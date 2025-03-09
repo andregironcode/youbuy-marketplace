@@ -204,12 +204,11 @@ export const useMessages = (chatId?: string) => {
       setCurrentChat(enhancedChatData);
       
       // Get messages for this chat between these two users - simplified query to avoid TS depth error
-      const queryCondition = `and(product_id.eq.${chatData.product_id},or(and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})))`;
-      
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .or(queryCondition)
+        .eq('product_id', chatData.product_id)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
 
       if (messagesError) {

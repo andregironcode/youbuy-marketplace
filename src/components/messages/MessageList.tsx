@@ -42,6 +42,8 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
     }
   };
 
+  console.log("Rendering MessageList with", messages.length, "messages");
+
   return (
     <>
       {messages.map((message) => {
