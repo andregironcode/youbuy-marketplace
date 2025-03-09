@@ -91,13 +91,16 @@ export const useMessages = (chatId?: string) => {
             .limit(1)
             .single();
 
-          // Get unread count
+          // Get unread count - Fix for TypeScript deep instantiation error
+          // Using a simpler approach that doesn't cause type recursion
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', user.id)
-            .eq('read', false)
-            .eq('chat_id', chat.id);
+            .match({ 
+              receiver_id: user.id, 
+              read: false, 
+              chat_id: chat.id 
+            });
 
           return {
             ...chat,
