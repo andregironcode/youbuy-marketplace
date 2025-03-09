@@ -5,7 +5,7 @@ import { ProductCard } from "../product/ProductCard";
 import { Button } from "../ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
-import { Grid2X2, List, Plus, ShoppingBag } from "lucide-react";
+import { Grid2X2, List, ListFilter, Plus, ShoppingBag } from "lucide-react";
 import { Card } from "../ui/card";
 import { cn } from "@/lib/utils";
 
@@ -72,28 +72,48 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
   return (
     <div>
       {/* View toggle and action buttons */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setViewMode('grid')} 
+              className={cn(
+                "h-9 w-9 p-0 rounded-md", 
+                viewMode === 'grid' 
+                  ? "bg-white shadow-sm text-youbuy" 
+                  : "bg-transparent text-gray-500"
+              )}
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setViewMode('list')} 
+              className={cn(
+                "h-9 w-9 p-0 rounded-md", 
+                viewMode === 'list' 
+                  ? "bg-white shadow-sm text-youbuy" 
+                  : "bg-transparent text-gray-500"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setViewMode('grid')} 
-            className={cn("h-9 w-9 p-0", viewMode === 'grid' && "bg-gray-100")}
+            className="text-gray-600 gap-2"
           >
-            <Grid2X2 className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setViewMode('list')} 
-            className={cn("h-9 w-9 p-0", viewMode === 'list' && "bg-gray-100")}
-          >
-            <List className="h-4 w-4" />
+            <ListFilter className="h-4 w-4" />
+            Filter
           </Button>
         </div>
         <Button 
           onClick={handleAddProduct} 
-          className="bg-youbuy hover:bg-youbuy-dark text-white"
+          className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm"
           size="sm"
         >
           <Plus className="mr-1 h-4 w-4" /> Upload product
@@ -109,15 +129,15 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
       ) : (
         <>
           {products.length === 0 ? (
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <ShoppingBag className="h-8 w-8 text-gray-400" />
+            <div className="rounded-lg bg-youbuy-light border border-youbuy/20 p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+                <ShoppingBag className="h-8 w-8 text-youbuy" />
               </div>
               <h3 className="text-lg font-medium mb-2">You don't have any products yet</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Start selling by uploading your first product. It's quick and easy!
               </p>
-              <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy-dark">
+              <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" /> Upload your first product
               </Button>
             </div>
@@ -128,18 +148,18 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
               ))}
               <Card 
                 onClick={handleAddProduct}
-                className="bg-white border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 h-full aspect-square text-gray-500 hover:bg-gray-50 cursor-pointer"
+                className="bg-youbuy-light border border-youbuy/20 rounded-lg flex flex-col items-center justify-center p-6 h-full aspect-square text-youbuy-dark hover:bg-youbuy-muted cursor-pointer transition-colors"
               >
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm">
                   <Plus className="h-6 w-6 text-youbuy" />
                 </div>
-                <span className="text-center">Upload product</span>
+                <span className="text-center font-medium">Upload product</span>
               </Card>
             </div>
           ) : (
             <div className="space-y-3">
               {products.map((product) => (
-                <div key={product.id} className="flex gap-4 border rounded-lg p-3 hover:bg-gray-50">
+                <div key={product.id} className="flex gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
                   <div className="w-20 h-20 rounded-md overflow-hidden">
                     <img 
                       src={product.image} 
@@ -166,7 +186,7 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
               ))}
               <Button 
                 onClick={handleAddProduct}
-                className="w-full py-6 border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600"
+                className="w-full py-6 border-2 border-dashed border-youbuy/30 bg-youbuy-light hover:bg-youbuy-muted text-youbuy-dark font-medium transition-colors"
                 variant="ghost"
               >
                 <Plus className="mr-2 h-4 w-4" /> Upload product
