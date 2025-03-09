@@ -6,10 +6,12 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { products } from "@/data/products";
+import { SellerListings } from "@/components/seller/SellerListings";
 
 // Products Page Component
 const ProductsPage = () => {
+  const { user } = useAuth();
+
   return (
     <div className="flex-1 p-6">
       <div className="mb-6">
@@ -25,41 +27,7 @@ const ProductsPage = () => {
           <TabsTrigger value="sold">SOLD</TabsTrigger>
         </TabsList>
         <TabsContent value="selling" className="mt-6">
-          <Card className="border rounded-lg overflow-hidden">
-            <div className="divide-y">
-              {products.slice(0, 4).map((product) => (
-                <div key={product.id} className="flex items-center p-4 hover:bg-accent/10">
-                  <div className="flex-shrink-0 mr-3">
-                    <input type="checkbox" className="rounded-sm" />
-                  </div>
-                  <div className="flex-shrink-0 mr-4">
-                    <img 
-                      src={`${product.image}?w=80&h=80&auto=format&fit=crop`} 
-                      alt={product.title} 
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-lg font-medium">${product.price}</div>
-                    <div className="text-sm">{product.title}</div>
-                  </div>
-                  <div className="hidden md:block w-24 text-sm text-muted-foreground">
-                    <div>Published</div>
-                    <div>12/02/2024</div>
-                  </div>
-                  <div className="hidden md:block w-24 text-sm text-muted-foreground">
-                    <div>Modified</div>
-                    <div>14/02/2024</div>
-                  </div>
-                  <div className="ml-4">
-                    <button className="px-4 py-2 bg-pink-500 text-white rounded-full text-sm">
-                      Reactivate
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <SellerListings userId={user?.id} />
         </TabsContent>
         <TabsContent value="sold">
           <div className="text-center py-10">
