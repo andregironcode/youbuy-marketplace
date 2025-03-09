@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { products } from "@/data/products";
 import { Badge } from "@/components/ui/badge";
 import { 
   Heart, 
@@ -29,12 +29,13 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { Card, CardContent } from "@/components/ui/card";
 import { SellerReviews } from "@/components/product/SellerReviews";
 import { ProductDetails } from "@/components/product/ProductDetails";
+import { ProductType, convertToProductType } from "@/types/product";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
-  const product = products.find(p => p.id === id);
+  const [product, setProduct] = useState<ProductType | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -42,7 +43,55 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [viewCount, setViewCount] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const productIsFavorite = isFavorite(id || '');
+
+  // Fetch product data from Supabase
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      
+      try {
+        console.log("Fetching product with ID:", id);
+        
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            profiles:seller_id(
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('id', id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching product details:', error);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Fetched product data:", data);
+        
+        if (data) {
+          const productData = convertToProductType(data, true);
+          setProduct(productData);
+          setLikeCount(productData.likeCount || 0);
+          setViewCount(productData.viewCount || 0);
+        }
+      } catch (err) {
+        console.error('Error in product fetch:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProduct();
+  }, [id]);
 
   const productImages = product ? [
     product.image,
@@ -204,12 +253,27 @@ const ProductDetail = () => {
     }
   };
 
-  useEffect(() => {
-    if (product) {
-      setLikeCount(product.likeCount || 0);
-      setViewCount(product.viewCount || 0);
-    }
-  }, [product]);
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 container py-8">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-pulse space-y-6 w-full max-w-4xl">
+              <div className="h-64 bg-gray-200 rounded-lg w-full"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -230,156 +294,6 @@ const ProductDetail = () => {
       </div>
     );
   }
-
-  const renderProductSpecificFields = () => {
-    return (
-      <div className="mt-6">
-        <h2 className="font-medium mb-4">Product Specifications</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {product.category === "electronics" && (
-            <>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Brand</p>
-                <p className="font-medium">Samsung</p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Model</p>
-                <p className="font-medium">{product.title.split(' ')[0]} {product.title.split(' ')[1]}</p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Condition</p>
-                <p className="font-medium">{product.isNew ? 'New (never used)' : 'Excellent'}</p>
-              </div>
-              {product.title.includes("iPhone") && (
-                <>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Storage</p>
-                    <p className="font-medium">{product.title.includes("256GB") ? "256GB" : 
-                      product.title.includes("512GB") ? "512GB" : "128GB"}</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Color</p>
-                    <p className="font-medium">Sierra Blue</p>
-                  </div>
-                </>
-              )}
-              {product.title.includes("MacBook") && (
-                <>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">RAM</p>
-                    <p className="font-medium">16GB</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Storage</p>
-                    <p className="font-medium">512GB SSD</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Processor</p>
-                    <p className="font-medium">M1 Pro</p>
-                  </div>
-                </>
-              )}
-              {product.title.includes("Canon") && (
-                <>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Megapixels</p>
-                    <p className="font-medium">45MP</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Lens</p>
-                    <p className="font-medium">24-70mm f/2.8 L</p>
-                  </div>
-                </>
-              )}
-              {product.title.includes("PlayStation") && (
-                <>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Edition</p>
-                    <p className="font-medium">Digital Edition</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Includes</p>
-                    <p className="font-medium">1 Controller, HDMI Cable, Power Cable</p>
-                  </div>
-                </>
-              )}
-              {product.title.includes("TV") && (
-                <>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Screen Size</p>
-                    <p className="font-medium">55 inches</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Resolution</p>
-                    <p className="font-medium">4K Ultra HD</p>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <p className="text-sm text-muted-foreground">Smart Features</p>
-                    <p className="font-medium">Full Smart TV</p>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-          
-          {product.category === "furniture" && (
-            <>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Material</p>
-                <p className="font-medium">Wood</p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Condition</p>
-                <p className="font-medium">{product.isNew ? 'New (never used)' : 'Good'}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">Dimensions</p>
-                <p className="font-medium">
-                  {product.title.includes("MALM") ? "140cm x 65cm x 75cm" : "180cm x 90cm x 45cm"}
-                </p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Color</p>
-                <p className="font-medium">
-                  {product.title.includes("White") ? "White" : product.title.includes("Black") ? "Black" : "Oak"}
-                </p>
-              </div>
-            </>
-          )}
-          
-          {product.category === "clothing" && (
-            <>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Brand</p>
-                <p className="font-medium">
-                  {product.title.includes("Nike") ? "Nike" : 
-                   product.title.includes("Adidas") ? "Adidas" : "Unbranded"}
-                </p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Size</p>
-                <p className="font-medium">
-                  {product.title.includes("43") ? "EU 43 / US 9.5" : 
-                   product.title.includes("42") ? "EU 42 / US 9" : "M"}
-                </p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Condition</p>
-                <p className="font-medium">{product.isNew ? 'New with tags' : 'Like new'}</p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-sm text-muted-foreground">Color</p>
-                <p className="font-medium">
-                  {product.title.includes("Blue") ? "University Blue" : 
-                   product.title.includes("Red") ? "Red" : "Black"}
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -512,15 +426,6 @@ const ProductDetail = () => {
               <Separator />
 
               <div>
-                <h2 className="font-medium mb-2">Description</h2>
-                <p className="text-muted-foreground">{product?.description}</p>
-              </div>
-              
-              {renderProductSpecificFields()}
-
-              <Separator />
-
-              <div>
                 <h2 className="font-medium mb-4">Seller</h2>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -530,7 +435,7 @@ const ProductDetail = () => {
                     </Avatar>
                     <div>
                       <Link
-                        to={`/seller/${product?.seller.userId}`}
+                        to={`/seller/${product?.seller.userId || product?.seller.id}`}
                         className="font-medium hover:text-youbuy"
                       >
                         {product?.seller.name}
@@ -559,16 +464,16 @@ const ProductDetail = () => {
                     </div>
                   </div>
                   
-                  <Link to={`/seller/${product?.seller.userId}`}>
+                  <Link to={`/seller/${product?.seller.userId || product?.seller.id}`}>
                     <Button variant="outline" size="sm">View Profile</Button>
                   </Link>
                 </div>
               </div>
 
-              {product?.seller.userId && (
+              {(product?.seller.userId || product?.seller.id) && (
                 <div className="pt-4">
                   <Link 
-                    to={`/seller/${product.seller.userId}?tab=reviews`} 
+                    to={`/seller/${product.seller.userId || product.seller.id}?tab=reviews`} 
                     className="flex items-center justify-center text-sm font-medium text-youbuy hover:underline"
                   >
                     <span>View all seller reviews</span>

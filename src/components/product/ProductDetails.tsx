@@ -47,7 +47,7 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
     
     return product.variations
       .filter(v => v.required)
-      .every(v => selectedVariations[v.id]);
+      .every(v => selectedVariations[variation.id]);
   };
   
   // Render the product status badge
