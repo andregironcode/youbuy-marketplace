@@ -206,7 +206,7 @@ export const SellerListings = ({
                         </div>
                         <div>
                           <p>Modified</p>
-                          <p>{product.updatedAt ? formatDate(product.updatedAt) : "N/A"}</p>
+                          <p>{product.createdAt ? formatDate(product.createdAt) : "N/A"}</p>
                         </div>
                       </div>
                     </div>
