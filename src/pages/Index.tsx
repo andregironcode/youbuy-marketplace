@@ -5,39 +5,25 @@ import { CategoryNav } from "@/components/category/CategoryNav";
 import { ProductCard } from "@/components/product/ProductCard";
 import { products } from "@/data/products";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ShoppingBag, Search, ChevronRight } from "lucide-react";
+import { PlusCircle, ShoppingBag, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { categories } from "@/data/categories";
-import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Filter products based on selected category
   const filteredProducts = selectedCategory === "all" 
     ? products 
     : products.filter(product => product.category === selectedCategory);
 
-  // Show only popular categories in the grid (limit to 12)
-  const popularCategories = categories.slice(0, 12);
+  // Show popular categories in the grid (limit to 12 by default, show all when requested)
+  const displayedCategories = showAllCategories ? categories : categories.slice(0, 12);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      
-      {/* Search banner */}
-      <div className="bg-youbuy py-6">
-        <div className="container flex flex-col items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Find What You Need on YouBuy</h1>
-          <div className="relative w-full max-w-2xl">
-            <Input 
-              placeholder="Search for items..." 
-              className="pl-10 py-6 rounded-full bg-white shadow-md"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          </div>
-        </div>
-      </div>
       
       <CategoryNav 
         selectedCategory={selectedCategory} 
@@ -49,13 +35,19 @@ const Index = () => {
           <>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Popular Categories</h2>
-              <Button variant="ghost" size="sm" className="text-youbuy">
-                View all <ChevronRight className="ml-1 h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-youbuy"
+                onClick={() => setShowAllCategories(!showAllCategories)}
+              >
+                {showAllCategories ? "Show less" : "View all"} 
+                <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
-              {popularCategories.map((category) => {
+              {displayedCategories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <Button 
