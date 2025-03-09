@@ -1,273 +1,154 @@
 
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Heart, 
-  Share2, 
-  MapPin, 
-  MessageCircle, 
-  ChevronLeft, 
-  AlertCircle,
-  Tag,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  Star,
-  Eye
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useFavorites } from "@/hooks/useFavorites";
 import { Card, CardContent } from "@/components/ui/card";
-import { SellerReviews } from "@/components/product/SellerReviews";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductDetails } from "@/components/product/ProductDetails";
-import { ProductType, convertToProductType } from "@/types/product";
+import { MessageButton } from "@/components/product/MessageButton";
+import { SellerReviews } from "@/components/product/SellerReviews";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useFavorites } from "@/hooks/useFavorites";
+import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar } from "lucide-react";
+import { ProductType } from "@/types/product";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [product, setProduct] = useState<ProductType | null>(null);
-  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [viewCount, setViewCount] = useState(0);
-  const [likeCount, setLikeCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const productIsFavorite = isFavorite(id || '');
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
+  const [activeImage, setActiveImage] = useState(0);
+  const [activeTab, setActiveTab] = useState("details");
 
-  // Fetch product data from Supabase
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
+  // Fetch product details
+  const { data: product, isLoading, error } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      if (!id) throw new Error("Product ID is required");
+
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          *,
+          seller_id(
+            id,
+            username,
+            full_name,
+            avatar_url,
+            created_at
+          )
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
       
-      setLoading(true);
-      
-      try {
-        console.log("Fetching product with ID:", id);
-        
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            *,
-            profiles:seller_id(
-              id,
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq('id', id)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching product details:', error);
-          setLoading(false);
-          return;
-        }
-        
-        console.log("Fetched product data:", data);
-        
-        if (data) {
-          const productData = convertToProductType(data, true);
-          setProduct(productData);
-          setLikeCount(productData.likeCount || 0);
-          setViewCount(productData.viewCount || 0);
-        }
-      } catch (err) {
-        console.error('Error in product fetch:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProduct();
-  }, [id]);
+      // Increment view count
+      await supabase
+        .from("products")
+        .update({ view_count: (data.view_count || 0) + 1 })
+        .eq("id", id);
 
-  const productImages = product ? [
-    product.image,
-    ...(product.images || []),
-    ...((!product.images || product.images.length < 3) ? [
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
-      "https://images.unsplash.com/photo-1507646227500-4d389b0012be"
-    ].slice(0, 3 - (product.images?.length || 0)) : [])
-  ] : [];
+      return {
+        ...data,
+        seller: {
+          userId: data.seller_id.id,
+          name: data.seller_id.full_name || data.seller_id.username || "Anonymous",
+          avatar: data.seller_id.avatar_url,
+          joinDate: data.seller_id.created_at,
+        },
+        images: data.image_urls || [],
+        variations: data.variations || [],
+        specifications: data.specifications || {},
+      } as ProductType;
+    },
+    enabled: !!id,
+  });
 
-  const handleContactSeller = () => {
+  // Handle favorite toggling
+  const isFavorite = favorites.some((favorite) => favorite === id);
+
+  const handleToggleFavorite = async () => {
     if (!user) {
       toast({
         title: "Sign in required",
-        description: "Please sign in to message the seller",
+        description: "Please sign in to save items to your favorites",
       });
       return;
     }
-    setIsMessageDialogOpen(true);
-  };
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || !user || !product) return;
-    
-    setIsSending(true);
-    
     try {
-      const sellerId = product.seller.userId;
-      
-      const { data: existingChats, error: chatQueryError } = await supabase
-        .from('chats')
-        .select('id')
-        .eq('product_id', product.id)
-        .eq('buyer_id', user.id)
-        .eq('seller_id', sellerId);
-      
-      if (chatQueryError) throw chatQueryError;
-      
-      let chatId;
-      
-      if (!existingChats || existingChats.length === 0) {
-        const { data: newChat, error: chatError } = await supabase
-          .from('chats')
-          .insert({
-            product_id: product.id,
-            seller_id: sellerId,
-            buyer_id: user.id
-          })
-          .select('id')
-          .single();
-          
-        if (chatError) throw chatError;
-        chatId = newChat.id;
-      } else {
-        chatId = existingChats[0].id;
-      }
-      
-      const { error: msgError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: sellerId,
-          product_id: product.id,
-          content: message,
+      if (isFavorite) {
+        await removeFavorite(id as string);
+        toast({
+          title: "Removed from favorites",
+          description: "This item has been removed from your favorites",
         });
-        
-      if (msgError) throw msgError;
-      
-      await supabase
-        .from('chats')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', chatId);
-      
-      toast({
-        title: "Message sent!",
-        description: "The seller will be notified of your message."
-      });
-      
-      setMessage("");
-      setIsMessageDialogOpen(false);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Failed to send message",
-        description: "Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      prevIndex === productImages.length - 1 ? 0 : prevIndex + 1
-    );
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      prevIndex === 0 ? productImages.length - 1 : prevIndex - 1
-    );
-  };
-
-  const selectImage = (index: number) => {
-    setCurrentImageIndex(index);
-  };
-
-  useEffect(() => {
-    const incrementViewCount = async () => {
-      if (!id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('view_count')
-          .eq('id', id)
-          .single();
-          
-        if (error) throw error;
-        
-        const currentViews = data?.view_count || 0;
-        setViewCount(currentViews + 1);
-        
-        await supabase
-          .from('products')
-          .update({ view_count: currentViews + 1 })
-          .eq('id', id);
-      } catch (error) {
-        console.error('Error updating view count:', error);
-      }
-    };
-    
-    incrementViewCount();
-  }, [id]);
-
-  const handleLikeToggle = async () => {
-    if (!id) return;
-    
-    try {
-      toggleFavorite(id);
-      
-      if (!productIsFavorite) {
-        setLikeCount(prev => prev + 1);
-        await supabase
-          .from('products')
-          .update({ like_count: likeCount + 1 })
-          .eq('id', id);
       } else {
-        setLikeCount(prev => Math.max(0, prev - 1));
-        await supabase
-          .from('products')
-          .update({ like_count: Math.max(0, likeCount - 1) })
-          .eq('id', id);
+        await addFavorite(id as string);
+        toast({
+          title: "Added to favorites",
+          description: "This item has been added to your favorites",
+        });
       }
     } catch (error) {
-      console.error('Error updating like count:', error);
+      console.error("Error toggling favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  if (loading) {
+  // Handle share button
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: product?.title || "Check out this product",
+          text: `Check out "${product?.title}" on YouBuy!`,
+          url: window.location.href,
+        });
+      } else {
+        // Fallback for browsers that don't support native sharing
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied",
+          description: "Product link copied to clipboard",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      if (error instanceof Error && error.name !== "AbortError") {
+        toast({
+          title: "Error",
+          description: "Failed to share. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-1 container py-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-pulse space-y-6 w-full max-w-4xl">
-              <div className="h-64 bg-gray-200 rounded-lg w-full"></div>
-              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-              <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="animate-pulse bg-gray-200 rounded-lg h-[400px]"></div>
+            <div className="space-y-4">
+              <div className="animate-pulse bg-gray-200 h-10 w-3/4 rounded"></div>
+              <div className="animate-pulse bg-gray-200 h-8 w-1/3 rounded"></div>
+              <div className="animate-pulse bg-gray-200 h-32 w-full rounded"></div>
             </div>
           </div>
         </main>
@@ -275,21 +156,22 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-1 container py-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-youbuy mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Product Not Found</h1>
-            <p className="text-muted-foreground mb-6">
-              The product you're looking for doesn't exist or has been removed.
-            </p>
-            <Link to="/">
-              <Button>Return to Home</Button>
-            </Link>
-          </div>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-8">
+              <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
+              <p className="text-muted-foreground mb-4">
+                The product you're looking for doesn't exist or has been removed.
+              </p>
+              <Button asChild>
+                <Link to="/">Browse More Products</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </main>
       </div>
     );
@@ -298,224 +180,182 @@ const ProductDetail = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 container py-6">
-        <div className="mb-4">
-          <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to listings
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-7">
-            <div className="space-y-4">
-              <div className="relative rounded-lg overflow-hidden bg-gray-100">
-                <img 
-                  src={productImages[currentImageIndex]} 
-                  alt={`${product.title} - image ${currentImageIndex + 1}`} 
-                  className="w-full object-cover aspect-square sm:aspect-[4/3]"
+      <main className="flex-1 container py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left column: Product images */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={product.images[activeImage]}
+                  alt={product.title}
+                  className="w-full h-full object-cover"
                 />
-                
-                {productImages.length > 1 && (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full"
-                      onClick={prevImage}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full"
-                      onClick={nextImage}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </>
-                )}
-                
-                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                  {currentImageIndex + 1} / {productImages.length}
-                </div>
-              </div>
-              
-              {productImages.length > 1 && (
-                <div className="flex space-x-2 overflow-x-auto pb-2">
-                  {productImages.map((image, index) => (
-                    <button
-                      key={index}
-                      className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${
-                        currentImageIndex === index ? 'border-youbuy' : 'border-transparent'
-                      }`}
-                      onClick={() => selectImage(index)}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`Thumbnail ${index + 1}`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  No image available
                 </div>
               )}
+            </div>
+
+            {/* Thumbnail gallery */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex space-x-2 overflow-x-auto pb-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveImage(index)}
+                    className={`relative flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 
+                      ${index === activeImage ? "border-youbuy" : "border-transparent"}`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Product view ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Product activity stats */}
+            <div className="flex items-center text-sm text-muted-foreground space-x-4">
+              <span className="flex items-center">
+                <Star className="mr-1 h-4 w-4" />
+                {product.viewCount || 0} views
+              </span>
+              <span>|</span>
+              <span className="flex items-center">
+                <Heart className="mr-1 h-4 w-4" />
+                {product.likeCount || 0} likes
+              </span>
+              <span>|</span>
+              <span className="flex items-center">
+                <Calendar className="mr-1 h-4 w-4" />
+                Listed on {format(new Date(product.createdAt || Date.now()), "MMM d, yyyy")}
+              </span>
+            </div>
+
+            {/* Tabs for Details and Reviews */}
+            <div className="mt-8">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-2 mb-4">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">
+                  <ProductDetails product={product} />
+                </TabsContent>
+                <TabsContent value="reviews">
+                  <SellerReviews 
+                    sellerId={product.seller.userId} 
+                    sellerName={product.seller.name}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 
-          <div className="lg:col-span-5">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex-1">
-                  <ProductDetails 
-                    product={product} 
-                    onAddToCart={handleContactSeller}
-                  />
-                  
-                  <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
-                    <div className="flex items-center">
-                      <Eye className="h-4 w-4 mr-1" /> 
-                      <span>{viewCount} views</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Heart className={`h-4 w-4 mr-1 ${productIsFavorite ? 'fill-youbuy text-youbuy' : ''}`} /> 
-                      <span>{likeCount} likes</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col space-y-2 ml-4">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={handleLikeToggle}
-                    disabled={isAdding || isRemoving}
-                  >
-                    <Heart className={`h-5 w-5 ${productIsFavorite ? 'fill-youbuy text-youbuy' : ''}`} />
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
+          {/* Right sidebar: Seller info, actions */}
+          <div className="space-y-4">
+            {/* Action buttons */}
+            <div className="flex space-x-2 mb-4">
+              <Button
+                variant="outline"
+                className={`flex-1 ${isFavorite ? "bg-red-50 border-red-200 text-red-600" : ""}`}
+                onClick={handleToggleFavorite}
+              >
+                <Heart
+                  className={`mr-2 h-4 w-4 ${isFavorite ? "fill-red-600 text-red-600" : ""}`}
+                />
+                {isFavorite ? "Saved" : "Save"}
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
+            </div>
 
-              <div className="flex items-center text-sm">
-                <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                <span>{product.location}</span>
-                <span className="mx-2">•</span>
-                <span>{product.timeAgo}</span>
-                {product.isNew && (
-                  <>
-                    <span className="mx-2">•</span>
-                    <Badge className="bg-youbuy">New</Badge>
-                  </>
-                )}
-              </div>
+            <Separator />
 
-              <Card className="border-dashed border-youbuy/40">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-5 w-5 text-youbuy" />
-                    <span className="font-medium text-youbuy-dark">
-                      Category: {product?.category.charAt(0).toUpperCase() + product?.category.slice(1)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              <div>
-                <h2 className="font-medium mb-4">Seller</h2>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Avatar className="h-12 w-12 mr-4">
-                      <AvatarImage src={product?.seller.avatar} alt={product?.seller.name} />
-                      <AvatarFallback>{product?.seller.name.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <Link
-                        to={`/seller/${product?.seller.userId || product?.seller.id}`}
-                        className="font-medium hover:text-youbuy"
-                      >
-                        {product?.seller.name}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">Member since {product?.seller.joinedDate}</p>
-                      
-                      {product?.seller.rating && (
-                        <div className="flex items-center mt-1">
-                          <div className="flex mr-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star 
-                                key={star} 
-                                className={`h-3 w-3 ${
-                                  star <= product.seller.rating! 
-                                    ? "fill-yellow-400 text-yellow-400" 
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            ({product.seller.totalReviews || 0})
-                          </span>
-                        </div>
+            {/* Seller information card */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={product.seller.avatar || ""} />
+                    <AvatarFallback>
+                      {product.seller.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">{product.seller.name}</h3>
+                      {/* Badge for verified sellers */}
+                      {product.seller.verified && (
+                        <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
                       )}
                     </div>
+                    <p className="text-sm text-muted-foreground">
+                      Member since {format(new Date(product.seller.joinDate || Date.now()), "MMMM yyyy")}
+                    </p>
                   </div>
-                  
-                  <Link to={`/seller/${product?.seller.userId || product?.seller.id}`}>
-                    <Button variant="outline" size="sm">View Profile</Button>
-                  </Link>
                 </div>
-              </div>
 
-              {(product?.seller.userId || product?.seller.id) && (
-                <div className="pt-4">
-                  <Link 
-                    to={`/seller/${product.seller.userId || product.seller.id}?tab=reviews`} 
-                    className="flex items-center justify-center text-sm font-medium text-youbuy hover:underline"
+                <div className="mt-4 space-y-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full justify-start"
                   >
-                    <span>View all seller reviews</span>
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Link>
+                    <Link to={`/seller/${product.seller.userId}`}>
+                      View profile
+                    </Link>
+                  </Button>
+                  <MessageButton
+                    productId={id as string}
+                    sellerId={product.seller.userId}
+                    productTitle={product.title}
+                    className="w-full bg-youbuy hover:bg-youbuy-dark"
+                  />
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              <div className="text-sm text-muted-foreground">
-                <AlertCircle className="inline h-4 w-4 mr-1" />
-                If you suspect this ad is a scam, please report it.
-              </div>
-            </div>
+            {/* Location info */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium">Location</h3>
+                    <p className="text-sm text-muted-foreground">{product.location || "Not specified"}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Safety tips */}
+            <Card className="bg-gray-50 border-gray-200">
+              <CardContent className="p-4">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <ShieldCheck className="h-4 w-4 mr-1 text-youbuy" />
+                  Safety Tips
+                </h3>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Meet in a safe, public place</li>
+                  <li>• Don't pay in advance</li>
+                  <li>• Check the item before paying</li>
+                  <li>• Report suspicious users</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
-
-      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Message {product.seller.name}</DialogTitle>
-            <DialogDescription>
-              Send a message about {product.title}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <Textarea 
-              placeholder="Write your message here..." 
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="min-h-32"
-            />
-            <Button 
-              className="w-full bg-youbuy hover:bg-youbuy-dark"
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isSending}
-            >
-              {isSending ? "Sending..." : "Send Message"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
