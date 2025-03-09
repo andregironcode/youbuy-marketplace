@@ -7,12 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Image as ImageIcon, X } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Copy, SaveAll } from "lucide-react";
 import { CategorySelector } from "@/components/category/CategorySelector";
 import { ProductFields } from "@/components/product/ProductFields";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { ProductVariation } from "@/types/product";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const Sell = () => {
   const [title, setTitle] = useState("");
@@ -26,6 +30,12 @@ const Sell = () => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
+  const [productStatus, setProductStatus] = useState<'available' | 'reserved'>('available');
+  const [reservedUserId, setReservedUserId] = useState("");
+  const [reservationDays, setReservationDays] = useState("3");
+  const [isBulkListing, setIsBulkListing] = useState(false);
+  const [bulkQuantity, setBulkQuantity] = useState("2");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -112,14 +122,37 @@ const Sell = () => {
       });
       return;
     }
+
+    // Calculate how many listings we need to create
+    const listingsToCreate = isBulkListing ? parseInt(bulkQuantity) || 1 : 1;
+    
+    if (listingsToCreate > 1 && variations.length > 0) {
+      toast({
+        title: "Invalid configuration",
+        description: "Bulk listings cannot contain variations. Please choose one or the other.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setUploading(true);
     
     try {
+      // For now, just show a toast as per original functionality
       toast({
-        title: "Coming soon",
+        title: isBulkListing ? `${listingsToCreate} items will be listed` : "Listing created",
         description: "Selling functionality will be implemented in the next phase",
       });
+      
+      // Additional info about the listing configuration
+      if (variations.length > 0) {
+        console.log("Product variations:", variations);
+      }
+      
+      if (productStatus === 'reserved') {
+        console.log("Reserved for user:", reservedUserId);
+        console.log("Reserved for days:", reservationDays);
+      }
     } catch (error) {
       console.error("Error listing item:", error);
       toast({
@@ -130,6 +163,12 @@ const Sell = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const duplicateForBulkListing = () => {
+    // This would prepare multiple listings for submission
+    // For now just toggle the bulk listing mode
+    setIsBulkListing(!isBulkListing);
   };
 
   const isDetailsComplete = title && description && category && price && location;
@@ -188,6 +227,52 @@ const Sell = () => {
                 </CardHeader>
                 <CardContent>
                   <form className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-medium">Basic Information</h3>
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center" 
+                          onClick={duplicateForBulkListing}
+                        >
+                          {isBulkListing ? (
+                            <>
+                              <X className="h-4 w-4 mr-2" />
+                              Cancel Bulk Listing
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Create Bulk Listing
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {isBulkListing && (
+                      <div className="bg-muted/50 p-4 rounded-md">
+                        <Label htmlFor="bulkQuantity">Number of identical items to list</Label>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Input 
+                            id="bulkQuantity" 
+                            type="number" 
+                            value={bulkQuantity} 
+                            onChange={(e) => setBulkQuantity(e.target.value)}
+                            min="2"
+                            max="100"
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">identical items</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          This will create multiple identical listings. Each will be shown separately to buyers.
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="space-y-2">
                       <Label htmlFor="title">Title</Label>
                       <Input 
@@ -296,14 +381,76 @@ const Sell = () => {
                       </div>
                     </div>
 
+                    {/* Product status section */}
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="status">
+                        <AccordionTrigger>Product Status</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="productStatus">Item Status</Label>
+                              <Select 
+                                value={productStatus} 
+                                onValueChange={(value: 'available' | 'reserved') => setProductStatus(value)}
+                              >
+                                <SelectTrigger id="productStatus">
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="available">Available (Anyone can buy)</SelectItem>
+                                  <SelectItem value="reserved">Reserved for specific user</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {productStatus === 'reserved' && (
+                              <div className="space-y-4 p-4 bg-muted/50 rounded-md">
+                                <div className="space-y-2">
+                                  <Label htmlFor="reservedUserId">Reserved for User ID</Label>
+                                  <Input 
+                                    id="reservedUserId" 
+                                    placeholder="Enter user ID" 
+                                    value={reservedUserId}
+                                    onChange={(e) => setReservedUserId(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="reservationDays">Reserved for Days</Label>
+                                  <Select 
+                                    value={reservationDays} 
+                                    onValueChange={setReservationDays}
+                                  >
+                                    <SelectTrigger id="reservationDays">
+                                      <SelectValue placeholder="Select days" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1">1 day</SelectItem>
+                                      <SelectItem value="3">3 days</SelectItem>
+                                      <SelectItem value="7">1 week</SelectItem>
+                                      <SelectItem value="14">2 weeks</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    After this period, the item will automatically become available to everyone.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
                     {/* Category-specific fields */}
-                    {category && (
+                    {category && !isBulkListing && (
                       <div className="space-y-2">
                         <Label>Category-Specific Details</Label>
                         <ProductFields 
                           category={category} 
                           subcategory={subcategory}
                           subSubcategory={subSubcategory}
+                          onVariationsChange={setVariations}
+                          initialVariations={variations}
                         />
                       </div>
                     )}
@@ -386,7 +533,14 @@ const Sell = () => {
                     disabled={uploading} 
                     className="bg-youbuy hover:bg-youbuy-dark"
                   >
-                    {uploading ? "Uploading..." : "List Item for Sale"}
+                    {isBulkListing 
+                      ? uploading 
+                        ? "Creating Listings..." 
+                        : `List ${bulkQuantity} Items for Sale`
+                      : uploading 
+                        ? "Uploading..." 
+                        : "List Item for Sale"
+                    }
                   </Button>
                 </CardFooter>
               </Card>

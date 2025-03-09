@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Card, CardContent } from "@/components/ui/card";
 import { SellerReviews } from "@/components/product/SellerReviews";
+import { ProductDetails } from "@/components/product/ProductDetails";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -388,24 +389,26 @@ const ProductDetail = () => {
 
           <div className="lg:col-span-5">
             <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h1 className="text-2xl font-bold">{product.title}</h1>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => toggleFavorite(product.id)}
-                      disabled={isAdding || isRemoving}
-                    >
-                      <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'fill-youbuy text-youbuy' : ''}`} />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Share2 className="h-5 w-5" />
-                    </Button>
-                  </div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1">
+                  <ProductDetails 
+                    product={product} 
+                    onAddToCart={handleContactSeller}
+                  />
                 </div>
-                <p className="text-3xl font-bold text-youbuy">AED {product.price.toFixed(2)}</p>
+                <div className="flex flex-col space-y-2 ml-4">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => toggleFavorite(product.id)}
+                    disabled={isAdding || isRemoving}
+                  >
+                    <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'fill-youbuy text-youbuy' : ''}`} />
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center text-sm">
@@ -488,14 +491,6 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              <Button 
-                className="w-full bg-youbuy hover:bg-youbuy-dark"
-                onClick={handleContactSeller}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Contact Seller
-              </Button>
-
               {product?.seller.userId && (
                 <div className="pt-4">
                   <Link 
@@ -547,4 +542,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
