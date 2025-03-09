@@ -8,6 +8,8 @@ export interface ProductType {
   location: string;
   timeAgo: string;
   isNew?: boolean;
+  isFeatured?: boolean;
+  createdAt: string; // ISO date string
   seller: {
     id: string;
     name: string;

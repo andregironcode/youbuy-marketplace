@@ -11,6 +11,8 @@ export const products: ProductType[] = [
     location: "Dubai Marina",
     timeAgo: "2 days ago",
     isNew: true,
+    isFeatured: true,
+    createdAt: "2023-10-29T14:00:00Z",
     seller: {
       id: "user1",
       name: "Ahmed",
@@ -27,6 +29,7 @@ export const products: ProductType[] = [
     image: "https://images.unsplash.com/photo-1518770660439-4636190af475",
     location: "JLT",
     timeAgo: "1 week ago",
+    createdAt: "2023-10-22T09:30:00Z",
     seller: {
       id: "user2",
       name: "Sarah",
@@ -44,6 +47,8 @@ export const products: ProductType[] = [
     location: "Downtown Dubai",
     timeAgo: "3 days ago",
     isNew: true,
+    isFeatured: true,
+    createdAt: "2023-10-27T11:15:00Z",
     seller: {
       id: "user3",
       name: "Michael",
@@ -60,6 +65,8 @@ export const products: ProductType[] = [
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
     location: "Abu Dhabi",
     timeAgo: "4 days ago",
+    createdAt: "2023-10-26T16:45:00Z",
+    isFeatured: true,
     seller: {
       id: "user4",
       name: "Fatima",
@@ -77,6 +84,7 @@ export const products: ProductType[] = [
     location: "Sharjah",
     timeAgo: "1 day ago",
     isNew: true,
+    createdAt: "2023-10-30T08:20:00Z",
     seller: {
       id: "user5",
       name: "Omar",
@@ -93,6 +101,7 @@ export const products: ProductType[] = [
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
     location: "Dubai Sports City",
     timeAgo: "5 days ago",
+    createdAt: "2023-10-25T13:10:00Z",
     seller: {
       id: "user6",
       name: "Jason",

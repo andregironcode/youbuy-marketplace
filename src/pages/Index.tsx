@@ -1,23 +1,27 @@
 
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
-import { ProductCard } from "@/components/product/ProductCard";
 import { products } from "@/data/products";
 import { ShoppingBag } from "lucide-react";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
+import { ProductSection } from "@/components/product/ProductSection";
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
-  // Filter products based on selected category
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
-
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-  };
+  // Get featured products
+  const featuredProducts = products.filter(product => product.isFeatured);
+  
+  // Get recently added products (sorted by creation date)
+  const recentlyAddedProducts = [...products]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4);
+  
+  // For "For You" section - in a real app, this would be personalized
+  // Here we're just showing a random selection
+  const forYouProducts = [...products]
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 4);
 
   const handleCategoryClick = () => {
     setCategoryDialogOpen(true);
@@ -28,35 +32,37 @@ const Index = () => {
       <Navbar onCategoryClick={handleCategoryClick} />
       
       <main className="flex-1 container py-6">
-        {selectedCategory !== "all" && (
-          <div className="mb-6">
-            <button 
-              onClick={() => setSelectedCategory("all")}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Clear category filter
-            </button>
-          </div>
-        )}
-        
         <CategoryBrowser 
           open={categoryDialogOpen} 
           onOpenChange={setCategoryDialogOpen} 
-          onSelectCategory={handleCategorySelect} 
+          onSelectCategory={(categoryId) => {
+            // We'll need to create a category page to handle this
+            console.log(`Selected category: ${categoryId}`);
+            window.location.href = `/category/${categoryId}`;
+          }} 
         />
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {/* Featured Products Section */}
+        <ProductSection 
+          title="Featured Products" 
+          products={featuredProducts} 
+          link="/featured" 
+        />
         
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">No products found</h3>
-            <p className="text-muted-foreground mt-2">Try a different category or check back later</p>
-          </div>
-        )}
+        {/* Recently Added Section */}
+        <ProductSection 
+          title="Recently Added" 
+          products={recentlyAddedProducts} 
+          link="/recent" 
+        />
+        
+        {/* For You Section */}
+        <ProductSection 
+          title="For You" 
+          products={forYouProducts} 
+          link="/recommended" 
+          linkText="See more"
+        />
       </main>
       
       <footer className="border-t py-6 md:py-8">
