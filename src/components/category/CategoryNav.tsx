@@ -25,7 +25,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-auto">
             <TabsList className={`${isMobile ? 'h-auto' : ''}`}>
               <TabsTrigger 
-                key="all" .
+                key="all"
                 value="all"
                 className={`px-4 py-2 ${isMobile ? 'text-sm' : ''}`}
               >
