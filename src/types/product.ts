@@ -48,7 +48,7 @@ export interface ProductType {
   };
   shippingOptions?: {
     inPersonMeetup: boolean;
-    shipping: boolean;
+    platformShipping: boolean; // Changed from 'shipping' to 'platformShipping'
     shippingCost?: number;
   };
 }

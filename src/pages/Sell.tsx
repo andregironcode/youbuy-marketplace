@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Image as ImageIcon, X, Copy, MapPin, ArrowRight, Check, Info } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Copy, MapPin, ArrowRight, Check, Info, Package, Scale, UserRound } from "lucide-react";
 import { CategorySelector } from "@/components/category/CategorySelector";
 import { ProductFields } from "@/components/product/ProductFields";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -581,14 +582,24 @@ const Sell = () => {
       <CardHeader>
         <CardTitle>Shipping Information</CardTitle>
         <CardDescription>
-          Provide shipping details to help buyers plan for delivery
+          Provide shipping details to help with delivery
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800 mb-4">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
+              <p className="text-sm">Shipping is provided by our platform. We just need some details about your item.</p>
+            </div>
+          </div>
+          
           <div className="space-y-4">
-            <Label>How much does the item weigh?</Label>
-            <p className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-gray-500" />
+              <Label>How much does the item weigh?</Label>
+            </div>
+            <p className="text-sm text-muted-foreground pl-7">
               Choose the weight range corresponding to your item. Please consider the weight of the packaging too.
             </p>
             
@@ -632,56 +643,45 @@ const Sell = () => {
             </RadioGroup>
           </div>
           
-          <div className="space-y-2 pt-4 border-t">
-            <Label>Delivery options</Label>
-            <div className="space-y-2">
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-gray-500" />
+              <Label>Package Dimensions (cm)</Label>
+            </div>
+            <p className="text-sm text-muted-foreground pl-7">
+              Enter the approximate dimensions of your packaged item
+            </p>
+            <div className="grid grid-cols-3 gap-3 pl-7">
+              <div className="space-y-2">
+                <Label htmlFor="length">Length</Label>
+                <Input id="length" placeholder="cm" type="number" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="width">Width</Label>
+                <Input id="width" placeholder="cm" type="number" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height">Height</Label>
+                <Input id="height" placeholder="cm" type="number" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <UserRound className="h-5 w-5 text-gray-500" />
+              <Label>Additional delivery option</Label>
+            </div>
+            <div className="space-y-2 pl-7">
               <div className="flex items-center space-x-2">
                 <Switch 
                   id="meetup" 
                   checked={shippingOptions.inPersonMeetup}
                   onCheckedChange={(checked) => setShippingOptions({...shippingOptions, inPersonMeetup: checked})}
                 />
-                <Label htmlFor="meetup">In-person meetup</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="shipping" 
-                  checked={shippingOptions.shipping}
-                  onCheckedChange={(checked) => setShippingOptions({...shippingOptions, shipping: checked})}
-                />
-                <Label htmlFor="shipping">Shipping</Label>
+                <Label htmlFor="meetup">I also want to offer in-person meetup</Label>
               </div>
             </div>
-            
-            {shippingOptions.shipping && (
-              <div className="ml-6 mt-4 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shipping-cost">Shipping Cost (AED)</Label>
-                  <Input 
-                    id="shipping-cost" 
-                    type="number"
-                    placeholder="e.g., 25" 
-                    value={shippingOptions.shippingCost || ''}
-                    onChange={(e) => setShippingOptions({
-                      ...shippingOptions, 
-                      shippingCost: e.target.value ? parseFloat(e.target.value) : 0
-                    })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Leave blank if buyer pays for shipping
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Package Dimensions (cm)</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input placeholder="Length" />
-                    <Input placeholder="Width" />
-                    <Input placeholder="Height" />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
