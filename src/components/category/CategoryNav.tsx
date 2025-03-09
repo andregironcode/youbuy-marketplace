@@ -3,19 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-
-const categories = [
-  { id: "all", name: "All" },
-  { id: "electronics", name: "Electronics" },
-  { id: "furniture", name: "Furniture" },
-  { id: "clothing", name: "Clothing" },
-  { id: "vehicles", name: "Vehicles" },
-  { id: "property", name: "Property" },
-  { id: "jobs", name: "Jobs" },
-  { id: "services", name: "Services" },
-  { id: "hobbies", name: "Hobbies" },
-  { id: "sports", name: "Sports" },
-];
+import { categoryNav } from "@/data/categories";
 
 interface CategoryNavProps {
   selectedCategory: string;
@@ -30,7 +18,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
       <ScrollArea className="w-full">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
           <TabsList className={`w-full justify-start ${isMobile ? 'h-auto' : ''}`}>
-            {categories.map((category) => (
+            {categoryNav.map((category) => (
               <TabsTrigger 
                 key={category.id} 
                 value={category.id}
