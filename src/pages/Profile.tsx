@@ -90,6 +90,17 @@ const InboxPage = () => {
   return null;
 };
 
+// Redirect component for Favorites (leads to main Favorites page)
+const FavoritesRedirect = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/favorites');
+  }, [navigate]);
+  
+  return null;
+};
+
 const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -118,7 +129,7 @@ const Profile = () => {
           <Route path="sales" element={<PlaceholderPage title="Sales" />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="inbox" element={<InboxPage />} />
-          <Route path="favorites" element={<PlaceholderPage title="Favorites" />} />
+          <Route path="favorites" element={<FavoritesRedirect />} />
           <Route path="stats" element={<PlaceholderPage title="Stats" />} />
           <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />

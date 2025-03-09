@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -28,7 +27,7 @@ const sidebarItems: SidebarItem[] = [
   { icon: Tag, label: "Sales", path: "/profile/sales" },
   { icon: Package, label: "Products", path: "/profile/products" },
   { icon: MessageCircle, label: "Messages", path: "/messages" },
-  { icon: Heart, label: "Favorites", path: "/profile/favorites" },
+  { icon: Heart, label: "Favorites", path: "/favorites" },
   { icon: BarChart2, label: "Stats", path: "/profile/stats" },
   { icon: Wallet, label: "Wallet", path: "/profile/wallet" },
   { icon: Settings, label: "Settings", path: "/profile/settings" },
