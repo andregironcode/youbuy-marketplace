@@ -11,16 +11,19 @@ import {
   MapPin, 
   MessageCircle, 
   ChevronLeft, 
-  AlertCircle 
+  AlertCircle,
+  Tag
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
+import { Card, CardContent } from "@/components/ui/card";
+import { ProductFields } from "@/components/product/ProductFields";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -138,6 +141,157 @@ const ProductDetail = () => {
     );
   }
 
+  // Determine if we should render the specific fields based on the product category
+  const renderProductSpecificFields = () => {
+    return (
+      <div className="mt-6">
+        <h2 className="font-medium mb-4">Product Specifications</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {product.category === "electronics" && (
+            <>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Brand</p>
+                <p className="font-medium">Samsung</p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Model</p>
+                <p className="font-medium">{product.title.split(' ')[0]} {product.title.split(' ')[1]}</p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Condition</p>
+                <p className="font-medium">{product.isNew ? 'New (never used)' : 'Excellent'}</p>
+              </div>
+              {product.title.includes("iPhone") && (
+                <>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Storage</p>
+                    <p className="font-medium">{product.title.includes("256GB") ? "256GB" : 
+                      product.title.includes("512GB") ? "512GB" : "128GB"}</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Color</p>
+                    <p className="font-medium">Sierra Blue</p>
+                  </div>
+                </>
+              )}
+              {product.title.includes("MacBook") && (
+                <>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">RAM</p>
+                    <p className="font-medium">16GB</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Storage</p>
+                    <p className="font-medium">512GB SSD</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Processor</p>
+                    <p className="font-medium">M1 Pro</p>
+                  </div>
+                </>
+              )}
+              {product.title.includes("Canon") && (
+                <>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Megapixels</p>
+                    <p className="font-medium">45MP</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Lens</p>
+                    <p className="font-medium">24-70mm f/2.8 L</p>
+                  </div>
+                </>
+              )}
+              {product.title.includes("PlayStation") && (
+                <>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Edition</p>
+                    <p className="font-medium">Digital Edition</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Includes</p>
+                    <p className="font-medium">1 Controller, HDMI Cable, Power Cable</p>
+                  </div>
+                </>
+              )}
+              {product.title.includes("TV") && (
+                <>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Screen Size</p>
+                    <p className="font-medium">55 inches</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Resolution</p>
+                    <p className="font-medium">4K Ultra HD</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm text-muted-foreground">Smart Features</p>
+                    <p className="font-medium">Full Smart TV</p>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          
+          {product.category === "furniture" && (
+            <>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Material</p>
+                <p className="font-medium">Wood</p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Condition</p>
+                <p className="font-medium">{product.isNew ? 'New (never used)' : 'Good'}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm text-muted-foreground">Dimensions</p>
+                <p className="font-medium">
+                  {product.title.includes("MALM") ? "140cm x 65cm x 75cm" : "180cm x 90cm x 45cm"}
+                </p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Color</p>
+                <p className="font-medium">
+                  {product.title.includes("White") ? "White" : product.title.includes("Black") ? "Black" : "Oak"}
+                </p>
+              </div>
+            </>
+          )}
+          
+          {product.category === "clothing" && (
+            <>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Brand</p>
+                <p className="font-medium">
+                  {product.title.includes("Nike") ? "Nike" : 
+                   product.title.includes("Adidas") ? "Adidas" : "Unbranded"}
+                </p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Size</p>
+                <p className="font-medium">
+                  {product.title.includes("43") ? "EU 43 / US 9.5" : 
+                   product.title.includes("42") ? "EU 42 / US 9" : "M"}
+                </p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Condition</p>
+                <p className="font-medium">{product.isNew ? 'New with tags' : 'Like new'}</p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-sm text-muted-foreground">Color</p>
+                <p className="font-medium">
+                  {product.title.includes("Blue") ? "University Blue" : 
+                   product.title.includes("Red") ? "Red" : "Black"}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -197,12 +351,25 @@ const ProductDetail = () => {
                 )}
               </div>
 
+              <Card className="border-dashed border-youbuy/40">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-youbuy" />
+                    <span className="font-medium text-youbuy-dark">
+                      Category: {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Separator />
 
               <div>
                 <h2 className="font-medium mb-2">Description</h2>
                 <p className="text-muted-foreground">{product.description}</p>
               </div>
+              
+              {renderProductSpecificFields()}
 
               <Separator />
 
@@ -242,6 +409,9 @@ const ProductDetail = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Message about: {product.title}</DialogTitle>
+            <DialogDescription>
+              Send a message to the seller about this item
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-4 mb-4">
             <img 
