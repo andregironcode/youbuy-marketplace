@@ -23,6 +23,11 @@ export interface ProductType {
     userId?: string; // Add userId for authenticated user reference
     rating?: number; // Average seller rating
     totalReviews?: number; // Total number of reviews
+    totalListings?: number; // Total published listings
+    totalSales?: number; // Total completed sales
+    totalPurchases?: number; // Total purchases made
+    totalShipments?: number; // Total shipments completed
+    businessAccount?: boolean; // Whether this is a business account
   };
   category: string;
 }

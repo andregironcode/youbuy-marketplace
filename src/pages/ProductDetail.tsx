@@ -38,11 +38,9 @@ const ProductDetail = () => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  // For demo purposes, create an array of images
   const productImages = product ? [
     product.image,
     ...(product.images || []),
-    // Add default images if product.images is not available or has less than 3 images
     ...((!product.images || product.images.length < 3) ? [
       "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
       "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
@@ -69,7 +67,6 @@ const ProductDetail = () => {
     try {
       const sellerId = product.seller.userId;
       
-      // Check if chat already exists
       const { data: existingChats, error: chatQueryError } = await supabase
         .from('chats')
         .select('id')
@@ -81,7 +78,6 @@ const ProductDetail = () => {
       
       let chatId;
       
-      // If chat doesn't exist, create one
       if (!existingChats || existingChats.length === 0) {
         const { data: newChat, error: chatError } = await supabase
           .from('chats')
@@ -99,7 +95,6 @@ const ProductDetail = () => {
         chatId = existingChats[0].id;
       }
       
-      // Insert message
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
@@ -111,7 +106,6 @@ const ProductDetail = () => {
         
       if (msgError) throw msgError;
       
-      // Update last_message_at in chat
       await supabase
         .from('chats')
         .update({ last_message_at: new Date().toISOString() })
@@ -172,7 +166,6 @@ const ProductDetail = () => {
     );
   }
 
-  // Determine if we should render the specific fields based on the product category
   const renderProductSpecificFields = () => {
     return (
       <div className="mt-6">
@@ -335,10 +328,8 @@ const ProductDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Product Image Gallery */}
           <div className="lg:col-span-7">
             <div className="space-y-4">
-              {/* Main Image */}
               <div className="relative rounded-lg overflow-hidden bg-gray-100">
                 <img 
                   src={productImages[currentImageIndex]} 
@@ -346,7 +337,6 @@ const ProductDetail = () => {
                   className="w-full object-cover aspect-square sm:aspect-[4/3]"
                 />
                 
-                {/* Navigation arrows */}
                 {productImages.length > 1 && (
                   <>
                     <Button 
@@ -368,13 +358,11 @@ const ProductDetail = () => {
                   </>
                 )}
                 
-                {/* Image counter */}
                 <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
                   {currentImageIndex + 1} / {productImages.length}
                 </div>
               </div>
               
-              {/* Thumbnails */}
               {productImages.length > 1 && (
                 <div className="flex space-x-2 overflow-x-auto pb-2">
                   {productImages.map((image, index) => (
@@ -397,7 +385,6 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product Details */}
           <div className="lg:col-span-5">
             <div className="space-y-6">
               <div>
@@ -457,15 +444,46 @@ const ProductDetail = () => {
 
               <div>
                 <h2 className="font-medium mb-4">Seller</h2>
-                <div className="flex items-center">
-                  <Avatar className="h-12 w-12 mr-4">
-                    <AvatarImage src={product?.seller.avatar} alt={product?.seller.name} />
-                    <AvatarFallback>{product?.seller.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{product?.seller.name}</p>
-                    <p className="text-sm text-muted-foreground">Member since {product?.seller.joinedDate}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Avatar className="h-12 w-12 mr-4">
+                      <AvatarImage src={product?.seller.avatar} alt={product?.seller.name} />
+                      <AvatarFallback>{product?.seller.name.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <Link
+                        to={`/seller/${product?.seller.userId}`}
+                        className="font-medium hover:text-youbuy"
+                      >
+                        {product?.seller.name}
+                      </Link>
+                      <p className="text-sm text-muted-foreground">Member since {product?.seller.joinedDate}</p>
+                      
+                      {product?.seller.rating && (
+                        <div className="flex items-center mt-1">
+                          <div className="flex mr-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                className={`h-3 w-3 ${
+                                  star <= product.seller.rating! 
+                                    ? "fill-yellow-400 text-yellow-400" 
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            ({product.seller.totalReviews || 0})
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  <Link to={`/seller/${product?.seller.userId}`}>
+                    <Button variant="outline" size="sm">View Profile</Button>
+                  </Link>
                 </div>
               </div>
 
@@ -478,10 +496,15 @@ const ProductDetail = () => {
               </Button>
 
               {product?.seller.userId && (
-                <SellerReviews 
-                  sellerId={product.seller.userId}
-                  sellerName={product.seller.name}
-                />
+                <div className="pt-4">
+                  <Link 
+                    to={`/seller/${product.seller.userId}?tab=reviews`} 
+                    className="flex items-center justify-center text-sm font-medium text-youbuy hover:underline"
+                  >
+                    <span>View all seller reviews</span>
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </div>
               )}
 
               <div className="text-sm text-muted-foreground">
@@ -493,48 +516,5 @@ const ProductDetail = () => {
         </div>
       </main>
 
-      {/* Message Dialog */}
-      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Message about: {product.title}</DialogTitle>
-            <DialogDescription>
-              Send a message to the seller about this item
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center space-x-4 mb-4">
-            <img 
-              src={product.image} 
-              alt={product.title} 
-              className="w-16 h-16 object-cover rounded"
-            />
-            <div>
-              <p className="font-medium">{product.title}</p>
-              <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
-            </div>
-          </div>
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message here..."
-            className="min-h-[100px]"
-          />
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isSending}
-              className="bg-youbuy hover:bg-youbuy-dark"
-            >
-              {isSending ? "Sending..." : "Send Message"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
+      <
 
-export default ProductDetail;

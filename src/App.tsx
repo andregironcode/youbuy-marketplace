@@ -1,53 +1,46 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import ProductDetail from "./pages/ProductDetail";
-import Sell from "./pages/Sell";
-import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import CategoryPage from "./pages/CategoryPage";
+import ProductDetail from "./pages/ProductDetail";
+import SellerProfile from "./pages/SellerProfile";
 import Messages from "./pages/Messages";
+import CategoryPage from "./pages/CategoryPage";
+import Sell from "./pages/Sell";
 import Favorites from "./pages/Favorites";
+import Notifications from "./pages/Notifications";
+import NotFound from "./pages/NotFound";
+import { Toaster } from "./components/ui/toaster";
+import { AuthProvider } from "./context/AuthContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/sell" element={<Sell />} />
-            <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile/*" element={<Profile />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/messages/:chatId" element={<Messages />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/seller/:id" element={<SellerProfile />} />
+            <Route path="/messages/*" element={<Messages />} />
+            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/sell" element={<Sell />} />
             <Route path="/favorites" element={<Favorites />} />
-            <Route path="/category/:categoryId" element={<CategoryPage />} />
-            <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
-            <Route path="/category/:categoryId/:subcategoryId/:subSubcategoryId" element={<CategoryPage />} />
-            <Route path="/featured" element={<CategoryPage />} />
-            <Route path="/recent" element={<CategoryPage />} />
-            <Route path="/recommended" element={<CategoryPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+          <Toaster />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
