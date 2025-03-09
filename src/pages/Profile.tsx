@@ -1,10 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SellerListings } from "@/components/seller/SellerListings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +12,7 @@ const ProductsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"selling" | "sold">("selling");
 
   useEffect(() => {
     // Create products for the user when they visit the profile page
@@ -202,20 +201,12 @@ const ProductsPage = () => {
         </div>
       )}
 
-      <Tabs defaultValue="selling">
-        <TabsList>
-          <TabsTrigger value="selling" className="text-youbuy data-[state=active]:text-youbuy font-medium">SELLING</TabsTrigger>
-          <TabsTrigger value="sold" className="font-medium">SOLD</TabsTrigger>
-        </TabsList>
-        <TabsContent value="selling" className="mt-6">
-          <SellerListings userId={user?.id} />
-        </TabsContent>
-        <TabsContent value="sold">
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">No sold items yet</p>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <SellerListings 
+        userId={user?.id} 
+        activeTab={activeTab}
+        showTabs={true}
+        onTabChange={setActiveTab}
+      />
     </div>
   );
 };

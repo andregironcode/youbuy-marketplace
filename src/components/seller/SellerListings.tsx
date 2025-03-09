@@ -11,13 +11,25 @@ import { cn } from "@/lib/utils";
 interface SellerListingsProps {
   userId?: string;
   limit?: number;
+  activeTab?: "selling" | "sold";
+  showTabs?: boolean;
+  onTabChange?: (tab: "selling" | "sold") => void;
 }
 
-export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
+export const SellerListings = ({ 
+  userId, 
+  limit = 8, 
+  activeTab = "selling",
+  showTabs = false,
+  onTabChange
+}: SellerListingsProps) => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"selling" | "sold">("selling");
+  const [internalActiveTab, setInternalActiveTab] = useState<"selling" | "sold">(activeTab);
   const navigate = useNavigate();
+
+  // Use either internal or external tab state
+  const currentActiveTab = onTabChange ? activeTab : internalActiveTab;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -27,6 +39,9 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
       
       try {
         console.log("Fetching products for seller ID:", userId);
+        
+        // Determine the product_status to filter by based on active tab
+        const statusFilter = currentActiveTab === "selling" ? "available" : "sold";
         
         const { data, error } = await supabase
           .from('products')
@@ -39,6 +54,7 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
             )
           `)
           .eq('seller_id', userId)
+          .eq('product_status', statusFilter)
           .order('created_at', { ascending: false })
           .limit(limit);
           
@@ -62,10 +78,14 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
     };
     
     fetchProducts();
-  }, [userId, limit]);
+  }, [userId, limit, currentActiveTab]);
 
   const handleAddProduct = () => {
     navigate('/sell');
+  };
+
+  const handleEditProduct = (productId: string) => {
+    navigate(`/profile/edit-product/${productId}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -76,51 +96,63 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
     }
   };
 
+  const handleTabChange = (tab: "selling" | "sold") => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
+
   return (
     <div>
-      {/* Header section */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Your products</h2>
-        <p className="text-muted-foreground text-sm">
-          Here you can list items, manage the ones you already have and activate featured to sell them faster
-        </p>
-      </div>
-
-      {/* Tab navigation and filter */}
-      <div className="flex justify-between items-center mb-4 border-b">
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab("selling")}
-            className={cn(
-              "px-4 py-3 text-sm font-medium transition-colors relative",
-              activeTab === "selling"
-                ? "text-youbuy border-b-2 border-youbuy"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            SELLING
-          </button>
-          <button
-            onClick={() => setActiveTab("sold")}
-            className={cn(
-              "px-4 py-3 text-sm font-medium transition-colors relative",
-              activeTab === "sold"
-                ? "text-youbuy border-b-2 border-youbuy"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            SOLD
-          </button>
+      {/* Only show header if not controlled by parent */}
+      {!onTabChange && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2">Your products</h2>
+          <p className="text-muted-foreground text-sm">
+            Here you can list items, manage the ones you already have and activate featured to sell them faster
+          </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="text-gray-600 gap-2"
-        >
-          <ListFilter className="h-4 w-4" />
-          Filter
-        </Button>
-      </div>
+      )}
+
+      {/* Tab navigation and filter - only show if showTabs is true */}
+      {showTabs && (
+        <div className="flex justify-between items-center mb-4 border-b">
+          <div className="flex">
+            <button
+              onClick={() => handleTabChange("selling")}
+              className={cn(
+                "px-4 py-3 text-sm font-medium transition-colors relative",
+                currentActiveTab === "selling"
+                  ? "text-youbuy border-b-2 border-youbuy"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              SELLING
+            </button>
+            <button
+              onClick={() => handleTabChange("sold")}
+              className={cn(
+                "px-4 py-3 text-sm font-medium transition-colors relative",
+                currentActiveTab === "sold"
+                  ? "text-youbuy border-b-2 border-youbuy"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              SOLD
+            </button>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-gray-600 gap-2"
+          >
+            <ListFilter className="h-4 w-4" />
+            Filter
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -135,13 +167,17 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
               <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
                 <Plus className="h-8 w-8 text-youbuy" />
               </div>
-              <h3 className="text-lg font-medium mb-2">You don't have any products yet</h3>
+              <h3 className="text-lg font-medium mb-2">You don't have any {currentActiveTab === "sold" ? "sold" : ""} products yet</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Start selling by uploading your first product. It's quick and easy!
+                {currentActiveTab === "selling" 
+                  ? "Start selling by uploading your first product. It's quick and easy!" 
+                  : "Products you've sold will appear here."}
               </p>
-              <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm">
-                <Plus className="mr-2 h-4 w-4" /> Upload your first product
-              </Button>
+              {currentActiveTab === "selling" && (
+                <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm">
+                  <Plus className="mr-2 h-4 w-4" /> Upload your first product
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -170,29 +206,37 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
                         </div>
                         <div>
                           <p>Modified</p>
-                          <p>{product.createdAt !== product.createdAt ? formatDate(product.createdAt) : "N/A"}</p>
+                          <p>{product.updatedAt ? formatDate(product.updatedAt) : "N/A"}</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditProduct(product.id)}
+                    >
+                      Edit
+                    </Button>
                     <Button 
                       size="sm" 
                       className="text-white bg-youbuy hover:bg-youbuy-dark"
-                      onClick={() => {}}
                     >
                       Feature
                     </Button>
                   </div>
                 </div>
               ))}
-              <Button 
-                onClick={handleAddProduct}
-                className="w-full py-6 border-2 border-dashed border-youbuy/30 bg-youbuy-light hover:bg-youbuy-muted text-youbuy-dark font-medium transition-colors"
-                variant="ghost"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Upload product
-              </Button>
+              {currentActiveTab === "selling" && (
+                <Button 
+                  onClick={handleAddProduct}
+                  className="w-full py-6 border-2 border-dashed border-youbuy/30 bg-youbuy-light hover:bg-youbuy-muted text-youbuy-dark font-medium transition-colors"
+                  variant="ghost"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Upload product
+                </Button>
+              )}
             </div>
           )}
         </>
