@@ -79,6 +79,17 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
+// Redirect component for the Inbox (leads to Messages page)
+const InboxPage = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/messages');
+  }, [navigate]);
+  
+  return null;
+};
+
 const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -106,7 +117,7 @@ const Profile = () => {
           <Route path="purchases" element={<PlaceholderPage title="Purchases" />} />
           <Route path="sales" element={<PlaceholderPage title="Sales" />} />
           <Route path="products" element={<ProductsPage />} />
-          <Route path="inbox" element={<PlaceholderPage title="Inbox" />} />
+          <Route path="inbox" element={<InboxPage />} />
           <Route path="favorites" element={<PlaceholderPage title="Favorites" />} />
           <Route path="stats" element={<PlaceholderPage title="Stats" />} />
           <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />

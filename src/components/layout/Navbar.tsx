@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell, LogOut, PlusCircle } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, Bell, LogOut, PlusCircle, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -71,15 +71,17 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
               </Link>
               {user ? (
                 <div className="flex items-center gap-1">
+                  <Link to="/messages">
+                    <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Messages">
+                      <MessageCircle className="h-5 w-5" />
+                    </Button>
+                  </Link>
                   <Link to="/profile">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.user_metadata?.avatar_url} />
                       <AvatarFallback>{getInitials()}</AvatarFallback>
                     </Avatar>
                   </Link>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut}>
-                    <LogOut className="h-4 w-4" />
-                  </Button>
                 </div>
               ) : (
                 <Link to="/auth">
@@ -111,6 +113,9 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
             </Link>
             {user ? (
               <>
+                <Link to="/messages" className="py-2 px-3 hover:bg-muted rounded-md">
+                  Messages
+                </Link>
                 <Link to="/profile" className="py-2 px-3 hover:bg-muted rounded-md">
                   Profile
                 </Link>

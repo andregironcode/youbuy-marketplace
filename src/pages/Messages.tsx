@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatType, MessageType } from "@/types/message";
-import { SendHorizonal, ArrowLeft } from "lucide-react";
+import { SendHorizonal, ArrowLeft, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { products } from "@/data/products";
@@ -28,6 +28,7 @@ const Messages = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<any>(null);
 
   // Fetch chats
   useEffect(() => {
@@ -157,7 +158,7 @@ const Messages = () => {
     }
   }, [user, loading, navigate, toast]);
 
-  // Fetch messages for current chat
+  // Fetch messages for current chat and set product info
   useEffect(() => {
     if (!chatId || !user) return;
 
@@ -173,6 +174,10 @@ const Messages = () => {
 
         if (chatError) throw chatError;
         setCurrentChat(chatData as ChatType);
+
+        // Find product from mock data
+        const productData = products.find(p => p.id === chatData.product_id);
+        setCurrentProduct(productData);
 
         // Get messages
         const { data: messagesData, error: messagesError } = await supabase
@@ -395,6 +400,26 @@ const Messages = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* Product Information Card - New section */}
+                {currentProduct && (
+                  <div className="p-3 border-b bg-accent/5">
+                    <Link to={`/product/${currentProduct.id}`} className="block hover:bg-accent/10 rounded-lg transition-colors">
+                      <div className="flex items-center p-2">
+                        <img 
+                          src={currentProduct.image} 
+                          alt={currentProduct.title} 
+                          className="w-16 h-16 object-cover rounded mr-3"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium">{currentProduct.title}</p>
+                          <p className="text-youbuy font-bold">AED {currentProduct.price.toFixed(2)}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </Link>
+                  </div>
+                )}
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">

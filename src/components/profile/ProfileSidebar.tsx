@@ -7,13 +7,15 @@ import {
   ShoppingBag, 
   Tag, 
   Package, 
-  Inbox, 
+  MessageCircle, 
   Heart, 
   BarChart2, 
   Wallet, 
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  LogOut
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type SidebarItem = {
   icon: React.ElementType;
@@ -25,7 +27,7 @@ const sidebarItems: SidebarItem[] = [
   { icon: ShoppingBag, label: "Purchases", path: "/profile/purchases" },
   { icon: Tag, label: "Sales", path: "/profile/sales" },
   { icon: Package, label: "Products", path: "/profile/products" },
-  { icon: Inbox, label: "Inbox", path: "/profile/inbox" },
+  { icon: MessageCircle, label: "Messages", path: "/messages" },
   { icon: Heart, label: "Favorites", path: "/profile/favorites" },
   { icon: BarChart2, label: "Stats", path: "/profile/stats" },
   { icon: Wallet, label: "Wallet", path: "/profile/wallet" },
@@ -34,7 +36,7 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 export const ProfileSidebar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   
   if (!user) return null;
@@ -89,6 +91,18 @@ export const ProfileSidebar = () => {
           })}
         </ul>
       </nav>
+      
+      {/* Sign out button at the bottom */}
+      <div className="p-4 border-t mt-auto">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+          onClick={signOut}
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          <span>Sign out</span>
+        </Button>
+      </div>
     </aside>
   );
 };
