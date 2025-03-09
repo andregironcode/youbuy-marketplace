@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -26,17 +26,27 @@ import { ProductType } from "@/types/product";
 import { SellerReviews } from "@/components/product/SellerReviews";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useFavoriteSellers } from "@/hooks/useFavoriteSellers";
 
 const SellerProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
   const { toast } = useToast();
   const { user } = useAuth();
-  const [favorited, setFavorited] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("listings");
+  const { isFavoriteSeller, toggleFavoriteSeller, isAdding, isRemoving } = useFavoriteSellers();
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl || "listings");
 
   // Find seller info from the products data (in a real app, this would come from the API)
   const sellerProducts = products.filter(p => p.seller.userId === id);
   const sellerInfo = sellerProducts.length > 0 ? sellerProducts[0].seller : null;
+
+  // Set active tab based on URL parameter
+  useEffect(() => {
+    if (tabFromUrl && ['listings', 'reviews', 'info'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   // Fetch seller reviews
   const { data: reviews, isLoading: isLoadingReviews } = useQuery({
@@ -53,21 +63,6 @@ const SellerProfile = () => {
     },
     enabled: !!id
   });
-
-  const toggleFavorite = () => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to favorite this seller",
-      });
-      return;
-    }
-    
-    setFavorited(!favorited);
-    toast({
-      title: favorited ? "Seller removed from favorites" : "Seller added to favorites",
-    });
-  };
 
   const handleContactSeller = () => {
     if (!user) {
@@ -201,11 +196,12 @@ const SellerProfile = () => {
                 
                 <Button 
                   variant="outline" 
-                  onClick={toggleFavorite}
+                  onClick={() => id && toggleFavoriteSeller(id)}
                   className="w-full"
+                  disabled={isAdding || isRemoving}
                 >
-                  <Heart className={`mr-2 h-4 w-4 ${favorited ? "fill-youbuy text-youbuy" : ""}`} />
-                  {favorited ? "Favorited" : "Favorite user"}
+                  <Heart className={`mr-2 h-4 w-4 ${id && isFavoriteSeller(id) ? "fill-youbuy text-youbuy" : ""}`} />
+                  {id && isFavoriteSeller(id) ? "Favorited" : "Favorite user"}
                 </Button>
               </div>
             </div>
@@ -215,7 +211,6 @@ const SellerProfile = () => {
         {/* Tab navigation */}
         <div className="mb-6">
           <Tabs 
-            defaultValue="listings" 
             value={activeTab} 
             onValueChange={setActiveTab}
             className="w-full"
