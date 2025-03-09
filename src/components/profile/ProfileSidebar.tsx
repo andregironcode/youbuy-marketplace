@@ -79,11 +79,11 @@ export const ProfileSidebar = () => {
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
                     isActive 
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      ? "bg-youbuy text-white font-bold shadow-md" 
+                      : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
                   <span>{item.label}</span>
                 </Link>
               </li>
@@ -96,7 +96,7 @@ export const ProfileSidebar = () => {
       <div className="p-3 border-t mt-auto">
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+          className="w-full justify-start hover:bg-red-100 hover:text-red-600 hover:font-semibold text-red-500 transition-all"
           onClick={signOut}
         >
           <LogOut className="h-5 w-5 mr-3" />
