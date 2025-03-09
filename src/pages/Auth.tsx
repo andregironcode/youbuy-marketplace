@@ -1,38 +1,78 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
   const { toast } = useToast();
+  const { signIn, signUp, user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here, implement real authentication
-    toast({
-      title: "Login functionality",
-      description: "Authentication will be implemented in the next phase",
-    });
+    setIsLoading(true);
+    setErrorMsg(null);
+    
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        setErrorMsg(error.message);
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: error.message
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here, implement real user registration
-    toast({
-      title: "Signup functionality",
-      description: "Registration will be implemented in the next phase",
-    });
+    setIsLoading(true);
+    setErrorMsg(null);
+    
+    try {
+      const { error } = await signUp(email, password, name);
+      if (error) {
+        setErrorMsg(error.message);
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description: error.message
+        });
+      } else {
+        toast({
+          title: "Account created",
+          description: "Welcome to YouBuy! You are now signed in."
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -58,6 +98,12 @@ const Auth = () => {
             </CardHeader>
             
             <CardContent>
+              {errorMsg && (
+                <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                  {errorMsg}
+                </div>
+              )}
+              
               {activeTab === "login" ? (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
@@ -69,6 +115,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -84,10 +131,22 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-youbuy hover:bg-youbuy-dark">
-                    Login
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-youbuy hover:bg-youbuy-dark"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      "Login"
+                    )}
                   </Button>
                 </form>
               ) : (
@@ -100,6 +159,7 @@ const Auth = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -111,6 +171,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -121,10 +182,22 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-youbuy hover:bg-youbuy-dark">
-                    Create account
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-youbuy hover:bg-youbuy-dark"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create account"
+                    )}
                   </Button>
                 </form>
               )}

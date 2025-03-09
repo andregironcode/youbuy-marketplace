@@ -2,13 +2,15 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, Bell, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export const Navbar = () => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { user, signOut } = useAuth();
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -52,11 +54,17 @@ export const Navbar = () => {
                   <Bell className="h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/auth">
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
+              {user ? (
+                <Button variant="ghost" size="icon" onClick={signOut}>
+                  <LogOut className="h-5 w-5" />
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -72,9 +80,19 @@ export const Navbar = () => {
             <Link to="/notifications" className="py-2 px-3 hover:bg-muted rounded-md">
               Notifications
             </Link>
-            <Link to="/auth" className="py-2 px-3 hover:bg-muted rounded-md">
-              Sign in / Register
-            </Link>
+            {user ? (
+              <button 
+                onClick={signOut}
+                className="flex items-center py-2 px-3 hover:bg-muted rounded-md text-left"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </button>
+            ) : (
+              <Link to="/auth" className="py-2 px-3 hover:bg-muted rounded-md">
+                Sign in / Register
+              </Link>
+            )}
           </nav>
         </div>
       )}
