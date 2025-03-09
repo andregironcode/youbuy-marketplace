@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -129,14 +130,22 @@ export const useMessages = (chatId?: string) => {
 
       fetchChats();
 
-      // Subscribe to changes in chats
+      // Subscribe to changes in chats - FIX: Proper filter format for Supabase
       const chatSubscription = supabase
         .channel('public:chats')
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'chats',
-          filter: `seller_id=eq.${user.id}|buyer_id=eq.${user.id}`
+          filter: `seller_id=eq.${user.id}`
+        }, () => {
+          fetchChats();
+        })
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'chats',
+          filter: `buyer_id=eq.${user.id}`
         }, () => {
           fetchChats();
         })
@@ -201,29 +210,33 @@ export const useMessages = (chatId?: string) => {
 
     loadMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages - FIX: Use proper filter for current product ID
     const messageSubscription = supabase
-      .channel('public:messages')
+      .channel(`messages-for-product-${currentChat?.product_id}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'messages',
-        filter: `product_id=eq.${currentChat?.product_id}`
+        filter: currentChat?.product_id ? `product_id=eq.${currentChat.product_id}` : undefined
       }, (payload) => {
-        setMessages(prev => [...prev, payload.new as MessageType]);
-        
-        // If message is for current user, mark as read
-        if (payload.new.receiver_id === user.id) {
-          supabase
-            .from('messages')
-            .update({ read: true })
-            .eq('id', payload.new.id);
+        if (payload.new) {
+          setMessages(prev => [...prev, payload.new as MessageType]);
+          
+          // If message is for current user, mark as read
+          if (payload.new.receiver_id === user.id) {
+            supabase
+              .from('messages')
+              .update({ read: true })
+              .eq('id', payload.new.id);
+          }
         }
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(messageSubscription);
+      if (messageSubscription) {
+        supabase.removeChannel(messageSubscription);
+      }
     };
   }, [chatId, user, currentChat?.product_id, toast]);
 
@@ -272,20 +285,8 @@ export const useMessages = (chatId?: string) => {
     
     setSendingMessage(true);
     try {
-      // For now, since we don't have actual file storage setup,
-      // we'll use a URL that simulates an image upload by using an appropriate public image URL
-      // In a real app, you would upload to Supabase Storage
-      
       // Create a mock image URL - in production this would be the actual upload URL
       const mockImageUrl = URL.createObjectURL(file);
-      
-      // In a real app, you'd do something like:
-      // const { data, error } = await supabase.storage
-      //   .from('message-images')
-      //   .upload(`${user.id}/${Date.now()}_${file.name}`, file);
-      
-      // if (error) throw error;
-      // const imageUrl = supabase.storage.from('message-images').getPublicUrl(data.path).data.publicUrl;
       
       const receiverId = currentChat.seller_id === user.id 
         ? currentChat.buyer_id 

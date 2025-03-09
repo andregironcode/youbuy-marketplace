@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType } from "@/types/product";
+import { useNavigate } from "react-router-dom";
 
 interface MessageButtonProps {
   product: ProductType;
@@ -19,6 +20,7 @@ interface MessageButtonProps {
 export const MessageButton = ({ product, size = "md", fullWidth = false, id }: MessageButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -43,6 +45,10 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
     try {
       const sellerId = product.seller.userId;
       
+      if (!sellerId) {
+        throw new Error("Seller information is missing");
+      }
+      
       // Check if chat already exists
       const { data: existingChats, error: chatQueryError } = await supabase
         .from('chats')
@@ -62,7 +68,8 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
           .insert({
             product_id: product.id,
             seller_id: sellerId,
-            buyer_id: user.id
+            buyer_id: user.id,
+            last_message_at: new Date().toISOString()
           })
           .select('id')
           .single();
@@ -98,6 +105,9 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
       
       setMessage("");
       setIsOpen(false);
+      
+      // Navigate to the chat
+      navigate(`/messages/${chatId}`);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
