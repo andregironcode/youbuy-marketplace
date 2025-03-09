@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Progress } from "@/components/ui/progress";
@@ -57,7 +56,6 @@ const Sell = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Effect to redirect if not authenticated
   useEffect(() => {
     if (!user) {
       toast({
@@ -134,7 +132,6 @@ const Sell = () => {
     setImagePreviewUrls(newPreviewUrls);
   };
 
-  // Upload images to storage
   const uploadImages = async () => {
     if (!user) return [];
     
@@ -205,7 +202,6 @@ const Sell = () => {
     setUploading(true);
     
     try {
-      // Upload images first
       const uploadedImageUrls = await uploadImages();
       setImageUrls(uploadedImageUrls);
       
@@ -219,33 +215,28 @@ const Sell = () => {
         return;
       }
       
-      // Create product data
-      const productData: SellFormData = {
+      const productData = {
         title,
         price,
         description,
         location,
         category,
         subcategory,
-        subSubcategory,
-        images: [], // We don't store files in the database
-        imagePreviewUrls: [], // We don't store local URLs in the database
-        imageUrls: uploadedImageUrls,
+        sub_subcategory: subSubcategory,
+        image_urls: uploadedImageUrls,
         variations,
         specifications,
-        productStatus: 'available',
-        reservedUserId: '',
-        reservationDays,
-        isBulkListing,
-        bulkQuantity,
+        product_status: productStatus,
+        reserved_user_id: reservedUserId || null,
+        reservation_days: reservationDays,
+        is_bulk_listing: isBulkListing,
+        bulk_quantity: bulkQuantity,
         weight,
-        shippingOptions,
-        promotionLevel: 'none',
-        sellerId: user.id,
-        createdAt: new Date().toISOString()
+        shipping_options: shippingOptions,
+        promotion_level: 'none',
+        seller_id: user.id
       };
       
-      // Insert product into database
       const { error: insertError, data: insertedProduct } = await supabase
         .from('products')
         .insert([productData])
@@ -263,7 +254,6 @@ const Sell = () => {
         return;
       }
       
-      // Show promotion dialog
       setShowPromoteDialog(true);
       
       toast({
@@ -289,12 +279,11 @@ const Sell = () => {
     setShowPromoteDialog(false);
     
     if (promotionLevel !== 'none') {
-      // Update the promotion level in the database
       const { error } = await supabase
         .from('products')
-        .update({ promotionLevel })
+        .update({ promotion_level: promotionLevel })
         .eq('title', title)
-        .eq('sellerId', user?.id);
+        .eq('seller_id', user?.id);
         
       if (error) {
         console.error('Error updating promotion:', error);
@@ -311,7 +300,6 @@ const Sell = () => {
       });
     }
     
-    // Navigate to the product page or profile
     navigate("/profile/products");
   };
 

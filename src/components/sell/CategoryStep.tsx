@@ -32,35 +32,65 @@ export const CategoryStep: React.FC<CategoryStepProps> = ({
 }) => {
   const isCategoryValid = category !== "";
   
-  // Detect category based on title keywords
+  // Function to detect category based on title keywords
   const detectCategory = (title: string) => {
     const lowerTitle = title.toLowerCase();
     
     if (lowerTitle.includes("phone") || lowerTitle.includes("iphone") || 
         lowerTitle.includes("samsung") || lowerTitle.includes("xiaomi") || 
-        lowerTitle.includes("smartphone")) {
+        lowerTitle.includes("smartphone") || lowerTitle.includes("mobile") ||
+        lowerTitle.includes("android") || lowerTitle.includes("apple")) {
       return { category: "mobile", subcategory: "phones" };
     }
     
     if (lowerTitle.includes("laptop") || lowerTitle.includes("computer") || 
         lowerTitle.includes("pc") || lowerTitle.includes("desktop") || 
-        lowerTitle.includes("macbook")) {
+        lowerTitle.includes("macbook") || lowerTitle.includes("dell") ||
+        lowerTitle.includes("hp") || lowerTitle.includes("lenovo") ||
+        lowerTitle.includes("asus")) {
       return { category: "electronics", subcategory: "computers" };
     }
     
     if (lowerTitle.includes("sofa") || lowerTitle.includes("chair") || 
         lowerTitle.includes("table") || lowerTitle.includes("couch") || 
-        lowerTitle.includes("desk")) {
+        lowerTitle.includes("desk") || lowerTitle.includes("bed") ||
+        lowerTitle.includes("furniture") || lowerTitle.includes("dresser") ||
+        lowerTitle.includes("cabinet")) {
       return { category: "furniture", subcategory: "living" };
     }
     
     if (lowerTitle.includes("tv") || lowerTitle.includes("television") || 
-        lowerTitle.includes("lcd") || lowerTitle.includes("smart tv")) {
+        lowerTitle.includes("lcd") || lowerTitle.includes("smart tv") ||
+        lowerTitle.includes("led tv") || lowerTitle.includes("screen")) {
       return { category: "electronics", subcategory: "televisions" };
+    }
+    
+    if (lowerTitle.includes("car") || lowerTitle.includes("vehicle") ||
+        lowerTitle.includes("auto") || lowerTitle.includes("bmw") ||
+        lowerTitle.includes("toyota") || lowerTitle.includes("honda") ||
+        lowerTitle.includes("ford") || lowerTitle.includes("mercedes")) {
+      return { category: "automotive", subcategory: "cars" };
+    }
+    
+    if (lowerTitle.includes("shoes") || lowerTitle.includes("sneakers") ||
+        lowerTitle.includes("boots") || lowerTitle.includes("nike") ||
+        lowerTitle.includes("adidas") || lowerTitle.includes("puma") ||
+        lowerTitle.includes("footwear")) {
+      return { category: "fashion", subcategory: "shoes" };
+    }
+    
+    if (lowerTitle.includes("shirt") || lowerTitle.includes("t-shirt") ||
+        lowerTitle.includes("dress") || lowerTitle.includes("pants") ||
+        lowerTitle.includes("jacket") || lowerTitle.includes("clothing") ||
+        lowerTitle.includes("jeans") || lowerTitle.includes("wear")) {
+      return { category: "fashion", subcategory: "clothing" };
     }
     
     return null;
   };
+
+  // Detect suggested category based on title
+  const suggestedCategory = detectCategory(title);
 
   return (
     <Card>
@@ -74,71 +104,44 @@ export const CategoryStep: React.FC<CategoryStepProps> = ({
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-2">Suggested categories</h3>
           <div className="space-y-2">
-            {detectCategory(title) && detectCategory(title)?.category === "mobile" && (
+            {suggestedCategory && (
               <button
                 className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
                 onClick={() => {
-                  handleCategoryChange("mobile", "phones");
+                  handleCategoryChange(suggestedCategory.category, suggestedCategory.subcategory);
                   setCurrentStep("details");
                 }}
               >
-                <div className="mr-3 text-gray-500">📱</div>
+                <div className="mr-3 text-gray-500">
+                  {suggestedCategory.category === "mobile" && "📱"}
+                  {suggestedCategory.category === "electronics" && suggestedCategory.subcategory === "computers" && "💻"}
+                  {suggestedCategory.category === "electronics" && suggestedCategory.subcategory === "televisions" && "📺"}
+                  {suggestedCategory.category === "furniture" && "🪑"}
+                  {suggestedCategory.category === "automotive" && "🚗"}
+                  {suggestedCategory.category === "fashion" && "👕"}
+                </div>
                 <div>
-                  <div className="font-medium">Smartphones</div>
-                  <div className="text-sm text-muted-foreground">Phones: mobiles & smartwatches</div>
+                  <div className="font-medium">
+                    {suggestedCategory.category === "mobile" && "Smartphones"}
+                    {suggestedCategory.category === "electronics" && suggestedCategory.subcategory === "computers" && "Laptops & Computers"}
+                    {suggestedCategory.category === "electronics" && suggestedCategory.subcategory === "televisions" && "Televisions"}
+                    {suggestedCategory.category === "furniture" && "Furniture"}
+                    {suggestedCategory.category === "automotive" && "Cars & Vehicles"}
+                    {suggestedCategory.category === "fashion" && suggestedCategory.subcategory === "shoes" && "Shoes & Footwear"}
+                    {suggestedCategory.category === "fashion" && suggestedCategory.subcategory === "clothing" && "Clothing & Apparel"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {suggestedCategory.category === "mobile" && "Phones: mobiles & smartwatches"}
+                    {suggestedCategory.category === "electronics" && "Electronics & technology"}
+                    {suggestedCategory.category === "furniture" && "Home & garden"}
+                    {suggestedCategory.category === "automotive" && "Cars, motorcycles & vehicles"}
+                    {suggestedCategory.category === "fashion" && "Fashion & accessories"}
+                  </div>
                 </div>
               </button>
             )}
             
-            {detectCategory(title) && detectCategory(title)?.category === "electronics" && detectCategory(title)?.subcategory === "computers" && (
-              <button
-                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
-                onClick={() => {
-                  handleCategoryChange("electronics", "computers");
-                  setCurrentStep("details");
-                }}
-              >
-                <div className="mr-3 text-gray-500">💻</div>
-                <div>
-                  <div className="font-medium">Laptops & Computers</div>
-                  <div className="text-sm text-muted-foreground">Electronics & technology</div>
-                </div>
-              </button>
-            )}
-            
-            {detectCategory(title) && detectCategory(title)?.category === "furniture" && (
-              <button
-                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
-                onClick={() => {
-                  handleCategoryChange("furniture", "living");
-                  setCurrentStep("details");
-                }}
-              >
-                <div className="mr-3 text-gray-500">🪑</div>
-                <div>
-                  <div className="font-medium">Furniture</div>
-                  <div className="text-sm text-muted-foreground">Home & garden</div>
-                </div>
-              </button>
-            )}
-            
-            {detectCategory(title) && detectCategory(title)?.category === "electronics" && detectCategory(title)?.subcategory === "televisions" && (
-              <button
-                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
-                onClick={() => {
-                  handleCategoryChange("electronics", "televisions");
-                  setCurrentStep("details");
-                }}
-              >
-                <div className="mr-3 text-gray-500">📺</div>
-                <div>
-                  <div className="font-medium">Televisions</div>
-                  <div className="text-sm text-muted-foreground">Electronics & technology</div>
-                </div>
-              </button>
-            )}
-            
-            {!detectCategory(title) && (
+            {!suggestedCategory && (
               <div className="text-center p-4 text-sm text-muted-foreground">
                 No suggested categories based on your title. Please select from the categories below.
               </div>

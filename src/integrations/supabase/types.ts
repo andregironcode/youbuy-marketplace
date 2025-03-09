@@ -108,6 +108,81 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          bulk_quantity: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_urls: string[] | null
+          is_bulk_listing: boolean | null
+          location: string
+          price: string
+          product_status: string
+          promotion_level: string
+          reservation_days: string | null
+          reserved_user_id: string | null
+          seller_id: string
+          shipping_options: Json
+          specifications: Json | null
+          sub_subcategory: string | null
+          subcategory: string | null
+          title: string
+          updated_at: string | null
+          variations: Json | null
+          weight: string | null
+        }
+        Insert: {
+          bulk_quantity?: string | null
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          image_urls?: string[] | null
+          is_bulk_listing?: boolean | null
+          location: string
+          price: string
+          product_status?: string
+          promotion_level?: string
+          reservation_days?: string | null
+          reserved_user_id?: string | null
+          seller_id: string
+          shipping_options?: Json
+          specifications?: Json | null
+          sub_subcategory?: string | null
+          subcategory?: string | null
+          title: string
+          updated_at?: string | null
+          variations?: Json | null
+          weight?: string | null
+        }
+        Update: {
+          bulk_quantity?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_urls?: string[] | null
+          is_bulk_listing?: boolean | null
+          location?: string
+          price?: string
+          product_status?: string
+          promotion_level?: string
+          reservation_days?: string | null
+          reserved_user_id?: string | null
+          seller_id?: string
+          shipping_options?: Json
+          specifications?: Json | null
+          sub_subcategory?: string | null
+          subcategory?: string | null
+          title?: string
+          updated_at?: string | null
+          variations?: Json | null
+          weight?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
