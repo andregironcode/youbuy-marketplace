@@ -20,7 +20,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
   return (
     <div className="border-b">
       <div className="container py-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-w-full overflow-hidden">
           <Button
             key="all"
             variant={selectedCategory === "all" ? "default" : "outline"}
@@ -28,6 +28,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
             className={selectedCategory === "all" ? "bg-youbuy hover:bg-youbuy-dark" : "hover:bg-youbuy/10 hover:text-youbuy"}
             onClick={() => setSelectedCategory("all")}
           >
+            All Categories
           </Button>
           
           {mainCategories.map((category) => (
@@ -56,7 +57,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
         </div>
         
         {showGrid && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4 max-h-[50vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4 max-h-[50vh] overflow-y-auto pr-1 no-scrollbar">
             {categoryNav.filter(cat => cat.id !== "all").map((category) => (
               <Button 
                 key={category.id}
