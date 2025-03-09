@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -43,10 +43,27 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
     setIsSending(true);
     
     try {
-      const sellerId = product.seller.userId;
+      // Get the seller ID - check all possible places it could be
+      let sellerId;
+      
+      // Check the different possible locations of the seller ID based on your data structure
+      if (product.seller?.userId) {
+        sellerId = product.seller.userId;
+      } else if (product.seller?.id) {
+        sellerId = product.seller.id;
+      } else if (product.seller_id) {
+        sellerId = product.seller_id;
+      } else if (product.profiles?.id) {
+        // For Supabase direct queries that might include profiles
+        sellerId = product.profiles.id;
+      }
+      
+      // Log for debugging
+      console.log("Product data:", product);
+      console.log("Seller ID found:", sellerId);
       
       if (!sellerId) {
-        throw new Error("Seller information is missing");
+        throw new Error("Could not find seller information. Please try again later.");
       }
       
       // Check if chat already exists
@@ -140,10 +157,13 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Message about: {product.title}</DialogTitle>
+            <DialogDescription>
+              Send a message to the seller about this item.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={product.image} 
+              src={product.image || product.image_urls?.[0]} 
               alt={product.title} 
               className="w-16 h-16 object-cover rounded"
             />
