@@ -6,6 +6,7 @@ import { Search, ShoppingBag, User, Menu, Bell, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Navbar = () => {
   const isMobile = useIsMobile();
@@ -14,6 +15,13 @@ export const Navbar = () => {
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
+  };
+
+  const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.charAt(0).toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() || "U";
   };
 
   return (
@@ -55,9 +63,17 @@ export const Navbar = () => {
                 </Button>
               </Link>
               {user ? (
-                <Button variant="ghost" size="icon" onClick={signOut}>
-                  <LogOut className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link to="/profile">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} />
+                      <AvatarFallback>{getInitials()}</AvatarFallback>
+                    </Avatar>
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={signOut}>
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </div>
               ) : (
                 <Link to="/auth">
                   <Button variant="ghost" size="icon">
@@ -81,13 +97,18 @@ export const Navbar = () => {
               Notifications
             </Link>
             {user ? (
-              <button 
-                onClick={signOut}
-                className="flex items-center py-2 px-3 hover:bg-muted rounded-md text-left"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign out
-              </button>
+              <>
+                <Link to="/profile" className="py-2 px-3 hover:bg-muted rounded-md">
+                  Profile
+                </Link>
+                <button 
+                  onClick={signOut}
+                  className="flex items-center py-2 px-3 hover:bg-muted rounded-md text-left"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </button>
+              </>
             ) : (
               <Link to="/auth" className="py-2 px-3 hover:bg-muted rounded-md">
                 Sign in / Register

@@ -1,0 +1,94 @@
+
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  ShoppingBag, 
+  Tag, 
+  Package, 
+  Inbox, 
+  Heart, 
+  BarChart2, 
+  Wallet, 
+  Settings, 
+  HelpCircle 
+} from "lucide-react";
+
+type SidebarItem = {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+};
+
+const sidebarItems: SidebarItem[] = [
+  { icon: ShoppingBag, label: "Purchases", path: "/profile/purchases" },
+  { icon: Tag, label: "Sales", path: "/profile/sales" },
+  { icon: Package, label: "Products", path: "/profile/products" },
+  { icon: Inbox, label: "Inbox", path: "/profile/inbox" },
+  { icon: Heart, label: "Favorites", path: "/profile/favorites" },
+  { icon: BarChart2, label: "Stats", path: "/profile/stats" },
+  { icon: Wallet, label: "Wallet", path: "/profile/wallet" },
+  { icon: Settings, label: "Settings", path: "/profile/settings" },
+  { icon: HelpCircle, label: "Help", path: "/profile/help" },
+];
+
+export const ProfileSidebar = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+  
+  if (!user) return null;
+  
+  // Extract first letter of name or email for avatar fallback
+  const getInitials = () => {
+    if (user.user_metadata?.full_name) {
+      return user.user_metadata.full_name.charAt(0).toUpperCase();
+    }
+    return user.email?.charAt(0).toUpperCase() || "U";
+  };
+
+  return (
+    <aside className="w-60 bg-sidebar border-r min-h-screen flex flex-col">
+      <div className="p-6 border-b">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user.user_metadata?.avatar_url} />
+            <AvatarFallback>{getInitials()}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-semibold">
+              {user.user_metadata?.full_name || user.email?.split('@')[0]}
+            </span>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <span>On YouBuy since {new Date(user.created_at).getFullYear()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <nav className="flex-1 py-4">
+        <ul className="space-y-1">
+          {sidebarItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors",
+                    isActive 
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </aside>
+  );
+};
