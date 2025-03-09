@@ -58,24 +58,27 @@ const ProductDetail = () => {
     setIsSending(true);
     
     try {
+      const sellerId = product.seller.userId;
+      
       // Check if chat already exists
-      const { data: existingChats } = await supabase
+      const { data: existingChats, error: chatQueryError } = await supabase
         .from('chats')
         .select('id')
         .eq('product_id', product.id)
         .eq('buyer_id', user.id)
-        .eq('seller_id', product.seller.userId)
-        .single();
+        .eq('seller_id', sellerId);
       
-      let chatId = existingChats?.id;
+      if (chatQueryError) throw chatQueryError;
+      
+      let chatId;
       
       // If chat doesn't exist, create one
-      if (!chatId) {
+      if (!existingChats || existingChats.length === 0) {
         const { data: newChat, error: chatError } = await supabase
           .from('chats')
           .insert({
             product_id: product.id,
-            seller_id: product.seller.userId,
+            seller_id: sellerId,
             buyer_id: user.id
           })
           .select('id')
@@ -83,6 +86,8 @@ const ProductDetail = () => {
           
         if (chatError) throw chatError;
         chatId = newChat.id;
+      } else {
+        chatId = existingChats[0].id;
       }
       
       // Insert message
@@ -90,7 +95,7 @@ const ProductDetail = () => {
         .from('messages')
         .insert({
           sender_id: user.id,
-          receiver_id: product.seller.userId,
+          receiver_id: sellerId,
           product_id: product.id,
           content: message,
         });

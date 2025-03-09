@@ -13,6 +13,7 @@ import { ChatType, MessageType } from "@/types/message";
 import { SendHorizonal, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { products } from "@/data/products";
 
 const Messages = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -54,33 +55,47 @@ const Messages = () => {
 
           if (error) throw error;
 
-          // Fetch additional info for each chat
+          // Get products from our local data for this demo
           const enhancedChats = await Promise.all(
             (data || []).map(async (chat) => {
               // Determine if user is buyer or seller
               const isUserSeller = chat.seller_id === user.id;
               const otherUserId = isUserSeller ? chat.buyer_id : chat.seller_id;
-
-              // Get the other user's info
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url')
-                .eq('id', otherUserId)
-                .single();
-
-              // For local development, we'll use mock product data since we don't have a products table in Supabase
-              // In a real app, you would fetch this from your database
-              const productData = {
+              
+              // Find matching product from our local data
+              const matchedProduct = products.find(p => p.id === chat.product_id);
+              
+              // For local development, we'll use mock product data
+              const productData = matchedProduct || {
                 title: "Product Item",
                 price: 100,
-                image_url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+                image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
               };
+              
+              // Get otherUser info - for mock data, we use the seller info from products
+              let otherUserInfo = {
+                name: 'Unknown User',
+                avatar: '',
+              };
+              
+              if (isUserSeller && matchedProduct) {
+                // If current user is seller and the other user is buyer, we don't have buyer info in our mock data
+                otherUserInfo = {
+                  name: 'Potential Buyer',
+                  avatar: '',
+                };
+              } else if (matchedProduct) {
+                // If current user is buyer, use the seller info from our mock data
+                otherUserInfo = {
+                  name: matchedProduct.seller.name,
+                  avatar: matchedProduct.seller.avatar,
+                };
+              }
 
               // Get last message
               const { data: lastMessageData } = await supabase
                 .from('messages')
                 .select('content, created_at')
-                .or(`sender_id.eq.${chat.seller_id},sender_id.eq.${chat.buyer_id}`)
                 .eq('product_id', chat.product_id)
                 .order('created_at', { ascending: false })
                 .limit(1)
@@ -96,14 +111,11 @@ const Messages = () => {
 
               return {
                 ...chat,
-                otherUser: {
-                  name: profileData?.full_name || 'Unknown User',
-                  avatar: profileData?.avatar_url || '',
-                },
+                otherUser: otherUserInfo,
                 product: {
                   title: productData.title || 'Unknown Product',
                   price: productData.price || 0,
-                  image: productData.image_url || '',
+                  image: productData.image || '',
                 },
                 lastMessage: lastMessageData?.content,
                 unreadCount: count || 0,
