@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
   session: Session | null;
@@ -23,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Get initial session
@@ -45,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signIn(email: string, password: string) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error) navigate('/');
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -63,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       });
-      if (!error) navigate('/');
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -72,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     await supabase.auth.signOut();
-    navigate('/auth');
   }
 
   const value = {
