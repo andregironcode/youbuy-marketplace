@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon, X } from "lucide-react";
 import { CategorySelector } from "@/components/category/CategorySelector";
 import { ProductFields } from "@/components/product/ProductFields";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const Sell = () => {
   const [title, setTitle] = useState("");
@@ -21,7 +23,11 @@ const Sell = () => {
   const [subcategory, setSubcategory] = useState("");
   const [subSubcategory, setSubSubcategory] = useState("");
   const [currentStep, setCurrentStep] = useState("category"); // Set initial step to "category"
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleCategoryChange = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     setCategory(categoryId);
@@ -29,13 +35,101 @@ const Sell = () => {
     setSubSubcategory(subSubcategoryId || "");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // Prevent adding more than 10 images
+    if (images.length + files.length > 10) {
+      toast({
+        title: "Maximum 10 images allowed",
+        description: "You can upload a maximum of 10 images per listing",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check each file for size (max 5MB)
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+    
+    Array.from(files).forEach(file => {
+      if (file.size <= 5 * 1024 * 1024) { // 5MB in bytes
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      toast({
+        title: "Some files are too large",
+        description: `${invalidFiles.join(", ")} ${invalidFiles.length > 1 ? "are" : "is"} larger than 5MB`,
+        variant: "destructive"
+      });
+    }
+
+    if (validFiles.length > 0) {
+      const newImages = [...images, ...validFiles];
+      setImages(newImages);
+
+      // Create preview URLs for the valid files
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+      setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    // Release the object URL to avoid memory leaks
+    URL.revokeObjectURL(imagePreviewUrls[index]);
+    
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+    
+    const newPreviewUrls = [...imagePreviewUrls];
+    newPreviewUrls.splice(index, 1);
+    setImagePreviewUrls(newPreviewUrls);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    toast({
-      title: "Coming soon",
-      description: "Selling functionality will be implemented in the next phase",
-    });
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to list items for sale",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (images.length === 0) {
+      toast({
+        title: "Images required",
+        description: "Please add at least one image of your item",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setUploading(true);
+    
+    try {
+      toast({
+        title: "Coming soon",
+        description: "Selling functionality will be implemented in the next phase",
+      });
+    } catch (error) {
+      console.error("Error listing item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to list item for sale. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const isDetailsComplete = title && description && category && price && location;
@@ -141,22 +235,65 @@ const Sell = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Photos</Label>
-                      <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            Drag & drop images here or click to browse
-                          </p>
-                          <Button variant="secondary" size="sm" className="mt-2">
+                      <Label>Photos (up to 10)</Label>
+                      <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                        {imagePreviewUrls.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                            {imagePreviewUrls.map((url, index) => (
+                              <div key={index} className="relative group aspect-square">
+                                <img 
+                                  src={url} 
+                                  alt={`Product preview ${index + 1}`} 
+                                  className="h-full w-full object-cover rounded-md"
+                                />
+                                <Button 
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                                  onClick={() => removeImage(index)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                                {index === 0 && (
+                                  <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 py-0.5 rounded">
+                                    Cover
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 py-4">
+                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Drag & drop images here or click to browse
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-2">
+                          <input
+                            type="file"
+                            id="imageUpload"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => document.getElementById('imageUpload')?.click()}
+                            disabled={images.length >= 10}
+                          >
                             <Upload className="h-4 w-4 mr-2" />
-                            Upload Images
+                            {imagePreviewUrls.length > 0 ? "Add More Images" : "Upload Images"}
                           </Button>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          You can upload up to 10 images. First image will be the cover (max 5MB each).
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        You can upload up to 10 images. First image will be the cover (max 5MB each).
-                      </p>
                     </div>
 
                     {/* Category-specific fields */}
@@ -245,10 +382,11 @@ const Sell = () => {
                     Back
                   </Button>
                   <Button 
-                    onClick={handleSubmit} 
+                    onClick={handleSubmit}
+                    disabled={uploading} 
                     className="bg-youbuy hover:bg-youbuy-dark"
                   >
-                    List Item for Sale
+                    {uploading ? "Uploading..." : "List Item for Sale"}
                   </Button>
                 </CardFooter>
               </Card>

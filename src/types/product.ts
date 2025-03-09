@@ -5,6 +5,7 @@ export interface ProductType {
   description: string;
   price: number;
   image: string;
+  images?: string[]; // Added support for multiple images
   location: string;
   coordinates?: {
     latitude: number;

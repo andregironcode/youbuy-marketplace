@@ -12,7 +12,10 @@ import {
   MessageCircle, 
   ChevronLeft, 
   AlertCircle,
-  Tag
+  Tag,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +26,6 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Card, CardContent } from "@/components/ui/card";
-import { ProductFields } from "@/components/product/ProductFields";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +36,16 @@ const ProductDetail = () => {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
+  // For demo purposes, create an array of images
+  const productImages = product ? [
+    product.image,
+    "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
+    "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
+    "https://images.unsplash.com/photo-1507646227500-4d389b0012be"
+  ] : [];
+
   const handleContactSeller = () => {
     if (!user) {
       toast({
@@ -119,6 +130,22 @@ const ProductDetail = () => {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === productImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === 0 ? productImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  const selectImage = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
   if (!product) {
@@ -304,14 +331,65 @@ const ProductDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Product Image */}
+          {/* Product Image Gallery */}
           <div className="lg:col-span-7">
-            <div className="rounded-lg overflow-hidden">
-              <img 
-                src={product.image} 
-                alt={product.title} 
-                className="w-full object-cover aspect-square sm:aspect-[4/3]"
-              />
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="relative rounded-lg overflow-hidden bg-gray-100">
+                <img 
+                  src={productImages[currentImageIndex]} 
+                  alt={`${product.title} - image ${currentImageIndex + 1}`} 
+                  className="w-full object-cover aspect-square sm:aspect-[4/3]"
+                />
+                
+                {/* Navigation arrows */}
+                {productImages.length > 1 && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full"
+                      onClick={prevImage}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+                
+                {/* Image counter */}
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                  {currentImageIndex + 1} / {productImages.length}
+                </div>
+              </div>
+              
+              {/* Thumbnails */}
+              {productImages.length > 1 && (
+                <div className="flex space-x-2 overflow-x-auto pb-2">
+                  {productImages.map((image, index) => (
+                    <button
+                      key={index}
+                      className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${
+                        currentImageIndex === index ? 'border-youbuy' : 'border-transparent'
+                      }`}
+                      onClick={() => selectImage(index)}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`Thumbnail ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

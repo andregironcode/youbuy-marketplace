@@ -1,4 +1,3 @@
-
 import { ProductType } from "@/types/product";
 
 export const products: ProductType[] = [
@@ -8,6 +7,12 @@ export const products: ProductType[] = [
     description: "Excellent condition iPhone 13 Pro Max with 256GB storage. Comes with original charger and box. No scratches or dents.",
     price: 3200,
     image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+    images: [
+      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+      "https://images.unsplash.com/photo-1591337676887-a217a6970a8a",
+      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab",
+      "https://images.unsplash.com/photo-1585060544812-6b45742d762f"
+    ],
     location: "Dubai Marina",
     coordinates: {
       latitude: 25.0819,
@@ -32,6 +37,11 @@ export const products: ProductType[] = [
     description: "White IKEA MALM desk in good condition. Dimensions: 140x65 cm. Can deliver within Dubai for additional fee.",
     price: 250,
     image: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    images: [
+      "https://images.unsplash.com/photo-1518770660439-4636190af475",
+      "https://images.unsplash.com/photo-1533090161767-e6ffed986c88",
+      "https://images.unsplash.com/photo-1505699261378-c431c8e25576"
+    ],
     location: "JLT",
     coordinates: {
       latitude: 25.0683,
@@ -54,6 +64,12 @@ export const products: ProductType[] = [
     description: "2021 MacBook Pro with M1 Pro chip, 16GB RAM and 512GB SSD. Barely used, in perfect condition with AppleCare+ until 2024.",
     price: 7500,
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    images: [
+      "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
+      "https://images.unsplash.com/photo-1496181133206-ae15ff5dd4ea",
+      "https://images.unsplash.com/photo-1526570207772-784d36084510"
+    ],
     location: "Downtown Dubai",
     coordinates: {
       latitude: 25.1915,
@@ -78,6 +94,11 @@ export const products: ProductType[] = [
     description: "Canon EOS R5 45MP mirrorless camera with 24-70mm f/2.8 L lens. Includes extra battery, 128GB card, and camera bag.",
     price: 12000,
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+    images: [
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+      "https://images.unsplash.com/photo-1516961642265-531546e84af2",
+      "https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea"
+    ],
     location: "Abu Dhabi",
     coordinates: {
       latitude: 24.4539,
@@ -101,6 +122,11 @@ export const products: ProductType[] = [
     description: "Brand new PS5 Digital Edition, unopened. Includes controller and all original accessories.",
     price: 1800,
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    images: [
+      "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+      "https://images.unsplash.com/photo-1622297845775-5ff3fef71d13",
+      "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3"
+    ],
     location: "Sharjah",
     coordinates: {
       latitude: 25.3463,
@@ -124,6 +150,11 @@ export const products: ProductType[] = [
     description: "Nike Air Jordan 1 High in University Blue colorway. Size 43 EU / 9.5 US. Worn only twice, like new condition.",
     price: 850,
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+    images: [
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+      "https://images.unsplash.com/photo-1552346154-21d32810aba3",
+      "https://images.unsplash.com/photo-1542219550-2da9a6bc0b8d"
+    ],
     location: "Dubai Sports City",
     coordinates: {
       latitude: 25.0324,
