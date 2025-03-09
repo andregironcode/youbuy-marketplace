@@ -40,7 +40,7 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
           className="mr-2"
           onClick={onCategoryClick}
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5" />Categories
         </Button>
 
         <div className="flex-1 mx-2">
