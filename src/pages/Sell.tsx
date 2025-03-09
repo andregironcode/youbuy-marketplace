@@ -20,7 +20,7 @@ const Sell = () => {
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [subSubcategory, setSubSubcategory] = useState("");
-  const [currentStep, setCurrentStep] = useState("details");
+  const [currentStep, setCurrentStep] = useState("category"); // Set initial step to "category"
   const { toast } = useToast();
 
   const handleCategoryChange = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {

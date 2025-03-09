@@ -13,12 +13,15 @@ interface CategoryNavProps {
 export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryNavProps) => {
   const isMobile = useIsMobile();
 
+  // Only show main categories and "all" in the top navigation bar
+  const mainCategories = [{ id: "all", name: "All" }, ...categoryNav.slice(0, isMobile ? 7 : 10)];
+  
   return (
     <div className="container py-4">
       <ScrollArea className="w-full">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
           <TabsList className={`w-full justify-start ${isMobile ? 'h-auto' : ''}`}>
-            {categoryNav.map((category) => (
+            {mainCategories.map((category) => (
               <TabsTrigger 
                 key={category.id} 
                 value={category.id}
