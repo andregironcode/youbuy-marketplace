@@ -28,7 +28,6 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
             className={selectedCategory === "all" ? "bg-youbuy hover:bg-youbuy-dark" : "hover:bg-youbuy/10 hover:text-youbuy"}
             onClick={() => setSelectedCategory("all")}
           >
-            All Categories
           </Button>
           
           {mainCategories.map((category) => (
