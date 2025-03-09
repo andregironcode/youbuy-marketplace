@@ -12,9 +12,18 @@ interface ProductSectionProps {
   products: ProductType[];
   link?: string;
   linkText?: string;
+  emptyMessage?: string;
+  isLoading?: boolean;
 }
 
-export const ProductSection = ({ title, products, link, linkText }: ProductSectionProps) => {
+export const ProductSection = ({ 
+  title, 
+  products, 
+  link, 
+  linkText,
+  emptyMessage = "No products found",
+  isLoading = false
+}: ProductSectionProps) => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -107,24 +116,28 @@ export const ProductSection = ({ title, products, link, linkText }: ProductSecti
         </Button>
         
         {/* Carousel Container */}
-        <div 
-          ref={carouselRef}
-          className="flex items-start overflow-x-auto pb-4 pt-2 px-1 -mx-1 snap-x scrollbar-hide"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {products.map(product => (
-            <div 
-              key={product.id} 
-              className="flex-none px-2 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
-        
-        {products.length === 0 && (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-youbuy"></div>
+          </div>
+        ) : products.length > 0 ? (
+          <div 
+            ref={carouselRef}
+            className="flex items-start overflow-x-auto pb-4 pt-2 px-1 -mx-1 snap-x scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {products.map(product => (
+              <div 
+                key={product.id} 
+                className="flex-none px-2 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start"
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found</p>
+            <p className="text-muted-foreground">{emptyMessage}</p>
           </div>
         )}
       </div>
