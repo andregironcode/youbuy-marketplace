@@ -2,13 +2,13 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell, LogOut } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, Bell, LogOut, Filter, PlusCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export const Navbar = () => {
+export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
@@ -34,7 +34,16 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        <div className="flex-1 mx-4">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="mr-2"
+          onClick={onCategoryClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <div className="flex-1 mx-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -54,9 +63,6 @@ export const Navbar = () => {
             </>
           ) : (
             <>
-              <Link to="/sell">
-                <Button variant="ghost" className="font-medium">Sell</Button>
-              </Link>
               <Link to="/notifications">
                 <Button variant="ghost" size="icon">
                   <Bell className="h-5 w-5" />
@@ -81,6 +87,12 @@ export const Navbar = () => {
                   </Button>
                 </Link>
               )}
+              <Link to="/sell">
+                <Button className="bg-youbuy hover:bg-youbuy-dark">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Sell an item
+                </Button>
+              </Link>
             </>
           )}
         </div>

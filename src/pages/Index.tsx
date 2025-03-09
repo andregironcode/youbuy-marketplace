@@ -3,9 +3,7 @@ import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { products } from "@/data/products";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, ShoppingBag, ChevronRight, Filter } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ShoppingBag } from "lucide-react";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 
 const Index = () => {
@@ -21,39 +19,25 @@ const Index = () => {
     setSelectedCategory(categoryId);
   };
 
+  const handleCategoryClick = () => {
+    setCategoryDialogOpen(true);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <Navbar onCategoryClick={handleCategoryClick} />
       
       <main className="flex-1 container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setCategoryDialogOpen(true)}
-              className="flex items-center gap-2"
+        {selectedCategory !== "all" && (
+          <div className="mb-6">
+            <button 
+              onClick={() => setSelectedCategory("all")}
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
-              <Filter className="h-4 w-4" />
-              <span>{selectedCategory === "all" ? "All Categories" : "Filter by Category"}</span>
-            </Button>
-            {selectedCategory !== "all" && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setSelectedCategory("all")}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Clear filter
-              </Button>
-            )}
+              Clear category filter
+            </button>
           </div>
-          <Link to="/sell">
-            <Button className="bg-youbuy hover:bg-youbuy-dark">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Sell an item
-            </Button>
-          </Link>
-        </div>
+        )}
         
         <CategoryBrowser 
           open={categoryDialogOpen} 
