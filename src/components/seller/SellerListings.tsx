@@ -23,6 +23,8 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
       setLoading(true);
       
       try {
+        console.log("Fetching products for seller ID:", userId);
+        
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -38,10 +40,12 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
           .limit(limit);
           
         if (error) {
-          console.error('Error fetching products:', error);
+          console.error('Error fetching seller products:', error);
           setLoading(false);
           return;
         }
+        
+        console.log("Fetched products data:", data);
         
         if (data) {
           const mappedProducts = data.map(item => convertToProductType(item));

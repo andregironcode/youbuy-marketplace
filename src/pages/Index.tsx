@@ -55,11 +55,23 @@ const Index = () => {
     setShowCategories(!showCategories);
   };
 
+  const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
+    console.log("Selected category:", categoryId, subcategoryId, subSubcategoryId);
+    // Here you would filter products by category
+    setShowCategories(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar onCategoryClick={toggleCategories} />
       <main className="flex-1 container py-8">
-        {showCategories && <CategoryBrowser onClose={() => setShowCategories(false)} />}
+        {showCategories && (
+          <CategoryBrowser 
+            open={showCategories} 
+            onOpenChange={setShowCategories} 
+            onSelectCategory={handleCategorySelect} 
+          />
+        )}
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Discover amazing deals nearby</h1>
