@@ -79,9 +79,9 @@ export const ChatWindow = ({
       ) : (
         <>
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={currentProduct?.image} />
+            <AvatarImage src={currentChat?.otherUser?.avatar} />
             <AvatarFallback>
-              {currentProduct?.title?.substring(0, 2) || '??'}
+              {currentChat?.otherUser?.name?.substring(0, 2) || '??'}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -89,7 +89,7 @@ export const ChatWindow = ({
               {currentChat?.otherUser?.name || 'Unknown User'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {currentChat?.product?.title || 'Unknown Product'}
+              {currentProduct?.title || currentChat?.product?.title || 'Unknown Product'}
             </p>
           </div>
         </>
@@ -113,7 +113,7 @@ export const ChatWindow = ({
       );
     }
     
-    return <ProductInfoCard product={currentProduct} />;
+    return <ProductInfoCard product={currentProduct || currentChat?.product} />;
   };
 
   // Messages area - Skeleton while loading
@@ -143,6 +143,13 @@ export const ChatWindow = ({
     );
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !loading && newMessage.trim()) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
     <>
       {renderChatHeader()}
@@ -157,13 +164,8 @@ export const ChatWindow = ({
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
             className="min-h-[45px] max-h-[120px]"
-            disabled={loading}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !loading) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
+            disabled={loading || sendingMessage}
+            onKeyDown={handleKeyPress}
           />
           <div className="flex flex-col space-y-2 self-end">
             <Button
@@ -172,7 +174,7 @@ export const ChatWindow = ({
               size="icon"
               className="h-9 w-9"
               onClick={triggerFileInput}
-              disabled={loading}
+              disabled={loading || sendingMessage}
             >
               <ImagePlus className="h-4 w-4" />
             </Button>
@@ -182,7 +184,7 @@ export const ChatWindow = ({
               className="hidden" 
               accept="image/*" 
               onChange={handleFileChange}
-              disabled={loading}
+              disabled={loading || sendingMessage}
             />
             <Button 
               onClick={handleSendMessage}

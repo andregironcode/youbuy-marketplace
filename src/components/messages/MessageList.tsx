@@ -46,6 +46,8 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
     <>
       {messages.map((message) => {
         const isUserMessage = message.sender_id === user?.id;
+        const isImageMessage = message.content.startsWith('image:');
+        
         return (
           <div 
             key={message.id}
@@ -56,14 +58,15 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
                 ? 'bg-youbuy text-white rounded-tr-none' 
                 : 'bg-gray-100 rounded-tl-none'
             }`}>
-              {message.content.startsWith('image:') ? (
+              {isImageMessage ? (
                 <img 
                   src={message.content.substring(6)} 
                   alt="Shared image" 
-                  className="rounded max-w-full h-auto"
+                  className="rounded max-w-full h-auto cursor-pointer"
+                  onClick={() => window.open(message.content.substring(6), '_blank')}
                 />
               ) : (
-                <p className="break-words">{message.content}</p>
+                <p className="break-words whitespace-pre-wrap">{message.content}</p>
               )}
               <p className={`text-xs mt-1 text-right ${
                 isUserMessage ? 'text-white/80' : 'text-gray-500'
