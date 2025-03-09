@@ -1,12 +1,14 @@
 
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Messages = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -22,20 +24,10 @@ const Messages = () => {
     loadingMessages,
     handleSendMessage,
     handleDeleteMessage,
-    handleImageUpload,
-    loadChatById,
-    fetchChats
+    handleImageUpload
   } = useMessages(chatId);
 
-  // Force load the chat when the component mounts or chatId changes
-  useEffect(() => {
-    if (chatId) {
-      console.log("Messages page: Explicitly loading chat ID:", chatId);
-      loadChatById(chatId);
-    }
-  }, [chatId, loadChatById]);
-
-  // Add this debugging log to track chat loading
+  // Debug current state
   useEffect(() => {
     console.log("Current chat state:", { 
       chatId, 
@@ -67,7 +59,7 @@ const Messages = () => {
               </div>
             </div>
 
-            {/* Chat Window */}
+            {/* Chat Window or Empty State */}
             <div className={`border rounded-lg overflow-hidden md:col-span-2 lg:col-span-3 flex flex-col ${!chatId ? 'hidden md:flex' : 'flex'}`}>
               {!chatId ? (
                 <div className="flex flex-col justify-center items-center h-full p-4 text-center">
@@ -94,7 +86,13 @@ const Messages = () => {
               ) : !currentChat ? (
                 <div className="flex flex-col justify-center items-center h-full p-4 text-center">
                   <p className="text-muted-foreground mb-2">Chat is loading or could not be found</p>
-                  <p className="text-sm">Please try refreshing if this persists. Chat ID: {chatId}</p>
+                  <p className="text-sm">Please try refreshing if this persists.</p>
+                  <Link to="/messages" className="mt-4">
+                    <Button variant="outline" className="flex items-center space-x-2">
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Back to messages</span>
+                    </Button>
+                  </Link>
                 </div>
               ) : (
                 <ChatWindow 

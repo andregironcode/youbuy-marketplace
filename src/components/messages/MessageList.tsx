@@ -53,7 +53,7 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
         return (
           <div 
             key={message.id}
-            className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} max-w-full`}
+            className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} mb-4 max-w-full`}
           >
             <div className={`relative group max-w-[80%] p-3 rounded-lg ${
               isUserMessage 

@@ -8,7 +8,7 @@ import { ChatType, MessageType } from "@/types/message";
 import { products } from "@/data/products";
 
 export const useMessages = (chatId?: string) => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -87,12 +87,11 @@ export const useMessages = (chatId?: string) => {
             .from('messages')
             .select('content, created_at')
             .eq('product_id', chat.product_id)
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
-          // Get unread count - simplified query to avoid TS error
+          // Get unread count - simplified query
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
@@ -110,7 +109,7 @@ export const useMessages = (chatId?: string) => {
               price: productData.price || 0,
               image: productData.image || '',
             },
-            lastMessage: lastMessageData?.content,
+            lastMessage: lastMessageData?.content || "No messages yet",
             unreadCount: count || 0,
           };
         })
@@ -129,12 +128,13 @@ export const useMessages = (chatId?: string) => {
     }
   }, [user, toast]);
 
-  // Load chat by ID
+  // Load chat by ID - simplified version
   const loadChatById = useCallback(async (id: string) => {
     if (!user) return;
     
     console.log("loadChatById called with ID:", id);
     setLoadingMessages(true);
+    setMessages([]); // Clear existing messages
     setCurrentChat(null); // Reset current chat while loading
     
     try {
@@ -203,12 +203,11 @@ export const useMessages = (chatId?: string) => {
       
       setCurrentChat(enhancedChatData);
       
-      // Get messages for this chat between these two users - simplified query to avoid TS depth error
+      // Simplified message query
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
         .eq('product_id', chatData.product_id)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
 
       if (messagesError) {
@@ -252,75 +251,28 @@ export const useMessages = (chatId?: string) => {
 
   // Fetch chats on initial load
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user) {
       navigate("/auth");
       return;
     }
 
-    if (user) {
-      fetchChats();
-
-      // Subscribe to changes in messages
-      const messageSubscription = supabase
-        .channel('messages_changes')
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`
-        }, () => {
-          fetchChats(); // Refresh chats when receiving new messages
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(messageSubscription);
-      };
-    }
-  }, [user, loading, navigate, fetchChats]);
-
-  // Fetch messages for current chat and set product info
-  useEffect(() => {
-    if (chatId && user) {
-      console.log("Explicitly loading chat ID in useEffect:", chatId);
-      loadChatById(chatId);
-    }
-  }, [chatId, user, loadChatById]);
-
-  // Subscribe to new messages
-  useEffect(() => {
-    if (!user || !currentChat) return;
+    fetchChats();
     
-    console.log("Setting up message subscription for chat:", currentChat.id);
-    
-    // Determine the other user ID based on current chat
-    const otherUserId = currentChat.seller_id === user.id 
-      ? currentChat.buyer_id 
-      : currentChat.seller_id;
-    
+    // Set up message subscription for all user's chats
     const messageSubscription = supabase
-      .channel(`chat-messages-${currentChat.id}`)
+      .channel('all_messages')
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'messages',
-        filter: `product_id=eq.${currentChat.product_id}`
-      }, (payload) => {
-        const newMessage = payload.new as MessageType;
+        filter: `receiver_id=eq.${user.id}`
+      }, () => {
+        console.log("New message received in subscription");
+        fetchChats(); // Refresh chats when receiving new messages
         
-        // Only add message if it's between these two users
-        if ((newMessage.sender_id === user.id && newMessage.receiver_id === otherUserId) || 
-            (newMessage.sender_id === otherUserId && newMessage.receiver_id === user.id)) {
-          console.log("New message received:", newMessage);
-          setMessages(prev => [...prev, newMessage]);
-          
-          // If message is for current user, mark as read
-          if (newMessage.receiver_id === user.id) {
-            supabase
-              .from('messages')
-              .update({ read: true })
-              .eq('id', newMessage.id);
-          }
+        // Reload current chat if we're viewing one
+        if (chatId) {
+          loadChatById(chatId);
         }
       })
       .subscribe();
@@ -328,7 +280,15 @@ export const useMessages = (chatId?: string) => {
     return () => {
       supabase.removeChannel(messageSubscription);
     };
-  }, [currentChat, user]);
+  }, [user, navigate, fetchChats, chatId, loadChatById]);
+
+  // Load specific chat when chatId changes
+  useEffect(() => {
+    if (chatId && user) {
+      console.log("Chat ID changed, loading:", chatId);
+      loadChatById(chatId);
+    }
+  }, [chatId, user, loadChatById]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !currentChat) return;
@@ -358,6 +318,9 @@ export const useMessages = (chatId?: string) => {
         .eq('id', currentChat.id);
       
       setNewMessage("");
+      
+      // Reload messages after sending
+      loadChatById(currentChat.id);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -401,6 +364,8 @@ export const useMessages = (chatId?: string) => {
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', currentChat.id);
       
+      // Reload messages after sending
+      loadChatById(currentChat.id);
     } catch (error) {
       console.error("Error sending image:", error);
       toast({
@@ -414,7 +379,7 @@ export const useMessages = (chatId?: string) => {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!user) return;
+    if (!user || !currentChat) return;
     
     try {
       // First check if the message belongs to the current user
@@ -444,8 +409,8 @@ export const useMessages = (chatId?: string) => {
         
       if (deleteError) throw deleteError;
       
-      // Update local state to remove the deleted message
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      // Reload messages after deletion
+      loadChatById(currentChat.id);
       
       toast({
         title: "Message deleted",
