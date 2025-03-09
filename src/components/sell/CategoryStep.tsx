@@ -31,6 +31,36 @@ export const CategoryStep: React.FC<CategoryStepProps> = ({
   setCurrentStep,
 }) => {
   const isCategoryValid = category !== "";
+  
+  // Detect category based on title keywords
+  const detectCategory = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    
+    if (lowerTitle.includes("phone") || lowerTitle.includes("iphone") || 
+        lowerTitle.includes("samsung") || lowerTitle.includes("xiaomi") || 
+        lowerTitle.includes("smartphone")) {
+      return { category: "mobile", subcategory: "phones" };
+    }
+    
+    if (lowerTitle.includes("laptop") || lowerTitle.includes("computer") || 
+        lowerTitle.includes("pc") || lowerTitle.includes("desktop") || 
+        lowerTitle.includes("macbook")) {
+      return { category: "electronics", subcategory: "computers" };
+    }
+    
+    if (lowerTitle.includes("sofa") || lowerTitle.includes("chair") || 
+        lowerTitle.includes("table") || lowerTitle.includes("couch") || 
+        lowerTitle.includes("desk")) {
+      return { category: "furniture", subcategory: "living" };
+    }
+    
+    if (lowerTitle.includes("tv") || lowerTitle.includes("television") || 
+        lowerTitle.includes("lcd") || lowerTitle.includes("smart tv")) {
+      return { category: "electronics", subcategory: "televisions" };
+    }
+    
+    return null;
+  };
 
   return (
     <Card>
@@ -44,36 +74,75 @@ export const CategoryStep: React.FC<CategoryStepProps> = ({
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-2">Suggested categories</h3>
           <div className="space-y-2">
-            <button
-              className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
-              onClick={() => {
-                if (title.toLowerCase().includes("phone") || title.toLowerCase().includes("iphone")) {
+            {detectCategory(title) && detectCategory(title)?.category === "mobile" && (
+              <button
+                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
+                onClick={() => {
                   handleCategoryChange("mobile", "phones");
                   setCurrentStep("details");
-                }
-              }}
-            >
-              <div className="mr-3 text-gray-500">📱</div>
-              <div>
-                <div className="font-medium">Smartphones</div>
-                <div className="text-sm text-muted-foreground">Phones: mobiles & smartwatches</div>
-              </div>
-            </button>
-            <button
-              className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
-              onClick={() => {
-                if (title.toLowerCase().includes("laptop") || title.toLowerCase().includes("computer")) {
+                }}
+              >
+                <div className="mr-3 text-gray-500">📱</div>
+                <div>
+                  <div className="font-medium">Smartphones</div>
+                  <div className="text-sm text-muted-foreground">Phones: mobiles & smartwatches</div>
+                </div>
+              </button>
+            )}
+            
+            {detectCategory(title) && detectCategory(title)?.category === "electronics" && detectCategory(title)?.subcategory === "computers" && (
+              <button
+                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
+                onClick={() => {
                   handleCategoryChange("electronics", "computers");
                   setCurrentStep("details");
-                }
-              }}
-            >
-              <div className="mr-3 text-gray-500">💻</div>
-              <div>
-                <div className="font-medium">Laptops & Computers</div>
-                <div className="text-sm text-muted-foreground">Electronics & technology</div>
+                }}
+              >
+                <div className="mr-3 text-gray-500">💻</div>
+                <div>
+                  <div className="font-medium">Laptops & Computers</div>
+                  <div className="text-sm text-muted-foreground">Electronics & technology</div>
+                </div>
+              </button>
+            )}
+            
+            {detectCategory(title) && detectCategory(title)?.category === "furniture" && (
+              <button
+                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
+                onClick={() => {
+                  handleCategoryChange("furniture", "living");
+                  setCurrentStep("details");
+                }}
+              >
+                <div className="mr-3 text-gray-500">🪑</div>
+                <div>
+                  <div className="font-medium">Furniture</div>
+                  <div className="text-sm text-muted-foreground">Home & garden</div>
+                </div>
+              </button>
+            )}
+            
+            {detectCategory(title) && detectCategory(title)?.category === "electronics" && detectCategory(title)?.subcategory === "televisions" && (
+              <button
+                className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
+                onClick={() => {
+                  handleCategoryChange("electronics", "televisions");
+                  setCurrentStep("details");
+                }}
+              >
+                <div className="mr-3 text-gray-500">📺</div>
+                <div>
+                  <div className="font-medium">Televisions</div>
+                  <div className="text-sm text-muted-foreground">Electronics & technology</div>
+                </div>
+              </button>
+            )}
+            
+            {!detectCategory(title) && (
+              <div className="text-center p-4 text-sm text-muted-foreground">
+                No suggested categories based on your title. Please select from the categories below.
               </div>
-            </button>
+            )}
           </div>
         </div>
         

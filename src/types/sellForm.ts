@@ -10,6 +10,7 @@ export type SellStep =
   | "promote";
 
 export interface SellFormData {
+  id?: string;
   title: string;
   price: string;
   description: string;
@@ -19,6 +20,7 @@ export interface SellFormData {
   subSubcategory: string;
   images: File[];
   imagePreviewUrls: string[];
+  imageUrls?: string[];
   variations: any[];
   specifications: any;
   productStatus: 'available' | 'reserved';
@@ -33,4 +35,6 @@ export interface SellFormData {
     shippingCost: number;
   };
   promotionLevel: 'none' | 'basic' | 'premium' | 'featured';
+  sellerId?: string;
+  createdAt?: string;
 }

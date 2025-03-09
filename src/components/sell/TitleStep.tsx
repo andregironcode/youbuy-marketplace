@@ -46,11 +46,17 @@ export const TitleStep: React.FC<TitleStepProps> = ({
               onChange={(e) => setTitle(e.target.value)}
               required
               maxLength={50}
+              className={!isTitleValid && title.length > 0 ? "border-red-500" : ""}
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Example: Three-seater red velvet sofa</span>
-              <span>{title.length}/50</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Example: Three-seater red velvet sofa</span>
+              <span className={title.length > 0 && !isTitleValid ? "text-red-500" : "text-muted-foreground"}>
+                {title.length}/50
+              </span>
             </div>
+            {title.length > 0 && title.length < 5 && (
+              <p className="text-xs text-red-500">Title must be at least 5 characters long</p>
+            )}
           </div>
         </div>
       </CardContent>

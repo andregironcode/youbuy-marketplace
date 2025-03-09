@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { SellStep } from "@/types/sellForm";
+import { SellStep, SellFormData } from "@/types/sellForm";
 import { TitleStep } from "@/components/sell/TitleStep";
 import { CategoryStep } from "@/components/sell/CategoryStep";
 import { DetailsStep } from "@/components/sell/DetailsStep";
@@ -13,6 +13,8 @@ import { ShippingStep } from "@/components/sell/ShippingStep";
 import { LocationStep } from "@/components/sell/LocationStep";
 import { PreviewStep } from "@/components/sell/PreviewStep";
 import { PromoteDialog } from "@/components/sell/PromoteDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Sell = () => {
   const [title, setTitle] = useState("");
@@ -25,6 +27,7 @@ const Sell = () => {
   
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   
   const [variations, setVariations] = useState<any[]>([]);
   const [specifications, setSpecifications] = useState<any>({});
@@ -52,6 +55,19 @@ const Sell = () => {
   
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Effect to redirect if not authenticated
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to list items for sale",
+        variant: "destructive",
+      });
+      navigate("/auth");
+    }
+  }, [user, navigate, toast]);
 
   const getStepProgress = () => {
     const steps: SellStep[] = ["title", "category", "details", "photos", "shipping", "location", "preview", "promote"];
@@ -118,6 +134,41 @@ const Sell = () => {
     setImagePreviewUrls(newPreviewUrls);
   };
 
+  // Upload images to storage
+  const uploadImages = async () => {
+    if (!user) return [];
+    
+    const uploadedUrls: string[] = [];
+    
+    for (let i = 0; i < images.length; i++) {
+      const file = images[i];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}-${i}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        toast({
+          title: "Upload error",
+          description: "Failed to upload image: " + file.name,
+          variant: "destructive"
+        });
+        continue;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+        
+      uploadedUrls.push(publicUrl);
+    }
+    
+    return uploadedUrls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -127,6 +178,7 @@ const Sell = () => {
         description: "Please sign in to list items for sale",
         variant: "destructive"
       });
+      navigate("/auth");
       return;
     }
 
@@ -153,6 +205,65 @@ const Sell = () => {
     setUploading(true);
     
     try {
+      // Upload images first
+      const uploadedImageUrls = await uploadImages();
+      setImageUrls(uploadedImageUrls);
+      
+      if (uploadedImageUrls.length === 0) {
+        toast({
+          title: "Upload error",
+          description: "Failed to upload images. Please try again.",
+          variant: "destructive"
+        });
+        setUploading(false);
+        return;
+      }
+      
+      // Create product data
+      const productData: SellFormData = {
+        title,
+        price,
+        description,
+        location,
+        category,
+        subcategory,
+        subSubcategory,
+        images: [], // We don't store files in the database
+        imagePreviewUrls: [], // We don't store local URLs in the database
+        imageUrls: uploadedImageUrls,
+        variations,
+        specifications,
+        productStatus: 'available',
+        reservedUserId: '',
+        reservationDays,
+        isBulkListing,
+        bulkQuantity,
+        weight,
+        shippingOptions,
+        promotionLevel: 'none',
+        sellerId: user.id,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Insert product into database
+      const { error: insertError, data: insertedProduct } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+        
+      if (insertError) {
+        console.error('Error inserting product:', insertError);
+        toast({
+          title: "Error",
+          description: "Failed to add product. Please try again.",
+          variant: "destructive"
+        });
+        setUploading(false);
+        return;
+      }
+      
+      // Show promotion dialog
       setShowPromoteDialog(true);
       
       toast({
@@ -174,14 +285,25 @@ const Sell = () => {
     }
   };
 
-  const completePromotion = () => {
+  const completePromotion = async () => {
     setShowPromoteDialog(false);
     
     if (promotionLevel !== 'none') {
-      toast({
-        title: "Promotion applied",
-        description: `Your listing has been promoted with the ${promotionLevel} package`,
-      });
+      // Update the promotion level in the database
+      const { error } = await supabase
+        .from('products')
+        .update({ promotionLevel })
+        .eq('title', title)
+        .eq('sellerId', user?.id);
+        
+      if (error) {
+        console.error('Error updating promotion:', error);
+      } else {
+        toast({
+          title: "Promotion applied",
+          description: `Your listing has been promoted with the ${promotionLevel} package`,
+        });
+      }
     } else {
       toast({
         title: "Listing published",
@@ -189,7 +311,8 @@ const Sell = () => {
       });
     }
     
-    window.location.href = "/";
+    // Navigate to the product page or profile
+    navigate("/profile/products");
   };
 
   const renderCurrentStep = () => {

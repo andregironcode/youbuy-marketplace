@@ -25,7 +25,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   setLocation,
   setCurrentStep,
 }) => {
-  const isLocationValid = location !== "";
+  const isLocationValid = location.length >= 3;
 
   return (
     <Card>
@@ -44,11 +44,14 @@ export const LocationStep: React.FC<LocationStepProps> = ({
               <Input 
                 id="location" 
                 placeholder="Enter address or area"
-                className="pl-10"
+                className={`pl-10 ${!isLocationValid && location.length > 0 ? "border-red-500" : ""}`}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
+            {location.length > 0 && !isLocationValid && (
+              <p className="text-xs text-red-500">Please enter a valid location (at least 3 characters)</p>
+            )}
           </div>
           
           <div className="bg-muted h-48 rounded-md flex items-center justify-center">
