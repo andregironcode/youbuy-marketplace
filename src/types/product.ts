@@ -13,6 +13,9 @@ export interface ProductType {
   timeAgo: string;
   isNew?: boolean;
   isFeatured?: boolean;
+  isPromoted?: boolean; // New field for promoted listings
+  promotionEndDate?: string; // When promotion ends
+  promotionLevel?: 'basic' | 'premium' | 'featured'; // Different promotion tiers
   createdAt: string; // ISO date string
   seller: {
     id: string;
@@ -29,12 +32,25 @@ export interface ProductType {
     businessAccount?: boolean; // Whether this is a business account
   };
   category: string;
+  subcategory?: string; // Added explicit subcategory field
+  subSubcategory?: string; // Added explicit sub-subcategory field
   // New fields for enhanced product listings
   variations?: ProductVariation[];
   status?: 'available' | 'reserved' | 'sold';
   reservedFor?: string; // User ID if reserved for a specific user
   reservedUntil?: string; // ISO date string until when the product is reserved
   specifications?: ProductSpecifications; // New field for category-specific attributes
+  weight?: string; // Weight range for shipping
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  shippingOptions?: {
+    inPersonMeetup: boolean;
+    shipping: boolean;
+    shippingCost?: number;
+  };
 }
 
 export interface ProductVariation {
