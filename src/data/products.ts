@@ -9,6 +9,10 @@ export const products: ProductType[] = [
     price: 3200,
     image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
     location: "Dubai Marina",
+    coordinates: {
+      latitude: 25.0819,
+      longitude: 55.1443
+    },
     timeAgo: "2 days ago",
     isNew: true,
     isFeatured: true,
@@ -28,6 +32,10 @@ export const products: ProductType[] = [
     price: 250,
     image: "https://images.unsplash.com/photo-1518770660439-4636190af475",
     location: "JLT",
+    coordinates: {
+      latitude: 25.0683,
+      longitude: 55.1401
+    },
     timeAgo: "1 week ago",
     createdAt: "2023-10-22T09:30:00Z",
     seller: {
@@ -45,6 +53,10 @@ export const products: ProductType[] = [
     price: 7500,
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
     location: "Downtown Dubai",
+    coordinates: {
+      latitude: 25.1915,
+      longitude: 55.2747
+    },
     timeAgo: "3 days ago",
     isNew: true,
     isFeatured: true,
@@ -64,6 +76,10 @@ export const products: ProductType[] = [
     price: 12000,
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
     location: "Abu Dhabi",
+    coordinates: {
+      latitude: 24.4539,
+      longitude: 54.3773
+    },
     timeAgo: "4 days ago",
     createdAt: "2023-10-26T16:45:00Z",
     isFeatured: true,
@@ -82,6 +98,10 @@ export const products: ProductType[] = [
     price: 1800,
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
     location: "Sharjah",
+    coordinates: {
+      latitude: 25.3463,
+      longitude: 55.4209
+    },
     timeAgo: "1 day ago",
     isNew: true,
     createdAt: "2023-10-30T08:20:00Z",
@@ -100,6 +120,10 @@ export const products: ProductType[] = [
     price: 850,
     image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
     location: "Dubai Sports City",
+    coordinates: {
+      latitude: 25.0324,
+      longitude: 55.2252
+    },
     timeAgo: "5 days ago",
     createdAt: "2023-10-25T13:10:00Z",
     seller: {

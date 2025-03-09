@@ -6,6 +6,10 @@ export interface ProductType {
   price: number;
   image: string;
   location: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   timeAgo: string;
   isNew?: boolean;
   isFeatured?: boolean;
