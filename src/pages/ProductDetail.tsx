@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { MessageButton } from "@/components/product/MessageButton";
 import { SellerReviews } from "@/components/product/SellerReviews";
@@ -26,7 +24,6 @@ const ProductDetail = () => {
   const { user } = useAuth();
   const { favorites, toggleFavorite } = useFavorites();
   const [activeImage, setActiveImage] = useState(0);
-  const [activeTab, setActiveTab] = useState("details");
 
   // Fetch product details
   const { data: product, isLoading, error } = useQuery({
@@ -217,23 +214,9 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            {/* Tabs for Details and Reviews */}
+            {/* Product Details section - no more tabs */}
             <div className="mt-8">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2 mb-4">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details">
-                  <ProductDetails product={product} />
-                </TabsContent>
-                <TabsContent value="reviews">
-                  <SellerReviews 
-                    sellerId={product.seller.userId || ""} 
-                    sellerName={product.seller.name}
-                  />
-                </TabsContent>
-              </Tabs>
+              <ProductDetails product={product} />
             </div>
           </div>
 

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ProductType, ProductVariation, ProductVariationOption } from "@/types/product";
 import { Card, CardContent } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tag, Check, AlertTriangle, Info } from "lucide-react";
+import { Tag, Check, AlertTriangle, Info, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ProductDetailsProps {
@@ -298,9 +299,9 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
       
-      {/* Changed to a Sell button as requested */}
+      {/* Changed to Buy Now button as requested */}
       <Button 
-        className="w-full bg-green-600 hover:bg-green-700 mt-4"
+        className="w-full bg-youbuy hover:bg-youbuy-dark mt-4"
         disabled={
           product.status === 'sold' || 
           product.status === 'reserved' || 
@@ -311,7 +312,7 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
           ? 'Sold Out' 
           : product.status === 'reserved' 
             ? 'Reserved' 
-            : 'Sell Similar Item'}
+            : <><ShoppingBag className="mr-2 h-5 w-5" />Buy Now</>}
       </Button>
       
       {product.variations && product.variations.some(v => v.required) && !areAllRequiredVariationsSelected() && (
