@@ -27,7 +27,9 @@ export const products: ProductType[] = [
       name: "Ahmed",
       avatar: "https://i.pravatar.cc/150?img=1",
       joinedDate: "Jan 2022",
-      userId: "00000000-0000-0000-0000-000000000001" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000001",
+      rating: 4.7,
+      totalReviews: 23
     },
     category: "electronics"
   },
@@ -54,7 +56,9 @@ export const products: ProductType[] = [
       name: "Sarah",
       avatar: "https://i.pravatar.cc/150?img=5",
       joinedDate: "Mar 2021",
-      userId: "00000000-0000-0000-0000-000000000002" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000002",
+      rating: 4.2,
+      totalReviews: 9
     },
     category: "furniture"
   },
@@ -84,7 +88,9 @@ export const products: ProductType[] = [
       name: "Michael",
       avatar: "https://i.pravatar.cc/150?img=8",
       joinedDate: "Dec 2021",
-      userId: "00000000-0000-0000-0000-000000000003" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000003",
+      rating: 5.0,
+      totalReviews: 12
     },
     category: "electronics"
   },
@@ -112,7 +118,9 @@ export const products: ProductType[] = [
       name: "Fatima",
       avatar: "https://i.pravatar.cc/150?img=9",
       joinedDate: "Aug 2020",
-      userId: "00000000-0000-0000-0000-000000000004" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000004",
+      rating: 4.5,
+      totalReviews: 17
     },
     category: "electronics"
   },
@@ -140,7 +148,9 @@ export const products: ProductType[] = [
       name: "Omar",
       avatar: "https://i.pravatar.cc/150?img=3",
       joinedDate: "Feb 2023",
-      userId: "00000000-0000-0000-0000-000000000005" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000005",
+      rating: 3.8,
+      totalReviews: 5
     },
     category: "electronics"
   },
@@ -167,7 +177,9 @@ export const products: ProductType[] = [
       name: "Jason",
       avatar: "https://i.pravatar.cc/150?img=4",
       joinedDate: "Apr 2022",
-      userId: "00000000-0000-0000-0000-000000000006" // Changed to UUID format
+      userId: "00000000-0000-0000-0000-000000000006",
+      rating: 4.9,
+      totalReviews: 15
     },
     category: "clothing"
   }

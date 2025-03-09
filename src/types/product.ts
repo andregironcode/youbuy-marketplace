@@ -21,6 +21,8 @@ export interface ProductType {
     avatar: string;
     joinedDate: string;
     userId?: string; // Add userId for authenticated user reference
+    rating?: number; // Average seller rating
+    totalReviews?: number; // Total number of reviews
   };
   category: string;
 }

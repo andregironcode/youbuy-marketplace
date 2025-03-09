@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
@@ -26,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Card, CardContent } from "@/components/ui/card";
+import { SellerReviews } from "@/components/product/SellerReviews";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,9 +41,13 @@ const ProductDetail = () => {
   // For demo purposes, create an array of images
   const productImages = product ? [
     product.image,
-    "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
-    "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
-    "https://images.unsplash.com/photo-1507646227500-4d389b0012be"
+    ...(product.images || []),
+    // Add default images if product.images is not available or has less than 3 images
+    ...((!product.images || product.images.length < 3) ? [
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca6",
+      "https://images.unsplash.com/photo-1507646227500-4d389b0012be"
+    ].slice(0, 3 - (product.images?.length || 0)) : [])
   ] : [];
 
   const handleContactSeller = () => {
@@ -434,7 +438,7 @@ const ProductDetail = () => {
                   <div className="flex items-center gap-2">
                     <Tag className="h-5 w-5 text-youbuy" />
                     <span className="font-medium text-youbuy-dark">
-                      Category: {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                      Category: {product?.category.charAt(0).toUpperCase() + product?.category.slice(1)}
                     </span>
                   </div>
                 </CardContent>
@@ -444,7 +448,7 @@ const ProductDetail = () => {
 
               <div>
                 <h2 className="font-medium mb-2">Description</h2>
-                <p className="text-muted-foreground">{product.description}</p>
+                <p className="text-muted-foreground">{product?.description}</p>
               </div>
               
               {renderProductSpecificFields()}
@@ -455,12 +459,12 @@ const ProductDetail = () => {
                 <h2 className="font-medium mb-4">Seller</h2>
                 <div className="flex items-center">
                   <Avatar className="h-12 w-12 mr-4">
-                    <AvatarImage src={product.seller.avatar} alt={product.seller.name} />
-                    <AvatarFallback>{product.seller.name.substring(0, 2)}</AvatarFallback>
+                    <AvatarImage src={product?.seller.avatar} alt={product?.seller.name} />
+                    <AvatarFallback>{product?.seller.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{product.seller.name}</p>
-                    <p className="text-sm text-muted-foreground">Member since {product.seller.joinedDate}</p>
+                    <p className="font-medium">{product?.seller.name}</p>
+                    <p className="text-sm text-muted-foreground">Member since {product?.seller.joinedDate}</p>
                   </div>
                 </div>
               </div>
@@ -472,6 +476,13 @@ const ProductDetail = () => {
                 <MessageCircle className="mr-2 h-5 w-5" />
                 Contact Seller
               </Button>
+
+              {product?.seller.userId && (
+                <SellerReviews 
+                  sellerId={product.seller.userId}
+                  sellerName={product.seller.name}
+                />
+              )}
 
               <div className="text-sm text-muted-foreground">
                 <AlertCircle className="inline h-4 w-4 mr-1" />
