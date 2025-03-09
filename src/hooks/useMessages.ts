@@ -89,17 +89,15 @@ export const useMessages = (chatId?: string) => {
             .eq('product_id', chat.product_id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
-          // Get unread count - simplified query
+          // Get unread count
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
-            .match({
-              receiver_id: user.id,
-              read: false,
-              product_id: chat.product_id
-            });
+            .eq('receiver_id', user.id)
+            .eq('read', false)
+            .eq('product_id', chat.product_id);
 
           return {
             ...chat,
@@ -128,7 +126,7 @@ export const useMessages = (chatId?: string) => {
     }
   }, [user, toast]);
 
-  // Load chat by ID - simplified version
+  // Load chat by ID
   const loadChatById = useCallback(async (id: string) => {
     if (!user) return;
     
@@ -143,11 +141,22 @@ export const useMessages = (chatId?: string) => {
         .from('chats')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (chatError) {
         console.error("Error fetching chat by ID:", chatError);
         throw chatError;
+      }
+      
+      if (!chatData) {
+        console.error("Chat not found");
+        toast({
+          title: "Chat not found",
+          description: "The conversation you're looking for doesn't exist",
+          variant: "destructive",
+        });
+        navigate('/messages');
+        return;
       }
       
       console.log("Chat data loaded:", chatData);
@@ -203,7 +212,7 @@ export const useMessages = (chatId?: string) => {
       
       setCurrentChat(enhancedChatData);
       
-      // Simplified message query
+      // Fetch messages
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
@@ -228,11 +237,9 @@ export const useMessages = (chatId?: string) => {
           await supabase
             .from('messages')
             .update({ read: true })
-            .match({ 
-              receiver_id: user.id,
-              product_id: chatData.product_id,
-              read: false
-            });
+            .eq('receiver_id', user.id)
+            .eq('product_id', chatData.product_id)
+            .eq('read', false);
         }
       }
 
@@ -280,7 +287,7 @@ export const useMessages = (chatId?: string) => {
     return () => {
       supabase.removeChannel(messageSubscription);
     };
-  }, [user, navigate, fetchChats, chatId, loadChatById]);
+  }, [user, navigate, fetchChats]);
 
   // Load specific chat when chatId changes
   useEffect(() => {
@@ -387,9 +394,18 @@ export const useMessages = (chatId?: string) => {
         .from('messages')
         .select('*')
         .eq('id', messageId)
-        .single();
+        .maybeSingle();
       
       if (messageError) throw messageError;
+      
+      if (!messageData) {
+        toast({
+          title: "Message not found",
+          description: "The message you're trying to delete no longer exists.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Verify that the current user is the sender
       if (messageData.sender_id !== user.id) {

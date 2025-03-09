@@ -25,7 +25,7 @@ const Messages = () => {
     handleSendMessage,
     handleDeleteMessage,
     handleImageUpload
-  } = useMessages(chatId);
+  } = useMessages(chatId || undefined);
 
   // Debug current state
   useEffect(() => {

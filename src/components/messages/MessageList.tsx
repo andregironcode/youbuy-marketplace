@@ -26,7 +26,7 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
   const { user } = useAuth();
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   
-  if (messages.length === 0) {
+  if (!messages || messages.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center h-full text-center">
         <p className="text-muted-foreground mb-2">No messages yet</p>
