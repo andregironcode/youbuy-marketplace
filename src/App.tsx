@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import ProductEditPage from "./pages/ProductEditPage";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile/*" element={<Profile />} />
+            <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/seller/:id" element={<SellerProfile />} />
             <Route path="/messages/*" element={<Messages />} />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +54,6 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
           return;
         }
         
-        // Transform database products to match ProductType
         const transformedProducts: ProductType[] = data.map(item => ({
           id: item.id,
           title: item.title,
@@ -65,7 +63,7 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
           images: item.image_urls || [],
           location: item.location,
           timeAgo: new Date(item.created_at).toLocaleDateString(),
-          status: item.product_status as "available" | "reserved" | "sold", // Type assertion to fix the error
+          status: item.product_status as "available" | "reserved" | "sold",
           createdAt: item.created_at,
           category: item.category,
           subcategory: item.subcategory,
@@ -100,7 +98,6 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
     );
   }
 
-  // Custom format date function (DD/MM/YYYY)
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -111,9 +108,8 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
   };
 
   const handleEditProduct = (e: React.MouseEvent, productId: string) => {
-    e.stopPropagation(); // Prevent triggering the card click
-    // Navigate to edit page or open edit modal
-    navigate(`/sell?edit=${productId}`);
+    e.stopPropagation();
+    navigate(`/profile/edit-product/${productId}`);
   };
 
   return (
@@ -129,7 +125,7 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
               <Checkbox 
                 id={`select-${product.id}`} 
                 aria-label={`Select ${product.title}`} 
-                onClick={(e) => e.stopPropagation()} // Prevent card click when checkbox is clicked
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
             <div className="flex-shrink-0">
@@ -158,7 +154,7 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
                   <Button 
                     variant="outline" 
                     className="h-9 bg-youbuy text-white hover:bg-youbuy/90"
-                    onClick={(e) => e.stopPropagation()} // Prevent card click when Feature button is clicked
+                    onClick={(e) => e.stopPropagation()}
                   >
                     Feature
                   </Button>
