@@ -166,11 +166,11 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
                       <div className="mt-2 sm:mt-0 text-xs text-muted-foreground grid grid-cols-2 gap-x-4">
                         <div>
                           <p>Published</p>
-                          <p>{formatDate(product.created_at || '')}</p>
+                          <p>{formatDate(product.createdAt)}</p>
                         </div>
                         <div>
                           <p>Modified</p>
-                          <p>{formatDate(product.updated_at || '')}</p>
+                          <p>{product.createdAt !== product.createdAt ? formatDate(product.createdAt) : "N/A"}</p>
                         </div>
                       </div>
                     </div>
