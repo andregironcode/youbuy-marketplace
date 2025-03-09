@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, SendHorizonal, ImagePlus } from "lucide-react";
 import { MessageList } from "./MessageList";
 import { ProductInfoCard } from "./ProductInfoCard";
+import { Skeleton } from "@/components/ui/skeleton"; 
 import { ChatType, MessageType } from "@/types/message";
 
 interface ChatWindowProps {
@@ -56,46 +57,82 @@ export const ChatWindow = ({
     fileInputRef.current?.click();
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <p>Loading messages...</p>
-      </div>
-    );
-  }
+  // Chat Header - Always show this, even while loading
+  const renderChatHeader = () => (
+    <div className="p-3 border-b bg-gray-50 flex items-center">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="md:hidden mr-2"
+        onClick={() => navigate('/messages')}
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </Button>
+      {loading ? (
+        <>
+          <Skeleton className="h-10 w-10 rounded-full mr-3" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </>
+      ) : (
+        <>
+          <Avatar className="h-10 w-10 mr-3">
+            <AvatarImage src={currentProduct?.image} />
+            <AvatarFallback>
+              {currentProduct?.title?.substring(0, 2) || '??'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">
+              {currentChat?.otherUser?.name || 'Unknown User'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {currentChat?.product?.title || 'Unknown Product'}
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
 
-  return (
-    <>
-      {/* Chat Header */}
-      <div className="p-3 border-b bg-gray-50 flex items-center">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="md:hidden mr-2"
-          onClick={() => navigate('/messages')}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <Avatar className="h-10 w-10 mr-3">
-          <AvatarImage src={currentProduct?.image} />
-          <AvatarFallback>
-            {currentProduct?.title?.substring(0, 2) || '??'}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="font-medium">
-            {currentChat?.otherUser?.name || 'Unknown User'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {currentChat?.product?.title || 'Unknown Product'}
-          </p>
+  // Product Info - Skeleton while loading
+  const renderProductInfo = () => {
+    if (loading) {
+      return (
+        <div className="p-3 border-b bg-accent/5">
+          <div className="flex items-center p-2">
+            <Skeleton className="w-16 h-16 rounded mr-3" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
         </div>
-      </div>
+      );
+    }
+    
+    return <ProductInfoCard product={currentProduct} />;
+  };
 
-      {/* Product Information Card */}
-      <ProductInfoCard product={currentProduct} />
-
-      {/* Messages */}
+  // Messages area - Skeleton while loading
+  const renderMessages = () => {
+    if (loading) {
+      return (
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className={`flex ${index % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[70%] ${index % 2 === 0 ? 'ml-auto' : 'mr-auto'}`}>
+                <Skeleton className={`h-14 w-48 rounded-lg ${index % 2 === 0 ? 'rounded-tr-none' : 'rounded-tl-none'}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return (
       <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4 overflow-x-hidden">
         <MessageList 
           messages={messages} 
@@ -103,8 +140,16 @@ export const ChatWindow = ({
         />
         <div ref={messagesEndRef} />
       </div>
+    );
+  };
 
-      {/* Input Area */}
+  return (
+    <>
+      {renderChatHeader()}
+      {renderProductInfo()}
+      {renderMessages()}
+
+      {/* Input Area - Always show this */}
       <div className="p-3 border-t">
         <div className="flex space-x-2">
           <Textarea
@@ -112,8 +157,9 @@ export const ChatWindow = ({
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
             className="min-h-[45px] max-h-[120px]"
+            disabled={loading}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !loading) {
                 e.preventDefault();
                 handleSendMessage();
               }
@@ -126,6 +172,7 @@ export const ChatWindow = ({
               size="icon"
               className="h-9 w-9"
               onClick={triggerFileInput}
+              disabled={loading}
             >
               <ImagePlus className="h-4 w-4" />
             </Button>
@@ -135,10 +182,11 @@ export const ChatWindow = ({
               className="hidden" 
               accept="image/*" 
               onChange={handleFileChange}
+              disabled={loading}
             />
             <Button 
               onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sendingMessage}
+              disabled={!newMessage.trim() || sendingMessage || loading}
               className="bg-youbuy hover:bg-youbuy-dark h-9 w-9 p-0"
             >
               <SendHorizonal className="h-5 w-5" />

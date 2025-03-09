@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChatType } from "@/types/message";
 import { formatChatTime } from "@/utils/dateFormat";
 
@@ -16,9 +17,23 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <p>Loading conversations...</p>
-      </div>
+      <>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="p-3 border-b">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-10" />
+                </div>
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </>
     );
   }
 

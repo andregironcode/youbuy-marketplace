@@ -5,6 +5,7 @@ import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Messages = () => {
   const { chatId } = useParams<{ chatId: string }>();
