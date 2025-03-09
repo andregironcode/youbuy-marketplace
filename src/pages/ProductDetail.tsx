@@ -14,7 +14,8 @@ import {
   Tag,
   ChevronRight,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Star
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -516,5 +517,34 @@ const ProductDetail = () => {
         </div>
       </main>
 
-      <
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message {product.seller.name}</DialogTitle>
+            <DialogDescription>
+              Send a message about {product.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Textarea 
+              placeholder="Write your message here..." 
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="min-h-32"
+            />
+            <Button 
+              className="w-full bg-youbuy hover:bg-youbuy-dark"
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isSending}
+            >
+              {isSending ? "Sending..." : "Send Message"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ProductDetail;
 
