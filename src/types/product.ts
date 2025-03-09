@@ -1,3 +1,4 @@
+
 export interface ProductType {
   id: string;
   title: string;
@@ -99,6 +100,9 @@ export interface ProductSpecifications {
   
   [key: string]: any;
 }
+
+// Import formatDistance from date-fns
+import { formatDistance } from "date-fns";
 
 export function convertToProductType(item: any, includeViews = false): ProductType {
   const profileData = item.profiles && typeof item.profiles === 'object' ? item.profiles : null;

@@ -86,7 +86,7 @@ const SellerProfile = () => {
             </TabsList>
             
             <TabsContent value="listings" className="mt-6">
-              <SellerListings products={sellerProducts} />
+              <SellerListings userId={id} />
             </TabsContent>
             
             <TabsContent value="reviews" className="mt-6">

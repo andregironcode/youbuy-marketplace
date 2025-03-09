@@ -5,7 +5,6 @@ import { ProductCard } from "../product/ProductCard";
 import { Button } from "../ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
-import { formatDistance } from "date-fns";
 
 interface SellerListingsProps {
   userId?: string;
