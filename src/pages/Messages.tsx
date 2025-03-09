@@ -17,7 +17,8 @@ const Messages = () => {
     sendingMessage,
     loadingChats,
     loadingMessages,
-    handleSendMessage
+    handleSendMessage,
+    handleDeleteMessage
   } = useMessages(chatId);
 
   return (
@@ -55,6 +56,7 @@ const Messages = () => {
                 newMessage={newMessage}
                 setNewMessage={setNewMessage}
                 handleSendMessage={handleSendMessage}
+                handleDeleteMessage={handleDeleteMessage}
                 sendingMessage={sendingMessage}
                 loading={loadingMessages}
               />

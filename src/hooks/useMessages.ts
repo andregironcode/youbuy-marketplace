@@ -268,6 +268,54 @@ export const useMessages = (chatId?: string) => {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      // First check if the message belongs to the current user
+      const { data: messageData, error: messageError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('id', messageId)
+        .single();
+      
+      if (messageError) throw messageError;
+      
+      // Verify that the current user is the sender
+      if (messageData.sender_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own messages.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Delete the message
+      const { error: deleteError } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+        
+      if (deleteError) throw deleteError;
+      
+      // Update local state to remove the deleted message
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      toast({
+        title: "Message deleted",
+        description: "Your message has been removed from the conversation."
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        title: "Failed to delete message",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     user,
     chats,
@@ -279,6 +327,7 @@ export const useMessages = (chatId?: string) => {
     sendingMessage,
     loadingChats,
     loadingMessages,
-    handleSendMessage
+    handleSendMessage,
+    handleDeleteMessage
   };
 };

@@ -16,6 +16,7 @@ interface ChatWindowProps {
   newMessage: string;
   setNewMessage: (message: string) => void;
   handleSendMessage: () => void;
+  handleDeleteMessage?: (messageId: string) => void;
   sendingMessage: boolean;
   loading: boolean;
 }
@@ -27,6 +28,7 @@ export const ChatWindow = ({
   newMessage,
   setNewMessage,
   handleSendMessage,
+  handleDeleteMessage,
   sendingMessage,
   loading
 }: ChatWindowProps) => {
@@ -79,7 +81,10 @@ export const ChatWindow = ({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
-        <MessageList messages={messages} />
+        <MessageList 
+          messages={messages} 
+          onDeleteMessage={handleDeleteMessage}
+        />
         <div ref={messagesEndRef} />
       </div>
 
