@@ -5,50 +5,62 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { useAuth } from "@/context/AuthContext";
 import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
+import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 
 const Index = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCategories, setShowCategories] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          profiles:seller_id(
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            profiles:seller_id(
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (error) {
+          console.error('Error fetching products:', error);
+          setLoading(false);
+          return;
+        }
         
-      if (error) {
-        console.error('Error fetching products:', error);
+        if (data) {
+          const mappedProducts = data.map(item => convertToProductType(item));
+          setProducts(mappedProducts);
+        }
+      } catch (err) {
+        console.error('Error in products fetch:', err);
+      } finally {
         setLoading(false);
-        return;
       }
-      
-      if (data) {
-        const mappedProducts = data.map(item => convertToProductType(item, true));
-        setProducts(mappedProducts);
-      }
-      
-      setLoading(false);
     };
     
     fetchProducts();
   }, []);
 
+  const toggleCategories = () => {
+    setShowCategories(!showCategories);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar onCategoryClick={toggleCategories} />
       <main className="flex-1 container py-8">
+        {showCategories && <CategoryBrowser onClose={() => setShowCategories(false)} />}
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Discover amazing deals nearby</h1>
           <p className="text-muted-foreground">Find items you'll love at prices you'll love even more</p>

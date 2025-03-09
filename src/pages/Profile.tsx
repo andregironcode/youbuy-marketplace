@@ -21,11 +21,16 @@ const ProductsPage = () => {
       if (!user) return;
 
       // Check if user already has products
-      const { data: existingProducts } = await supabase
+      const { data: existingProducts, error } = await supabase
         .from('products')
         .select('id')
         .eq('seller_id', user.id)
         .limit(1);
+        
+      if (error) {
+        console.error('Error checking for existing products:', error);
+        return;
+      }
 
       // Only create products if user doesn't have any
       if (!existingProducts || existingProducts.length === 0) {

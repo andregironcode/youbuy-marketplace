@@ -22,32 +22,36 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
       
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          profiles:seller_id(
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('seller_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            profiles:seller_id(
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('seller_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+          
+        if (error) {
+          console.error('Error fetching products:', error);
+          setLoading(false);
+          return;
+        }
         
-      if (error) {
-        console.error('Error fetching products:', error);
+        if (data) {
+          const mappedProducts = data.map(item => convertToProductType(item));
+          setProducts(mappedProducts);
+        }
+      } catch (err) {
+        console.error('Error in seller products fetch:', err);
+      } finally {
         setLoading(false);
-        return;
       }
-      
-      if (data) {
-        const mappedProducts = data.map(item => convertToProductType(item));
-        setProducts(mappedProducts);
-      }
-      
-      setLoading(false);
     };
     
     fetchProducts();
