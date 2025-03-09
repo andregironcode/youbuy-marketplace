@@ -15,6 +15,7 @@ export const useFavoriteSellers = () => {
     queryFn: async () => {
       if (!user) return [];
       
+      // We're using our custom table that was just created
       const { data, error } = await supabase
         .from("favorite_sellers")
         .select("seller_id")
@@ -37,7 +38,10 @@ export const useFavoriteSellers = () => {
       
       const { error } = await supabase
         .from("favorite_sellers")
-        .insert({ user_id: user.id, seller_id: sellerId });
+        .insert({ 
+          user_id: user.id, 
+          seller_id: sellerId 
+        });
       
       if (error) {
         if (error.code === "23505") { // Unique constraint violation
