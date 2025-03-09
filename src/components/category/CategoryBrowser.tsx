@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { X, ChevronRight } from "lucide-react";
@@ -9,7 +9,7 @@ import { categories } from "@/data/categories";
 interface CategoryBrowserProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectCategory: (categoryId: string) => void;
+  onSelectCategory: (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => void;
 }
 
 export const CategoryBrowser = ({ open, onOpenChange, onSelectCategory }: CategoryBrowserProps) => {
@@ -29,18 +29,19 @@ export const CategoryBrowser = ({ open, onOpenChange, onSelectCategory }: Catego
     const subCategory = category.subCategories.find(s => s.id === subCategoryId);
     if (!subCategory) return;
     
+    setSelectedSubCategory(subCategoryId);
+    
     if (subCategory.subSubCategories && subCategory.subSubCategories.length > 0) {
-      setSelectedSubCategory(subCategoryId);
       setCurrentLevel("subsub");
     } else {
       // If no sub-subcategories, select this subcategory directly
-      onSelectCategory(selectedCategory!);
+      onSelectCategory(selectedCategory!, subCategoryId);
       onOpenChange(false);
     }
   };
   
   const handleSubSubCategorySelect = (subSubCategoryId: string) => {
-    onSelectCategory(selectedCategory!);
+    onSelectCategory(selectedCategory!, selectedSubCategory!, subSubCategoryId);
     onOpenChange(false);
   };
   
@@ -163,6 +164,9 @@ export const CategoryBrowser = ({ open, onOpenChange, onSelectCategory }: Catego
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-0 max-h-[80vh] overflow-y-auto">
+        <DialogDescription className="sr-only">
+          Browse through product categories
+        </DialogDescription>
         <div className="sticky top-0 bg-white z-10 px-4 py-3 border-b flex items-center justify-between">
           <DialogTitle className="text-xl font-medium">Browse by category</DialogTitle>
           <DialogClose className="h-8 w-8 rounded-full hover:bg-gray-100 flex items-center justify-center">

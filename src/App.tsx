@@ -31,6 +31,8 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile/*" element={<Profile />} />
             <Route path="/category/:categoryId" element={<CategoryPage />} />
+            <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
+            <Route path="/category/:categoryId/:subcategoryId/:subSubcategoryId" element={<CategoryPage />} />
             <Route path="/featured" element={<CategoryPage />} />
             <Route path="/recent" element={<CategoryPage />} />
             <Route path="/recommended" element={<CategoryPage />} />

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { products } from "@/data/products";
 import { ShoppingBag } from "lucide-react";
@@ -22,6 +23,7 @@ const scrollbarHideStyles = `
 
 const Index = () => {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Get featured products
   const featuredProducts = products.filter(product => product.isFeatured);
@@ -52,10 +54,17 @@ const Index = () => {
         <CategoryBrowser 
           open={categoryDialogOpen} 
           onOpenChange={setCategoryDialogOpen} 
-          onSelectCategory={(categoryId) => {
-            // We'll need to create a category page to handle this
-            console.log(`Selected category: ${categoryId}`);
-            window.location.href = `/category/${categoryId}`;
+          onSelectCategory={(categoryId, subcategoryId, subSubcategoryId) => {
+            // Build the appropriate URL based on the selected category hierarchy
+            let url = `/category/${categoryId}`;
+            if (subcategoryId) {
+              url += `/${subcategoryId}`;
+              if (subSubcategoryId) {
+                url += `/${subSubcategoryId}`;
+              }
+            }
+            // Use navigate instead of window.location for React Router
+            navigate(url);
           }} 
         />
         

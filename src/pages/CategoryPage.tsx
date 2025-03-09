@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { products } from "@/data/products";
@@ -104,6 +104,7 @@ const sortOptions = [
 
 const CategoryPage = () => {
   const { categoryId = "all", subcategoryId, subSubcategoryId } = useParams();
+  const navigate = useNavigate();
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceMin, setPriceMin] = useState("");
@@ -134,21 +135,21 @@ const CategoryPage = () => {
     // Category filter
     if (categoryId !== "all") {
       // If we have a sub-subcategory selected
-      if (selectedSubSubcategory) {
-        if (product.category !== selectedSubSubcategory) {
+      if (subSubcategoryId) {
+        if (product.category !== subSubcategoryId) {
           return false;
         }
       }
       // If we have a subcategory selected
-      else if (selectedSubcategory) {
+      else if (subcategoryId) {
         // Get all sub-subcategories for this subcategory
         const subcategory = categories
-          .find(cat => cat.id === selectedCategory)
-          ?.subCategories.find(sub => sub.id === selectedSubcategory);
+          .find(cat => cat.id === categoryId)
+          ?.subCategories.find(sub => sub.id === subcategoryId);
         
         const validCategories = subcategory?.subSubCategories 
-          ? [selectedSubcategory, ...subcategory.subSubCategories.map(s => s.id)]
-          : [selectedSubcategory];
+          ? [subcategoryId, ...subcategory.subSubCategories.map(s => s.id)]
+          : [subcategoryId];
         
         if (!validCategories.includes(product.category)) {
           return false;
@@ -156,7 +157,7 @@ const CategoryPage = () => {
       }
       // If we just have a main category selected
       else {
-        const validCategories = findAllSubcategories(selectedCategory);
+        const validCategories = findAllSubcategories(categoryId);
         if (!validCategories.includes(product.category)) {
           return false;
         }
@@ -224,19 +225,26 @@ const CategoryPage = () => {
     setCategoryDialogOpen(true);
   };
 
-  const handleCategorySelect = (newCategoryId: string) => {
-    window.location.href = `/category/${newCategoryId}`;
-  };
-
-  const handleCategoryChange = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
-    let url = `/category/${categoryId}`;
-    if (subcategoryId) {
-      url += `/${subcategoryId}`;
-      if (subSubcategoryId) {
-        url += `/${subSubcategoryId}`;
+  const handleCategorySelect = (newCategoryId: string, newSubcategoryId?: string, newSubSubcategoryId?: string) => {
+    let url = `/category/${newCategoryId}`;
+    if (newSubcategoryId) {
+      url += `/${newSubcategoryId}`;
+      if (newSubSubcategoryId) {
+        url += `/${newSubSubcategoryId}`;
       }
     }
-    window.location.href = url;
+    navigate(url);
+  };
+
+  const handleCategoryChange = (newCategoryId: string, newSubcategoryId?: string, newSubSubcategoryId?: string) => {
+    let url = `/category/${newCategoryId}`;
+    if (newSubcategoryId) {
+      url += `/${newSubcategoryId}`;
+      if (newSubSubcategoryId) {
+        url += `/${newSubSubcategoryId}`;
+      }
+    }
+    navigate(url);
   };
 
   const clearFilters = () => {
@@ -405,16 +413,18 @@ const CategoryPage = () => {
               </div>
               
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Category Selector */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm">Category</h4>
-                  <CategorySelector 
-                    onCategoryChange={handleCategoryChange}
-                    selectedCategory={selectedCategory}
-                    selectedSubcategory={selectedSubcategory}
-                    selectedSubSubcategory={selectedSubSubcategory}
-                  />
-                </div>
+                {/* Only show category selector when on "all" category page */}
+                {categoryId === "all" && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm">Category</h4>
+                    <CategorySelector 
+                      onCategoryChange={handleCategoryChange}
+                      selectedCategory={selectedCategory}
+                      selectedSubcategory={selectedSubcategory}
+                      selectedSubSubcategory={selectedSubSubcategory}
+                    />
+                  </div>
+                )}
                 
                 {/* Price Range */}
                 <div className="space-y-4">
