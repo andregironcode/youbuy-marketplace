@@ -4,10 +4,11 @@ import { ProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Bookmark, ShoppingBag } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useNavigate } from "react-router-dom";
 
 interface SellerListingsProps {
   products?: ProductType[];
@@ -19,6 +20,7 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
   const [products, setProducts] = useState<ProductType[]>(propProducts || []);
   const [loading, setLoading] = useState(!propProducts);
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (propProducts) {
@@ -104,13 +106,31 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
+  const handleViewProduct = (productId: string) => {
+    navigate(`/product/${productId}`);
+  };
+
+  const handleEditProduct = (e: React.MouseEvent, productId: string) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    // Navigate to edit page or open edit modal
+    navigate(`/sell?edit=${productId}`);
+  };
+
   return (
     <div className="space-y-4">
       {products.map(product => (
-        <Card key={product.id} className="p-4 relative">
+        <Card 
+          key={product.id} 
+          className="p-4 relative hover:shadow-md transition-all cursor-pointer"
+          onClick={() => handleViewProduct(product.id)}
+        >
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
-              <Checkbox id={`select-${product.id}`} aria-label={`Select ${product.title}`} />
+              <Checkbox 
+                id={`select-${product.id}`} 
+                aria-label={`Select ${product.title}`} 
+                onClick={(e) => e.stopPropagation()} // Prevent card click when checkbox is clicked
+              />
             </div>
             <div className="flex-shrink-0">
               <img 
@@ -135,17 +155,20 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
                   Modified {formatDate(product.createdAt)}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" className="h-9">
+                  <Button 
+                    variant="outline" 
+                    className="h-9 bg-youbuy text-white hover:bg-youbuy/90"
+                    onClick={(e) => e.stopPropagation()} // Prevent card click when Feature button is clicked
+                  >
                     Feature
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <ShoppingBag className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <Bookmark className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-9 w-9"
+                      onClick={(e) => handleEditProduct(e, product.id)}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </div>
