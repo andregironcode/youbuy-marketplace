@@ -20,27 +20,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
   const product = products.find(p => p.id === id);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: isFavorite 
-        ? "This item has been removed from your favorites" 
-        : "This item has been added to your favorites",
-    });
-  };
-
+  const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
+  
   const handleContactSeller = () => {
     if (!user) {
       toast({
@@ -180,9 +171,10 @@ const ProductDetail = () => {
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      onClick={toggleFavorite}
+                      onClick={() => toggleFavorite(product.id)}
+                      disabled={isAdding || isRemoving}
                     >
-                      <Heart className={`h-5 w-5 ${isFavorite ? 'fill-youbuy text-youbuy' : ''}`} />
+                      <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'fill-youbuy text-youbuy' : ''}`} />
                     </Button>
                     <Button variant="outline" size="icon">
                       <Share2 className="h-5 w-5" />

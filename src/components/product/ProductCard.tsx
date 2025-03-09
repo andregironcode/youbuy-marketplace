@@ -6,12 +6,21 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { MessageButton } from "./MessageButton";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface ProductCardProps {
   product: ProductType;
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
+  const productIsFavorite = isFavorite(product.id);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toggleFavorite(product.id);
+  };
+
   return (
     <Card className="overflow-hidden group h-full">
       <Link to={`/product/${product.id}`}>
@@ -29,13 +38,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full"
-            onClick={(e) => {
-              e.preventDefault();
-              // For saving product as favorite (to be implemented)
-            }}
+            className={`absolute top-2 right-2 ${productIsFavorite ? 'bg-white' : 'bg-white/80 hover:bg-white'} rounded-full`}
+            onClick={handleFavoriteClick}
+            disabled={isAdding || isRemoving}
           >
-            <Heart className="h-4 w-4 text-muted-foreground" />
+            <Heart className={`h-4 w-4 ${productIsFavorite ? 'fill-youbuy text-youbuy' : 'text-muted-foreground'}`} />
           </Button>
         </div>
       </Link>
