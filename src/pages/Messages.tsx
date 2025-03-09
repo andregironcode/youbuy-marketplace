@@ -53,6 +53,28 @@ const Messages = () => {
                   <p className="text-muted-foreground mb-2">Select a conversation</p>
                   <p className="text-sm">Choose a conversation from the list to view messages</p>
                 </div>
+              ) : loadingMessages ? (
+                <div className="flex-1 flex flex-col">
+                  <div className="p-3 border-b bg-gray-50 flex items-center">
+                    <Skeleton className="h-10 w-10 rounded-full mr-3" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                  <div className="flex-1 p-4">
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-16 w-3/4" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : !currentChat ? (
+                <div className="flex flex-col justify-center items-center h-full p-4 text-center">
+                  <p className="text-muted-foreground mb-2">Conversation not found</p>
+                  <p className="text-sm">The conversation you're looking for doesn't exist or you don't have access to it</p>
+                </div>
               ) : (
                 <ChatWindow 
                   currentChat={currentChat}

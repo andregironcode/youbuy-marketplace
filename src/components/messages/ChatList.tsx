@@ -46,41 +46,50 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
     );
   }
 
+  const handleChatClick = (chatId: string) => {
+    console.log("Navigating to chat:", chatId);
+    navigate(`/messages/${chatId}`);
+  };
+
   return (
     <>
-      {chats.map((chat) => (
-        <div 
-          key={chat.id}
-          className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${currentChatId === chat.id ? 'bg-gray-100' : ''}`}
-          onClick={() => navigate(`/messages/${chat.id}`)}
-        >
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={chat.otherUser?.avatar} />
-              <AvatarFallback>{chat.otherUser?.name.substring(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-center">
-                <p className="font-medium truncate">{chat.otherUser?.name}</p>
-                <span className="text-xs text-muted-foreground">
-                  {formatChatTime(chat.last_message_at)}
-                </span>
+      {chats.map((chat) => {
+        const isActive = currentChatId === chat.id;
+        
+        return (
+          <div 
+            key={chat.id}
+            className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${isActive ? 'bg-gray-100' : ''}`}
+            onClick={() => handleChatClick(chat.id)}
+          >
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={chat.otherUser?.avatar} />
+                <AvatarFallback>{chat.otherUser?.name?.substring(0, 2) || '??'}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium truncate">{chat.otherUser?.name || 'Unknown User'}</p>
+                  <span className="text-xs text-muted-foreground">
+                    {formatChatTime(chat.last_message_at)}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  {chat.lastMessage || "No messages yet"}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {chat.product?.title || 'Unknown Product'}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground truncate">
-                {chat.lastMessage || "No messages yet"}
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                {chat.product?.title}
-              </p>
             </div>
+            {chat.unreadCount > 0 && (
+              <div className="mt-1 flex justify-end">
+                <Badge className="bg-youbuy">{chat.unreadCount}</Badge>
+              </div>
+            )}
           </div>
-          {chat.unreadCount > 0 && (
-            <div className="mt-1 flex justify-end">
-              <Badge className="bg-youbuy">{chat.unreadCount}</Badge>
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 };

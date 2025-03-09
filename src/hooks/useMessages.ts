@@ -32,6 +32,7 @@ export const useMessages = (chatId?: string) => {
       const fetchChats = async () => {
         setLoadingChats(true);
         try {
+          console.log("Fetching chats for user:", user.id);
           const { data, error } = await supabase
             .from('chats')
             .select(`
@@ -46,6 +47,8 @@ export const useMessages = (chatId?: string) => {
             .order('last_message_at', { ascending: false });
 
           if (error) throw error;
+          
+          console.log("Chats fetched:", data);
 
           // Get products from our local data for this demo
           const enhancedChats = await Promise.all(
@@ -130,29 +133,21 @@ export const useMessages = (chatId?: string) => {
 
       fetchChats();
 
-      // Subscribe to changes in chats - FIX: Proper filter format for Supabase
-      const chatSubscription = supabase
-        .channel('public:chats')
+      // Subscribe to changes in messages
+      const messageSubscription = supabase
+        .channel('messages_changes')
         .on('postgres_changes', { 
-          event: '*', 
+          event: 'INSERT', 
           schema: 'public', 
-          table: 'chats',
-          filter: `seller_id=eq.${user.id}`
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
         }, () => {
-          fetchChats();
-        })
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'chats',
-          filter: `buyer_id=eq.${user.id}`
-        }, () => {
-          fetchChats();
+          fetchChats(); // Refresh chats when receiving new messages
         })
         .subscribe();
 
       return () => {
-        supabase.removeChannel(chatSubscription);
+        supabase.removeChannel(messageSubscription);
       };
     }
   }, [user, loading, navigate, toast]);
@@ -164,6 +159,8 @@ export const useMessages = (chatId?: string) => {
     const loadMessages = async () => {
       setLoadingMessages(true);
       try {
+        console.log("Loading chat:", chatId);
+        
         // Get the current chat
         const { data: chatData, error: chatError } = await supabase
           .from('chats')
@@ -171,7 +168,12 @@ export const useMessages = (chatId?: string) => {
           .eq('id', chatId)
           .single();
 
-        if (chatError) throw chatError;
+        if (chatError) {
+          console.error("Error fetching chat:", chatError);
+          throw chatError;
+        }
+        
+        console.log("Chat data:", chatData);
         setCurrentChat(chatData as ChatType);
 
         // Find product from mock data
@@ -186,18 +188,26 @@ export const useMessages = (chatId?: string) => {
           .or(`sender_id.eq.${chatData.seller_id},sender_id.eq.${chatData.buyer_id}`)
           .order('created_at', { ascending: true });
 
-        if (messagesError) throw messagesError;
+        if (messagesError) {
+          console.error("Error fetching messages:", messagesError);
+          throw messagesError;
+        }
+        
+        console.log("Messages loaded:", messagesData?.length);
         setMessages(messagesData as MessageType[]);
 
         // Mark messages as read
-        await supabase
-          .from('messages')
-          .update({ read: true })
-          .eq('receiver_id', user.id)
-          .eq('product_id', chatData.product_id);
+        if (messagesData && messagesData.length > 0) {
+          await supabase
+            .from('messages')
+            .update({ read: true })
+            .eq('receiver_id', user.id)
+            .eq('product_id', chatData.product_id);
+        }
 
       } catch (error) {
         console.error("Error loading messages:", error);
+        setCurrentChat(null);
         toast({
           title: "Error loading conversation",
           description: "Please try again later",
@@ -210,34 +220,37 @@ export const useMessages = (chatId?: string) => {
 
     loadMessages();
 
-    // Subscribe to new messages - FIX: Use proper filter for current product ID
-    const messageSubscription = supabase
-      .channel(`messages-for-product-${currentChat?.product_id}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'messages',
-        filter: currentChat?.product_id ? `product_id=eq.${currentChat.product_id}` : undefined
-      }, (payload) => {
-        if (payload.new) {
-          setMessages(prev => [...prev, payload.new as MessageType]);
-          
-          // If message is for current user, mark as read
-          if (payload.new.receiver_id === user.id) {
-            supabase
-              .from('messages')
-              .update({ read: true })
-              .eq('id', payload.new.id);
+    // Subscribe to new messages
+    const productId = currentChat?.product_id;
+    if (productId) {
+      const messageSubscription = supabase
+        .channel(`messages-for-product-${productId}`)
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `product_id=eq.${productId}`
+        }, (payload) => {
+          if (payload.new) {
+            setMessages(prev => [...prev, payload.new as MessageType]);
+            
+            // If message is for current user, mark as read
+            if (payload.new.receiver_id === user.id) {
+              supabase
+                .from('messages')
+                .update({ read: true })
+                .eq('id', payload.new.id);
+            }
           }
-        }
-      })
-      .subscribe();
+        })
+        .subscribe();
 
-    return () => {
-      if (messageSubscription) {
-        supabase.removeChannel(messageSubscription);
-      }
-    };
+      return () => {
+        if (messageSubscription) {
+          supabase.removeChannel(messageSubscription);
+        }
+      };
+    }
   }, [chatId, user, currentChat?.product_id, toast]);
 
   const handleSendMessage = async () => {
