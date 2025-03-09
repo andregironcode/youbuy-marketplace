@@ -1,10 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { ProductCard } from "@/components/product/ProductCard";
 import { ProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pencil, Bookmark, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SellerListingsProps {
   products?: ProductType[];
@@ -60,7 +63,7 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
           images: item.image_urls || [],
           location: item.location,
           timeAgo: new Date(item.created_at).toLocaleDateString(),
-          status: item.product_status,
+          status: item.product_status as "available" | "reserved" | "sold", // Type assertion to fix the error
           createdAt: item.created_at,
           category: item.category,
           subcategory: item.subcategory,
@@ -85,26 +88,76 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
   
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
           <div key={i} className="space-y-3">
-            <Skeleton className="h-[200px] w-full rounded-md" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-[80px] w-full rounded-md" />
           </div>
         ))}
       </div>
     );
   }
 
+  // Custom format date function (DD/MM/YYYY)
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="space-y-4">
       {products.map(product => (
-        <ProductCard key={product.id} product={product} />
+        <Card key={product.id} className="p-4 relative">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <Checkbox id={`select-${product.id}`} aria-label={`Select ${product.title}`} />
+            </div>
+            <div className="flex-shrink-0">
+              <img 
+                src={product.image} 
+                alt={product.title} 
+                className="w-20 h-20 object-cover rounded"
+              />
+            </div>
+            <div className="flex-grow">
+              <div className="flex justify-between">
+                <div>
+                  <div className="text-xl font-bold">€{product.price.toFixed(0)}</div>
+                  <h3 className="font-medium">{product.title}</h3>
+                </div>
+                <div className="text-right space-y-1">
+                  <div>Published</div>
+                  <div className="text-sm text-muted-foreground">{formatDate(product.createdAt)}</div>
+                </div>
+              </div>
+              <div className="mt-2 flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  Modified {formatDate(product.createdAt)}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="h-9">
+                    Feature
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <ShoppingBag className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <Bookmark className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
       ))}
       
       {products.length === 0 && (
-        <div className="col-span-full py-10 text-center">
+        <div className="py-10 text-center">
           <p className="text-muted-foreground">No products listed yet</p>
         </div>
       )}

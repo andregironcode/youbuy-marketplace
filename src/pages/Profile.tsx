@@ -5,7 +5,6 @@ import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 import { SellerListings } from "@/components/seller/SellerListings";
 
 // Products Page Component
@@ -23,8 +22,8 @@ const ProductsPage = () => {
 
       <Tabs defaultValue="selling">
         <TabsList>
-          <TabsTrigger value="selling">SELLING</TabsTrigger>
-          <TabsTrigger value="sold">SOLD</TabsTrigger>
+          <TabsTrigger value="selling" className="text-youbuy data-[state=active]:text-youbuy font-medium">SELLING</TabsTrigger>
+          <TabsTrigger value="sold" className="font-medium">SOLD</TabsTrigger>
         </TabsList>
         <TabsContent value="selling" className="mt-6">
           <SellerListings userId={user?.id} />
