@@ -68,12 +68,13 @@ const Messages = () => {
                 .eq('id', otherUserId)
                 .single();
 
-              // Get product info
-              const { data: productData } = await supabase
-                .from('products')
-                .select('title, price, image_url')
-                .eq('id', chat.product_id)
-                .single();
+              // For local development, we'll use mock product data since we don't have a products table in Supabase
+              // In a real app, you would fetch this from your database
+              const productData = {
+                title: "Product Item",
+                price: 100,
+                image_url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+              };
 
               // Get last message
               const { data: lastMessageData } = await supabase
@@ -99,11 +100,11 @@ const Messages = () => {
                   name: profileData?.full_name || 'Unknown User',
                   avatar: profileData?.avatar_url || '',
                 },
-                product: productData ? {
+                product: {
                   title: productData.title || 'Unknown Product',
                   price: productData.price || 0,
                   image: productData.image_url || '',
-                } : undefined,
+                },
                 lastMessage: lastMessageData?.content,
                 unreadCount: count || 0,
               };
@@ -407,7 +408,7 @@ const Messages = () => {
                             <p className={`text-xs mt-1 text-right ${
                               isUserMessage ? 'text-white/80' : 'text-gray-500'
                             }`}>
-                              {formatMessageTime(message.createdAt)}
+                              {formatMessageTime(message.created_at)}
                             </p>
                           </div>
                         </div>
