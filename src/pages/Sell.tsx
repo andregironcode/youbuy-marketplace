@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +20,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
-// Step definition type
 type SellStep = 
   | "title" 
   | "category" 
@@ -33,7 +31,6 @@ type SellStep =
   | "promote";
 
 const Sell = () => {
-  // Basic product details
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -42,25 +39,20 @@ const Sell = () => {
   const [subcategory, setSubcategory] = useState("");
   const [subSubcategory, setSubSubcategory] = useState("");
   
-  // Image handling
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   
-  // Product specifications and variations
   const [variations, setVariations] = useState<ProductVariation[]>([]);
   const [specifications, setSpecifications] = useState<ProductSpecifications>({});
   
-  // Product status and availability
   const [productStatus, setProductStatus] = useState<'available' | 'reserved'>('available');
   const [reservedUserId, setReservedUserId] = useState("");
   const [reservationDays, setReservationDays] = useState("3");
   
-  // Bulk listing options
   const [showBulkListing, setShowBulkListing] = useState(false);
   const [isBulkListing, setIsBulkListing] = useState(false);
   const [bulkQuantity, setBulkQuantity] = useState("2");
   
-  // Shipping details
   const [weight, setWeight] = useState("");
   const [shippingOptions, setShippingOptions] = useState({
     inPersonMeetup: true,
@@ -68,11 +60,9 @@ const Sell = () => {
     shippingCost: 0
   });
   
-  // Promotion options
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [promotionLevel, setPromotionLevel] = useState<'none' | 'basic' | 'premium' | 'featured'>('none');
   
-  // Process state
   const [currentStep, setCurrentStep] = useState<SellStep>("title");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -80,7 +70,6 @@ const Sell = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Progress calculation
   const getStepProgress = () => {
     const steps: SellStep[] = ["title", "category", "details", "photos", "shipping", "location", "preview", "promote"];
     const currentIndex = steps.indexOf(currentStep);
@@ -97,7 +86,6 @@ const Sell = () => {
     const files = e.target.files;
     if (!files) return;
 
-    // Prevent adding more than 10 images
     if (images.length + files.length > 10) {
       toast({
         title: "Maximum 10 images allowed",
@@ -107,12 +95,11 @@ const Sell = () => {
       return;
     }
 
-    // Check each file for size (max 5MB)
     const validFiles: File[] = [];
     const invalidFiles: string[] = [];
     
     Array.from(files).forEach(file => {
-      if (file.size <= 5 * 1024 * 1024) { // 5MB in bytes
+      if (file.size <= 5 * 1024 * 1024) {
         validFiles.push(file);
       } else {
         invalidFiles.push(file.name);
@@ -131,14 +118,12 @@ const Sell = () => {
       const newImages = [...images, ...validFiles];
       setImages(newImages);
 
-      // Create preview URLs for the valid files
       const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
       setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
     }
   };
 
   const removeImage = (index: number) => {
-    // Release the object URL to avoid memory leaks
     URL.revokeObjectURL(imagePreviewUrls[index]);
     
     const newImages = [...images];
@@ -171,7 +156,6 @@ const Sell = () => {
       return;
     }
 
-    // Calculate how many listings we need to create
     const listingsToCreate = isBulkListing ? parseInt(bulkQuantity) || 1 : 1;
     
     if (listingsToCreate > 1 && variations.length > 0) {
@@ -186,10 +170,8 @@ const Sell = () => {
     setUploading(true);
     
     try {
-      // After successfully creating the listing, show promotion dialog
       setShowPromoteDialog(true);
       
-      // For now, just show a toast as per original functionality
       toast({
         title: "Listing created",
         description: isBulkListing 
@@ -211,7 +193,6 @@ const Sell = () => {
 
   const completePromotion = () => {
     setShowPromoteDialog(false);
-    // In a real implementation, this would apply the promotion and redirect to the listing
     
     if (promotionLevel !== 'none') {
       toast({
@@ -225,19 +206,18 @@ const Sell = () => {
       });
     }
     
-    // Reset the form and redirect to home (in a real implementation)
-    // window.location.href = "/";
+    window.location.href = "/";
   };
 
-  // Step validation functions
   const isTitleValid = title.length >= 5 && title.length <= 50;
   const isCategoryValid = category !== "";
-  const isDetailsValid = description.length >= 20 && parseFloat(price) > 0;
+  const isPriceValid = parseFloat(price) > 0;
+  const isDescriptionValid = description.length >= 20;
+  const isDetailsValid = isPriceValid;
   const isPhotosValid = images.length > 0;
   const isShippingValid = weight !== "";
   const isLocationValid = location !== "";
 
-  // Render functions for each step
   const renderTitleStep = () => (
     <Card>
       <CardHeader>
@@ -290,7 +270,6 @@ const Sell = () => {
         <div className="mb-4">
           <h3 className="text-sm font-medium mb-2">Suggested categories</h3>
           <div className="space-y-2">
-            {/* Suggested categories would be dynamically generated based on title */}
             <button 
               className="w-full flex items-center p-3 border rounded-md hover:border-youbuy text-left"
               onClick={() => {
@@ -408,7 +387,6 @@ const Sell = () => {
             </div>
           </div>
           
-          {/* Category-specific fields */}
           {category && (
             <div className="pt-2 border-t">
               <ProductFields 
@@ -423,7 +401,6 @@ const Sell = () => {
             </div>
           )}
           
-          {/* Bulk listing option */}
           <div className="flex items-center space-x-2 pt-4 border-t">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-medium">List multiple identical items</h3>
@@ -789,7 +766,6 @@ const Sell = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Product preview card */}
           <div className="border rounded-lg overflow-hidden">
             {imagePreviewUrls.length > 0 && (
               <div className="aspect-video relative">
@@ -836,7 +812,6 @@ const Sell = () => {
                         <span className="text-sm">{specifications.model}</span>
                       </div>
                     )}
-                    {/* Add more specifications as needed */}
                   </div>
                 </div>
               )}
@@ -878,7 +853,6 @@ const Sell = () => {
     </Card>
   );
 
-  // Promotion dialog
   const renderPromoteDialog = () => (
     <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
       <DialogContent className="sm:max-w-lg">
@@ -978,7 +952,6 @@ const Sell = () => {
     </Dialog>
   );
 
-  // Main render function
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -992,7 +965,6 @@ const Sell = () => {
             <Progress value={getStepProgress()} className="h-2" />
           </div>
           
-          {/* Step content */}
           {currentStep === "title" && renderTitleStep()}
           {currentStep === "category" && renderCategoryStep()}
           {currentStep === "details" && renderDetailsStep()}
@@ -1001,7 +973,6 @@ const Sell = () => {
           {currentStep === "location" && renderLocationStep()}
           {currentStep === "preview" && renderPreviewStep()}
           
-          {/* Promotion dialog */}
           {renderPromoteDialog()}
         </div>
       </main>
