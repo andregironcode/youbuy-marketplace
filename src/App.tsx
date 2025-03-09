@@ -30,7 +30,9 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/seller/:id" element={<SellerProfile />} />
             <Route path="/messages/*" element={<Messages />} />
-            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/category/:categoryId" element={<CategoryPage />} />
+            <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
+            <Route path="/category/:categoryId/:subcategoryId/:subSubcategoryId" element={<CategoryPage />} />
             <Route path="/sell" element={<Sell />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/notifications" element={<Notifications />} />
