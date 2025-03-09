@@ -4,7 +4,7 @@ export interface ProductType {
   description: string;
   price: number;
   image: string;
-  images?: string[]; // Added support for multiple images
+  images?: string[];
   location: string;
   coordinates?: {
     latitude: number;
@@ -13,35 +13,35 @@ export interface ProductType {
   timeAgo: string;
   isNew?: boolean;
   isFeatured?: boolean;
-  isPromoted?: boolean; // New field for promoted listings
-  promotionEndDate?: string; // When promotion ends
-  promotionLevel?: 'basic' | 'premium' | 'featured'; // Different promotion tiers
-  createdAt: string; // ISO date string
-  viewCount?: number; // Added for view tracking
-  likeCount?: number; // Added for like tracking
+  isPromoted?: boolean;
+  promotionEndDate?: string;
+  promotionLevel?: 'basic' | 'premium' | 'featured';
+  createdAt: string;
+  viewCount?: number;
+  likeCount?: number;
   seller: {
     id: string;
     name: string;
     avatar: string;
     joinedDate: string;
-    userId?: string; // Add userId for authenticated user reference
-    rating?: number; // Average seller rating
-    totalReviews?: number; // Total number of reviews
-    totalListings?: number; // Total published listings
-    totalSales?: number; // Total completed sales
-    totalPurchases?: number; // Total purchases made
-    totalShipments?: number; // Total shipments completed
-    businessAccount?: boolean; // Whether this is a business account
+    userId?: string;
+    rating?: number;
+    totalReviews?: number;
+    totalListings?: number;
+    totalSales?: number;
+    totalPurchases?: number;
+    totalShipments?: number;
+    businessAccount?: boolean;
   };
   category: string;
-  subcategory?: string; // Added explicit subcategory field
-  subSubcategory?: string; // Added explicit sub-subcategory field
+  subcategory?: string;
+  subSubcategory?: string;
   variations?: ProductVariation[];
   status?: 'available' | 'reserved' | 'sold';
-  reservedFor?: string; // User ID if reserved for a specific user
-  reservedUntil?: string; // ISO date string until when the product is reserved
-  specifications?: ProductSpecifications; // New field for category-specific attributes
-  weight?: string; // Weight range for shipping
+  reservedFor?: string;
+  reservedUntil?: string;
+  specifications?: ProductSpecifications;
+  weight?: string;
   dimensions?: {
     length: number;
     width: number;
@@ -49,7 +49,7 @@ export interface ProductType {
   };
   shippingOptions?: {
     inPersonMeetup: boolean;
-    platformShipping: boolean; // Changed from 'shipping' to 'platformShipping'
+    platformShipping: boolean;
     shippingCost?: number;
   };
 }
@@ -57,7 +57,7 @@ export interface ProductType {
 export interface ProductVariation {
   id: string;
   type: 'color' | 'size' | 'style' | 'material' | 'custom';
-  name: string; // For custom variation types
+  name: string;
   options: ProductVariationOption[];
   required?: boolean;
 }
@@ -66,37 +66,30 @@ export interface ProductVariationOption {
   id: string;
   value: string;
   image?: string;
-  additionalPrice?: number; // Extra cost for this option, if any
-  available: boolean; // Whether this is in stock
-  stockQuantity?: number; // Optional stock count
+  additionalPrice?: number;
+  available: boolean;
+  stockQuantity?: number;
 }
 
-// New interface for category-specific specifications
 export interface ProductSpecifications {
-  // General
   condition?: 'new' | 'like-new' | 'excellent' | 'good' | 'fair' | 'salvage';
   
-  // Electronics
   brand?: string;
   model?: string;
   
-  // Televisions
-  screenSize?: number; // in inches
+  screenSize?: number;
   resolution?: 'hd' | 'fullhd' | '4k' | '8k';
   smartTv?: 'none' | 'basic' | 'full';
   
-  // Mobile Phones & Tablets
-  storage?: string; // e.g., "128GB"
+  storage?: string;
   processor?: string;
   ram?: string;
   camera?: string;
   
-  // Computers & Laptops
   computerType?: 'desktop' | 'laptop' | 'tablet' | 'all-in-one';
   graphics?: string;
   operatingSystem?: string;
   
-  // Furniture
   material?: string;
   dimensions?: {
     length: number;
@@ -104,6 +97,40 @@ export interface ProductSpecifications {
     height: number;
   };
   
-  // Others - extensible with additional attributes as needed
   [key: string]: any;
+}
+
+export function convertToProductType(item: any, includeViews = false): ProductType {
+  const profileData = item.profiles && typeof item.profiles === 'object' ? item.profiles : null;
+  
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    price: parseFloat(item.price),
+    image: item.image_urls?.[0] || '/placeholder.svg',
+    images: item.image_urls || [],
+    location: item.location,
+    timeAgo: formatDistance(new Date(item.created_at), new Date(), { addSuffix: true }),
+    seller: {
+      id: item.seller_id,
+      name: profileData?.full_name || 'Unknown Seller',
+      avatar: profileData?.avatar_url || '/placeholder.svg',
+      joinedDate: item.created_at
+    },
+    category: item.category,
+    subcategory: item.subcategory || undefined,
+    subSubcategory: item.sub_subcategory || undefined,
+    viewCount: includeViews ? (item.view_count || 0) : undefined,
+    likeCount: item.like_count || 0,
+    createdAt: item.created_at,
+    status: item.product_status || 'available',
+    variations: item.variations || [],
+    specifications: item.specifications || {},
+    shippingOptions: {
+      inPersonMeetup: item.shipping_options?.inPersonMeetup || true,
+      platformShipping: item.shipping_options?.platformShipping || false,
+      shippingCost: item.shipping_options?.shippingCost || 0
+    }
+  };
 }

@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -6,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SellerListings } from "@/components/seller/SellerListings";
+import { DummyProductInserter } from "@/components/product/DummyProductInserter";
 
 // Products Page Component
 const ProductsPage = () => {
