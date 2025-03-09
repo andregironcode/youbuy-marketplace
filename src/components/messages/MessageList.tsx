@@ -49,14 +49,22 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
         return (
           <div 
             key={message.id}
-            className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} max-w-full`}
           >
-            <div className={`relative max-w-[70%] p-3 rounded-lg ${
+            <div className={`relative group max-w-[80%] p-3 rounded-lg ${
               isUserMessage 
                 ? 'bg-youbuy text-white rounded-tr-none' 
                 : 'bg-gray-100 rounded-tl-none'
             }`}>
-              <p>{message.content}</p>
+              {message.content.startsWith('image:') ? (
+                <img 
+                  src={message.content.substring(6)} 
+                  alt="Shared image" 
+                  className="rounded max-w-full h-auto"
+                />
+              ) : (
+                <p className="break-words">{message.content}</p>
+              )}
               <p className={`text-xs mt-1 text-right ${
                 isUserMessage ? 'text-white/80' : 'text-gray-500'
               }`}>
@@ -71,7 +79,7 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="absolute -right-8 top-0 text-gray-400 hover:text-destructive hover:bg-transparent"
+                      className="absolute -right-8 top-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-destructive hover:bg-transparent transition-opacity"
                       onClick={() => setMessageToDelete(message.id)}
                     >
                       <Trash2 className="h-4 w-4" />

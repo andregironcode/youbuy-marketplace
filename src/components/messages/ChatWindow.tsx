@@ -1,10 +1,10 @@
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, SendHorizonal } from "lucide-react";
+import { ArrowLeft, SendHorizonal, ImagePlus } from "lucide-react";
 import { MessageList } from "./MessageList";
 import { ProductInfoCard } from "./ProductInfoCard";
 import { ChatType, MessageType } from "@/types/message";
@@ -17,6 +17,7 @@ interface ChatWindowProps {
   setNewMessage: (message: string) => void;
   handleSendMessage: () => void;
   handleDeleteMessage?: (messageId: string) => void;
+  handleImageUpload?: (file: File) => void;
   sendingMessage: boolean;
   loading: boolean;
 }
@@ -29,16 +30,31 @@ export const ChatWindow = ({
   setNewMessage,
   handleSendMessage,
   handleDeleteMessage,
+  handleImageUpload,
   sendingMessage,
   loading
 }: ChatWindowProps) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Scroll to bottom of messages whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0 && handleImageUpload) {
+      handleImageUpload(files[0]);
+      // Reset the input to allow uploading the same file again
+      e.target.value = '';
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   if (loading) {
     return (
@@ -61,9 +77,9 @@ export const ChatWindow = ({
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <Avatar className="h-10 w-10 mr-3">
-          <AvatarImage src={currentChat?.otherUser?.avatar} />
+          <AvatarImage src={currentProduct?.image} />
           <AvatarFallback>
-            {currentChat?.otherUser?.name.substring(0, 2) || '??'}
+            {currentProduct?.title?.substring(0, 2) || '??'}
           </AvatarFallback>
         </Avatar>
         <div>
@@ -80,7 +96,7 @@ export const ChatWindow = ({
       <ProductInfoCard product={currentProduct} />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4 overflow-x-hidden">
         <MessageList 
           messages={messages} 
           onDeleteMessage={handleDeleteMessage}
@@ -103,13 +119,31 @@ export const ChatWindow = ({
               }
             }}
           />
-          <Button 
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sendingMessage}
-            className="bg-youbuy hover:bg-youbuy-dark self-end h-[45px] px-4"
-          >
-            <SendHorizonal className="h-5 w-5" />
-          </Button>
+          <div className="flex flex-col space-y-2 self-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={triggerFileInput}
+            >
+              <ImagePlus className="h-4 w-4" />
+            </Button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleFileChange}
+            />
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() || sendingMessage}
+              className="bg-youbuy hover:bg-youbuy-dark h-9 w-9 p-0"
+            >
+              <SendHorizonal className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </>

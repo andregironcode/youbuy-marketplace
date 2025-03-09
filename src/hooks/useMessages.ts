@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -268,6 +267,61 @@ export const useMessages = (chatId?: string) => {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!user || !currentChat) return;
+    
+    setSendingMessage(true);
+    try {
+      // For now, since we don't have actual file storage setup,
+      // we'll use a URL that simulates an image upload by using an appropriate public image URL
+      // In a real app, you would upload to Supabase Storage
+      
+      // Create a mock image URL - in production this would be the actual upload URL
+      const mockImageUrl = URL.createObjectURL(file);
+      
+      // In a real app, you'd do something like:
+      // const { data, error } = await supabase.storage
+      //   .from('message-images')
+      //   .upload(`${user.id}/${Date.now()}_${file.name}`, file);
+      
+      // if (error) throw error;
+      // const imageUrl = supabase.storage.from('message-images').getPublicUrl(data.path).data.publicUrl;
+      
+      const receiverId = currentChat.seller_id === user.id 
+        ? currentChat.buyer_id 
+        : currentChat.seller_id;
+      
+      // Insert message with image URL
+      const { error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          product_id: currentChat.product_id,
+          // Prefixing with "image:" to distinguish image messages
+          content: `image:${mockImageUrl}`,
+        });
+        
+      if (msgError) throw msgError;
+      
+      // Update last_message_at in chat
+      await supabase
+        .from('chats')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', currentChat.id);
+      
+    } catch (error) {
+      console.error("Error sending image:", error);
+      toast({
+        title: "Failed to send image",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   const handleDeleteMessage = async (messageId: string) => {
     if (!user) return;
     
@@ -328,6 +382,7 @@ export const useMessages = (chatId?: string) => {
     loadingChats,
     loadingMessages,
     handleSendMessage,
-    handleDeleteMessage
+    handleDeleteMessage,
+    handleImageUpload
   };
 };
