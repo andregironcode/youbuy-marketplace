@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const categories = [
   { id: "all", name: "All" },
@@ -27,7 +27,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
 
   return (
     <div className="container py-4">
-      <ScrollArea className="w-full" orientation="horizontal">
+      <ScrollArea className="w-full">
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
           <TabsList className={`w-full justify-start ${isMobile ? 'h-auto' : ''}`}>
             {categories.map((category) => (
@@ -41,6 +41,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
             ))}
           </TabsList>
         </Tabs>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   );

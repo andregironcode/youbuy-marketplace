@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { CategoryNav } from "@/components/category/CategoryNav";
 import { ProductCard } from "@/components/product/ProductCard";
 import { products } from "@/data/products";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
