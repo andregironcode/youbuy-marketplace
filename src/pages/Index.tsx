@@ -6,6 +6,20 @@ import { ShoppingBag } from "lucide-react";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 import { ProductSection } from "@/components/product/ProductSection";
 
+// Add CSS to hide scrollbars for the carousel
+const scrollbarHideStyles = `
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+`;
+
 const Index = () => {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
@@ -15,13 +29,13 @@ const Index = () => {
   // Get recently added products (sorted by creation date)
   const recentlyAddedProducts = [...products]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+    .slice(0, 8); // Increased from 4 to 8 for better carousel
   
   // For "For You" section - in a real app, this would be personalized
   // Here we're just showing a random selection
   const forYouProducts = [...products]
     .sort(() => 0.5 - Math.random())
-    .slice(0, 4);
+    .slice(0, 8); // Increased from 4 to 8 for better carousel
 
   const handleCategoryClick = () => {
     setCategoryDialogOpen(true);
@@ -29,6 +43,9 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Add the scrollbar hiding styles */}
+      <style>{scrollbarHideStyles}</style>
+      
       <Navbar onCategoryClick={handleCategoryClick} />
       
       <main className="flex-1 container py-6">
