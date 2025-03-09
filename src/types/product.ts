@@ -19,6 +19,7 @@ export interface ProductType {
     name: string;
     avatar: string;
     joinedDate: string;
+    userId?: string; // Add userId for authenticated user reference
   };
   category: string;
 }

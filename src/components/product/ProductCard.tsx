@@ -1,10 +1,11 @@
 
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
+import { MessageButton } from "./MessageButton";
 
 interface ProductCardProps {
   product: ProductType;
@@ -51,6 +52,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <span>{product.location}</span>
           <span className="mx-1">•</span>
           <span>{product.timeAgo}</span>
+        </div>
+        <div className="mt-3">
+          <MessageButton product={product} size="sm" fullWidth />
         </div>
       </CardContent>
     </Card>

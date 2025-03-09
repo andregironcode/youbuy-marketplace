@@ -16,12 +16,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
   const product = products.find(p => p.id === id);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
@@ -34,10 +42,84 @@ const ProductDetail = () => {
   };
 
   const handleContactSeller = () => {
-    toast({
-      title: "Feature coming soon",
-      description: "Messaging functionality will be available in the next update",
-    });
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to message the seller",
+      });
+      return;
+    }
+    setIsMessageDialogOpen(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user || !product) return;
+    
+    setIsSending(true);
+    
+    try {
+      // Check if chat already exists
+      const { data: existingChats } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('product_id', product.id)
+        .eq('buyer_id', user.id)
+        .eq('seller_id', product.seller.userId)
+        .single();
+      
+      let chatId = existingChats?.id;
+      
+      // If chat doesn't exist, create one
+      if (!chatId) {
+        const { data: newChat, error: chatError } = await supabase
+          .from('chats')
+          .insert({
+            product_id: product.id,
+            seller_id: product.seller.userId,
+            buyer_id: user.id
+          })
+          .select('id')
+          .single();
+          
+        if (chatError) throw chatError;
+        chatId = newChat.id;
+      }
+      
+      // Insert message
+      const { error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: product.seller.userId,
+          product_id: product.id,
+          content: message,
+        });
+        
+      if (msgError) throw msgError;
+      
+      // Update last_message_at in chat
+      await supabase
+        .from('chats')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', chatId);
+      
+      toast({
+        title: "Message sent!",
+        description: "The seller will be notified of your message."
+      });
+      
+      setMessage("");
+      setIsMessageDialogOpen(false);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Failed to send message",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (!product) {
@@ -157,6 +239,44 @@ const ProductDetail = () => {
           </div>
         </div>
       </main>
+
+      {/* Message Dialog */}
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Message about: {product.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center space-x-4 mb-4">
+            <img 
+              src={product.image} 
+              alt={product.title} 
+              className="w-16 h-16 object-cover rounded"
+            />
+            <div>
+              <p className="font-medium">{product.title}</p>
+              <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
+            </div>
+          </div>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message here..."
+            className="min-h-[100px]"
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isSending}
+              className="bg-youbuy hover:bg-youbuy-dark"
+            >
+              {isSending ? "Sending..." : "Send Message"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
