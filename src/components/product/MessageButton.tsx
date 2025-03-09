@@ -51,11 +51,6 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
         sellerId = product.seller.userId;
       } else if (product.seller?.id) {
         sellerId = product.seller.id;
-      } else if (product.seller_id) {
-        sellerId = product.seller_id;
-      } else if (product.profiles?.id) {
-        // For Supabase direct queries that might include profiles
-        sellerId = product.profiles.id;
       }
       
       // Log for debugging
@@ -163,7 +158,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
           </DialogHeader>
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={product.image || product.image_urls?.[0]} 
+              src={product.image} 
               alt={product.title} 
               className="w-16 h-16 object-cover rounded"
             />
