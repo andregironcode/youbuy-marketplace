@@ -2,16 +2,19 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell, LogOut, PlusCircle, MessageCircle } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UnreadBadge } from "@/components/messages/UnreadBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -23,6 +26,56 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
     }
     return user?.email?.charAt(0).toUpperCase() || "U";
   };
+
+  // Fetch unread messages count
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .eq('read', false);
+        
+        if (error) throw error;
+        setUnreadCount(count || 0);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('public:messages')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages',
+        filter: `receiver_id=eq.${user.id}`
+      }, () => {
+        fetchUnreadCount();
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'messages',
+        filter: `receiver_id=eq.${user.id}`
+      }, () => {
+        fetchUnreadCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -72,8 +125,9 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
               {user ? (
                 <div className="flex items-center gap-1">
                   <Link to="/messages">
-                    <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Messages">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Messages">
                       <MessageCircle className="h-5 w-5" />
+                      <UnreadBadge count={unreadCount} />
                     </Button>
                   </Link>
                   <Link to="/profile">
@@ -113,8 +167,11 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
             </Link>
             {user ? (
               <>
-                <Link to="/messages" className="py-2 px-3 hover:bg-muted rounded-md">
+                <Link to="/messages" className="py-2 px-3 hover:bg-muted rounded-md flex justify-between items-center">
                   Messages
+                  {unreadCount > 0 && (
+                    <Badge className="bg-youbuy">{unreadCount}</Badge>
+                  )}
                 </Link>
                 <Link to="/profile" className="py-2 px-3 hover:bg-muted rounded-md">
                   Profile
@@ -123,7 +180,6 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
                   onClick={signOut}
                   className="flex items-center py-2 px-3 hover:bg-muted rounded-md text-left"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </button>
               </>
