@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ProductType } from "@/types/product";
+import { ProductType, ProductSpecifications } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info, ArrowUpToLine, X } from "lucide-react";
+import { ProductFields } from "@/components/product/ProductFields";
 
 export const ProductEdit = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +40,9 @@ export const ProductEdit = () => {
   const [width, setWidth] = useState("");
   const [depth, setDepth] = useState("");
   const [height, setHeight] = useState("");
+  
+  // Specifications
+  const [specifications, setSpecifications] = useState<ProductSpecifications>({});
   
   useEffect(() => {
     if (!user) {
@@ -85,6 +90,12 @@ export const ProductEdit = () => {
           return;
         }
         
+        // Safely parse specifications - ensure it's an object
+        let parsedSpecifications: ProductSpecifications = {};
+        if (data.specifications && typeof data.specifications === 'object' && !Array.isArray(data.specifications)) {
+          parsedSpecifications = data.specifications as ProductSpecifications;
+        }
+        
         // Transform database product to match ProductType
         const transformedProduct: ProductType = {
           id: data.id,
@@ -99,7 +110,7 @@ export const ProductEdit = () => {
           createdAt: data.created_at,
           category: data.category,
           subcategory: data.subcategory,
-          specifications: data.specifications || {},
+          specifications: parsedSpecifications,
           seller: {
             id: data.seller_id,
             name: "You",
@@ -109,6 +120,7 @@ export const ProductEdit = () => {
         };
         
         setProduct(transformedProduct);
+        setSpecifications(parsedSpecifications);
         
         // Set form values
         setTitle(transformedProduct.title);
@@ -118,13 +130,13 @@ export const ProductEdit = () => {
         setImages(transformedProduct.images || []);
         
         // Set specifications if available
-        if (transformedProduct.specifications) {
-          setCondition(transformedProduct.specifications.condition || "");
+        if (parsedSpecifications) {
+          setCondition(parsedSpecifications.condition || "");
           
-          if (transformedProduct.specifications.dimensions) {
-            setWidth(transformedProduct.specifications.dimensions.width?.toString() || "");
-            setDepth(transformedProduct.specifications.dimensions.length?.toString() || "");
-            setHeight(transformedProduct.specifications.dimensions.height?.toString() || "");
+          if (parsedSpecifications.dimensions) {
+            setWidth(parsedSpecifications.dimensions.width?.toString() || "");
+            setDepth(parsedSpecifications.dimensions.length?.toString() || "");
+            setHeight(parsedSpecifications.dimensions.height?.toString() || "");
           }
         }
       } catch (error) {
@@ -141,6 +153,11 @@ export const ProductEdit = () => {
     
     fetchProduct();
   }, [id, user, navigate, toast]);
+  
+  // Handle specifications change from ProductFields component
+  const handleSpecificationsChange = (newSpecifications: ProductSpecifications) => {
+    setSpecifications(newSpecifications);
+  };
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -246,18 +263,15 @@ export const ProductEdit = () => {
       // Combine existing and new images
       const allImageUrls = [...images, ...newUploadedImageUrls];
       
-      // Calculate dimensions object
-      const dimensions = {
-        width: width ? parseFloat(width) : undefined,
-        length: depth ? parseFloat(depth) : undefined,
-        height: height ? parseFloat(height) : undefined
-      };
-      
-      // Update specifications
+      // Update specifications with dimensions
       const updatedSpecifications = {
-        ...product.specifications,
+        ...specifications,
         condition,
-        dimensions
+        dimensions: {
+          width: width ? parseFloat(width) : undefined,
+          length: depth ? parseFloat(depth) : undefined,
+          height: height ? parseFloat(height) : undefined
+        }
       };
       
       const { error } = await supabase
