@@ -22,6 +22,7 @@ export const products: ProductType[] = [
       name: "Ahmed",
       avatar: "https://i.pravatar.cc/150?img=1",
       joinedDate: "Jan 2022",
+      userId: "seller-001" // Added userId for the seller
     },
     category: "electronics"
   },
@@ -43,6 +44,7 @@ export const products: ProductType[] = [
       name: "Sarah",
       avatar: "https://i.pravatar.cc/150?img=5",
       joinedDate: "Mar 2021",
+      userId: "seller-002" // Added userId for the seller
     },
     category: "furniture"
   },
@@ -66,6 +68,7 @@ export const products: ProductType[] = [
       name: "Michael",
       avatar: "https://i.pravatar.cc/150?img=8",
       joinedDate: "Dec 2021",
+      userId: "seller-003" // Added userId for the seller
     },
     category: "electronics"
   },
@@ -88,6 +91,7 @@ export const products: ProductType[] = [
       name: "Fatima",
       avatar: "https://i.pravatar.cc/150?img=9",
       joinedDate: "Aug 2020",
+      userId: "seller-004" // Added userId for the seller
     },
     category: "electronics"
   },
@@ -110,6 +114,7 @@ export const products: ProductType[] = [
       name: "Omar",
       avatar: "https://i.pravatar.cc/150?img=3",
       joinedDate: "Feb 2023",
+      userId: "seller-005" // Added userId for the seller
     },
     category: "electronics"
   },
@@ -131,6 +136,7 @@ export const products: ProductType[] = [
       name: "Jason",
       avatar: "https://i.pravatar.cc/150?img=4",
       joinedDate: "Apr 2022",
+      userId: "seller-006" // Added userId for the seller
     },
     category: "clothing"
   }
