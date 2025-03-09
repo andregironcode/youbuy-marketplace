@@ -23,7 +23,8 @@ const Messages = () => {
     handleSendMessage,
     handleDeleteMessage,
     handleImageUpload,
-    loadChatById
+    loadChatById,
+    fetchChats
   } = useMessages(chatId);
 
   // Force load the chat when the component mounts or chatId changes

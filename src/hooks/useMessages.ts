@@ -86,21 +86,19 @@ export const useMessages = (chatId?: string) => {
           const { data: lastMessageData } = await supabase
             .from('messages')
             .select('content, created_at')
-            .eq('chat_id', chat.id)
+            .eq('product_id', chat.product_id)
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
-          // Get unread count - Fix for TypeScript deep instantiation error
-          // Using a simpler approach that doesn't cause type recursion
+          // Get unread count
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
-            .match({ 
-              receiver_id: user.id, 
-              read: false, 
-              chat_id: chat.id 
-            });
+            .eq('receiver_id', user.id)
+            .eq('read', false)
+            .eq('product_id', chat.product_id);
 
           return {
             ...chat,
@@ -203,11 +201,12 @@ export const useMessages = (chatId?: string) => {
       setCurrentChat(enhancedChatData);
       setCurrentProduct(productData);
       
-      // Get messages
+      // Get messages for this chat between these two users
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .eq('chat_id', id)
+        .eq('product_id', chatData.product_id)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
       if (messagesError) {
@@ -224,7 +223,7 @@ export const useMessages = (chatId?: string) => {
           .from('messages')
           .update({ read: true })
           .eq('receiver_id', user.id)
-          .eq('chat_id', id);
+          .eq('product_id', chatData.product_id);
       }
 
     } catch (error) {
@@ -277,28 +276,37 @@ export const useMessages = (chatId?: string) => {
 
   // Subscribe to new messages
   useEffect(() => {
-    if (!user || !chatId) return;
+    if (!user || !currentChat) return;
     
-    console.log("Setting up message subscription for chat:", chatId);
+    console.log("Setting up message subscription for chat:", currentChat.id);
+    
+    // Determine the other user ID based on current chat
+    const otherUserId = currentChat.seller_id === user.id 
+      ? currentChat.buyer_id 
+      : currentChat.seller_id;
     
     const messageSubscription = supabase
-      .channel(`chat-messages-${chatId}`)
+      .channel(`chat-messages-${currentChat.id}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'messages',
-        filter: `chat_id=eq.${chatId}`
+        filter: `product_id=eq.${currentChat.product_id}`
       }, (payload) => {
-        console.log("New message received:", payload.new);
-        if (payload.new) {
-          setMessages(prev => [...prev, payload.new as MessageType]);
+        const newMessage = payload.new as MessageType;
+        
+        // Only add message if it's between these two users
+        if ((newMessage.sender_id === user.id && newMessage.receiver_id === otherUserId) || 
+            (newMessage.sender_id === otherUserId && newMessage.receiver_id === user.id)) {
+          console.log("New message received:", newMessage);
+          setMessages(prev => [...prev, newMessage]);
           
           // If message is for current user, mark as read
-          if (payload.new.receiver_id === user.id) {
+          if (newMessage.receiver_id === user.id) {
             supabase
               .from('messages')
               .update({ read: true })
-              .eq('id', payload.new.id);
+              .eq('id', newMessage.id);
           }
         }
       })
@@ -307,7 +315,7 @@ export const useMessages = (chatId?: string) => {
     return () => {
       supabase.removeChannel(messageSubscription);
     };
-  }, [chatId, user]);
+  }, [currentChat, user]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !currentChat) return;
@@ -324,7 +332,6 @@ export const useMessages = (chatId?: string) => {
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
-          chat_id: currentChat.id,
           product_id: currentChat.product_id,
           content: newMessage,
         });
@@ -368,7 +375,6 @@ export const useMessages = (chatId?: string) => {
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
-          chat_id: currentChat.id,
           product_id: currentChat.product_id,
           // Prefixing with "image:" to distinguish image messages
           content: `image:${mockImageUrl}`,
