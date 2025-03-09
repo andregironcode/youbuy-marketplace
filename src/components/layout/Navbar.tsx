@@ -27,7 +27,7 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <div className="mr-4 flex">
+        <div className="mr-2 md:mr-4 flex">
           <Link to="/" className="flex items-center space-x-2">
             <ShoppingBag className="h-6 w-6 text-youbuy" />
             <span className="font-bold text-xl hidden sm:inline-block">YouBuy</span>
@@ -36,61 +36,62 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
 
         <Button 
           variant="ghost" 
-          size="icon"
-          className="mr-2"
+          size={isMobile ? "sm" : "default"}
+          className="mr-1 md:mr-2"
           onClick={onCategoryClick}
         >
-          <Menu className="h-5 w-5" />Categories
+          <Menu className="h-4 w-4 mr-1" />
+          <span className={isMobile ? "text-xs" : ""}>Categories</span>
         </Button>
 
-        <div className="flex-1 mx-2">
+        <div className="flex-1 mx-1 md:mx-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search products..."
-              className="w-full pl-8 bg-muted"
+              className="w-full pl-8 bg-muted text-sm h-9"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-2">
+        <div className="flex items-center justify-end space-x-1 md:space-x-2">
           {isMobile ? (
             <>
-              <Button variant="ghost" size="icon" className="mr-2" onClick={toggleMobileMenu}>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleMobileMenu}>
                 <Menu className="h-5 w-5" />
               </Button>
             </>
           ) : (
             <>
               <Link to="/notifications">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="h-9 w-9">
                   <Bell className="h-5 w-5" />
                 </Button>
               </Link>
               {user ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Link to="/profile">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.user_metadata?.avatar_url} />
                       <AvatarFallback>{getInitials()}</AvatarFallback>
                     </Avatar>
                   </Link>
-                  <Button variant="ghost" size="icon" onClick={signOut}>
-                    <LogOut className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut}>
+                    <LogOut className="h-4 w-4" />
                   </Button>
                 </div>
               ) : (
                 <Link to="/auth">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
                     <User className="h-5 w-5" />
                   </Button>
                 </Link>
               )}
               <Link to="/sell">
-                <Button className="bg-youbuy hover:bg-youbuy-dark">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Sell an item
+                <Button className="bg-youbuy hover:bg-youbuy-dark h-9 text-sm">
+                  <PlusCircle className="mr-1 h-4 w-4" />
+                  Sell
                 </Button>
               </Link>
             </>
