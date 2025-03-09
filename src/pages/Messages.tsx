@@ -6,6 +6,7 @@ import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 
 const Messages = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -21,8 +22,17 @@ const Messages = () => {
     loadingMessages,
     handleSendMessage,
     handleDeleteMessage,
-    handleImageUpload
+    handleImageUpload,
+    loadChatById
   } = useMessages(chatId);
+
+  // Force load the chat when the component mounts or chatId changes
+  useEffect(() => {
+    if (chatId) {
+      console.log("Messages page: Explicitly loading chat ID:", chatId);
+      loadChatById(chatId);
+    }
+  }, [chatId, loadChatById]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -72,8 +82,8 @@ const Messages = () => {
                 </div>
               ) : !currentChat ? (
                 <div className="flex flex-col justify-center items-center h-full p-4 text-center">
-                  <p className="text-muted-foreground mb-2">Conversation not found</p>
-                  <p className="text-sm">The conversation you're looking for doesn't exist or you don't have access to it</p>
+                  <p className="text-muted-foreground mb-2">Chat is loading or could not be found</p>
+                  <p className="text-sm">Please try refreshing if this persists. Chat ID: {chatId}</p>
                 </div>
               ) : (
                 <ChatWindow 
