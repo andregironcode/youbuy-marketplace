@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, StarHalf, MessageCircle, Edit, Check, X } from "lucide-react";
+import { Star, StarHalf, MessageCircle, Edit, Check, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +49,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
-  // Fetch reviews for this seller
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
@@ -62,7 +60,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
 
       if (reviewsError) throw reviewsError;
 
-      // Fetch reviewer profiles for each review
       const reviewerIds = reviewsData.map((review) => review.reviewer_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
@@ -71,7 +68,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
 
       if (profilesError) throw profilesError;
 
-      // Combine reviews with profile data
       const reviewsWithProfiles = reviewsData.map((review) => {
         const reviewer = profilesData.find((profile) => profile.id === review.reviewer_id);
         return { ...review, reviewer };
@@ -79,7 +75,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
 
       setReviews(reviewsWithProfiles);
 
-      // Calculate average rating
       if (reviewsWithProfiles.length > 0) {
         const total = reviewsWithProfiles.reduce((sum, review) => sum + review.rating, 0);
         setAverageRating(total / reviewsWithProfiles.length);
@@ -87,7 +82,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
         setAverageRating(null);
       }
 
-      // Check if the current user has already submitted a review
       if (user) {
         const userReview = reviewsWithProfiles.find(
           (review) => review.reviewer_id === user.id
@@ -127,7 +121,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
 
     try {
       if (userReview) {
-        // Update existing review
         const { error } = await supabase
           .from("seller_reviews")
           .update({
@@ -143,7 +136,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
           description: "Your review has been updated successfully.",
         });
       } else {
-        // Create new review
         const { error } = await supabase.from("seller_reviews").insert({
           reviewer_id: user.id,
           seller_id: sellerId,
@@ -159,7 +151,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
         });
       }
 
-      // Refresh reviews
       await fetchReviews();
       setIsReviewDialogOpen(false);
     } catch (error) {
@@ -382,7 +373,6 @@ export const SellerReviews = ({ sellerId, sellerName }: SellerReviewsProps) => {
         </>
       )}
 
-      {/* Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
