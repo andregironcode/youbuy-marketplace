@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 // Step definition type
 type SellStep = 
@@ -55,6 +56,7 @@ const Sell = () => {
   const [reservationDays, setReservationDays] = useState("3");
   
   // Bulk listing options
+  const [showBulkListing, setShowBulkListing] = useState(false);
   const [isBulkListing, setIsBulkListing] = useState(false);
   const [bulkQuantity, setBulkQuantity] = useState("2");
   
@@ -423,36 +425,55 @@ const Sell = () => {
           
           {/* Bulk listing option */}
           <div className="flex items-center space-x-2 pt-4 border-t">
-            <Switch 
-              id="bulk-listing"
-              checked={isBulkListing}
-              onCheckedChange={setIsBulkListing}
-            />
-            <div className="grid gap-1.5">
-              <Label htmlFor="bulk-listing">List multiple identical items</Label>
-              <p className="text-sm text-muted-foreground">
-                Create multiple listings for identical items
-              </p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-medium">List multiple identical items</h3>
+              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Premium</Badge>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowBulkListing(!showBulkListing)}
+              className="ml-auto"
+            >
+              {showBulkListing ? "Hide" : "Show"}
+            </Button>
           </div>
           
-          {isBulkListing && (
-            <div className="pl-8">
-              <div className="space-y-2">
-                <Label htmlFor="bulkQuantity">Number of items</Label>
-                <Input 
-                  id="bulkQuantity" 
-                  type="number" 
-                  value={bulkQuantity} 
-                  onChange={(e) => setBulkQuantity(e.target.value)}
-                  min="2"
-                  max="100"
-                  className="w-24"
-                />
+          {showBulkListing && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800">
+              <div className="flex items-start gap-2 mb-3">
+                <Info className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                <p className="text-sm">Bulk listing is a premium feature that allows you to list multiple identical items at once.</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Each item will be listed separately
-              </p>
+              
+              <div className="flex items-center space-x-2 ml-6">
+                <Switch 
+                  id="bulk-listing"
+                  checked={isBulkListing}
+                  onCheckedChange={setIsBulkListing}
+                />
+                <Label htmlFor="bulk-listing">Enable bulk listing</Label>
+              </div>
+              
+              {isBulkListing && (
+                <div className="mt-3 ml-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="bulkQuantity">Number of items</Label>
+                    <Input 
+                      id="bulkQuantity" 
+                      type="number" 
+                      value={bulkQuantity} 
+                      onChange={(e) => setBulkQuantity(e.target.value)}
+                      min="2"
+                      max="100"
+                      className="w-24"
+                    />
+                  </div>
+                  <p className="text-xs text-amber-700 mt-2">
+                    Each item will be listed separately
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
