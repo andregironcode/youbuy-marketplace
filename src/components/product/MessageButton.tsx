@@ -13,9 +13,10 @@ interface MessageButtonProps {
   product: ProductType;
   size?: "sm" | "md";
   fullWidth?: boolean;
+  id?: string;
 }
 
-export const MessageButton = ({ product, size = "md", fullWidth = false }: MessageButtonProps) => {
+export const MessageButton = ({ product, size = "md", fullWidth = false, id }: MessageButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -116,6 +117,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false }: Messa
   return (
     <>
       <Button
+        id={id}
         variant="outline"
         className={`${buttonClass} ${fullWidth ? 'w-full' : ''}`}
         onClick={handleClick}

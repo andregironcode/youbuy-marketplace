@@ -15,7 +15,7 @@ import { SellerReviews } from "@/components/product/SellerReviews";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useFavorites } from "@/hooks/useFavorites";
-import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar } from "lucide-react";
+import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar, MessageCircle, ShoppingBag } from "lucide-react";
 import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -296,11 +296,48 @@ const ProductDetail = () => {
                       View profile
                     </Link>
                   </Button>
-                  <MessageButton
-                    product={product}
-                    size="md"
-                    fullWidth={true}
-                  />
+                  
+                  {/* More prominent message button */}
+                  <Button
+                    variant="default"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      if (!user) {
+                        toast({
+                          title: "Sign in required",
+                          description: "Please sign in to message the seller",
+                        });
+                        return;
+                      }
+                      // Use the existing MessageButton component's dialog functionality
+                      document.getElementById("message-button-trigger")?.click();
+                    }}
+                  >
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Message Seller
+                  </Button>
+                  
+                  {/* Buy now button - even more prominent */}
+                  <Button 
+                    className="w-full bg-youbuy hover:bg-youbuy-dark text-white mt-2 py-6 text-lg font-semibold"
+                    disabled={
+                      product.status === 'sold' || 
+                      product.status === 'reserved'
+                    }
+                  >
+                    <ShoppingBag className="mr-2 h-5 w-5" />
+                    Buy Now
+                  </Button>
+                  
+                  {/* Hidden message button to trigger the dialog */}
+                  <div className="hidden">
+                    <MessageButton
+                      id="message-button-trigger"
+                      product={product}
+                      size="md"
+                      fullWidth={true}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
