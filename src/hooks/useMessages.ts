@@ -92,13 +92,15 @@ export const useMessages = (chatId?: string) => {
             .limit(1)
             .single();
 
-          // Get unread count
+          // Get unread count - simplified query to avoid TS error
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', user.id)
-            .eq('read', false)
-            .eq('product_id', chat.product_id);
+            .match({
+              receiver_id: user.id,
+              read: false,
+              product_id: chat.product_id
+            });
 
           return {
             ...chat,
@@ -131,12 +133,11 @@ export const useMessages = (chatId?: string) => {
   const loadChatById = useCallback(async (id: string) => {
     if (!user) return;
     
+    console.log("loadChatById called with ID:", id);
     setLoadingMessages(true);
     setCurrentChat(null); // Reset current chat while loading
     
     try {
-      console.log("Loading chat by ID:", id);
-      
       // Get the current chat
       const { data: chatData, error: chatError } = await supabase
         .from('chats')
@@ -159,11 +160,13 @@ export const useMessages = (chatId?: string) => {
           description: "You don't have permission to view this conversation",
           variant: "destructive",
         });
+        navigate('/messages');
         return;
       }
       
       // Find product from mock data
       const productData = products.find(p => p.id === chatData.product_id);
+      setCurrentProduct(productData);
       
       // Determine if user is buyer or seller
       const isUserSeller = chatData.seller_id === user.id;
@@ -199,14 +202,14 @@ export const useMessages = (chatId?: string) => {
       };
       
       setCurrentChat(enhancedChatData);
-      setCurrentProduct(productData);
       
-      // Get messages for this chat between these two users
+      // Get messages for this chat between these two users - simplified query to avoid TS depth error
+      const queryCondition = `and(product_id.eq.${chatData.product_id},or(and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})))`;
+      
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .eq('product_id', chatData.product_id)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+        .or(queryCondition)
         .order('created_at', { ascending: true });
 
       if (messagesError) {
@@ -219,11 +222,20 @@ export const useMessages = (chatId?: string) => {
 
       // Mark messages as read
       if (messagesData && messagesData.length > 0) {
-        await supabase
-          .from('messages')
-          .update({ read: true })
-          .eq('receiver_id', user.id)
-          .eq('product_id', chatData.product_id);
+        const unreadMessages = messagesData.filter(msg => 
+          msg.receiver_id === user.id && !msg.read
+        );
+        
+        if (unreadMessages.length > 0) {
+          await supabase
+            .from('messages')
+            .update({ read: true })
+            .match({ 
+              receiver_id: user.id,
+              product_id: chatData.product_id,
+              read: false
+            });
+        }
       }
 
     } catch (error) {
@@ -233,10 +245,11 @@ export const useMessages = (chatId?: string) => {
         description: "Please try again later",
         variant: "destructive",
       });
+      navigate('/messages');
     } finally {
       setLoadingMessages(false);
     }
-  }, [user, toast]);
+  }, [user, toast, navigate]);
 
   // Fetch chats on initial load
   useEffect(() => {
@@ -270,6 +283,7 @@ export const useMessages = (chatId?: string) => {
   // Fetch messages for current chat and set product info
   useEffect(() => {
     if (chatId && user) {
+      console.log("Explicitly loading chat ID in useEffect:", chatId);
       loadChatById(chatId);
     }
   }, [chatId, user, loadChatById]);
