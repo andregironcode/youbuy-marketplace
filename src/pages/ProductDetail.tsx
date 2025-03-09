@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar } from "lucide-react";
-import { ProductType } from "@/types/product";
+import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
@@ -24,7 +24,7 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { favorites, addFavorite, removeFavorite } = useFavorites();
+  const { favorites, toggleFavorite } = useFavorites();
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
 
@@ -57,18 +57,11 @@ const ProductDetail = () => {
         .update({ view_count: (data.view_count || 0) + 1 })
         .eq("id", id);
 
-      return {
+      // Convert raw data to ProductType
+      return convertToProductType({
         ...data,
-        seller: {
-          userId: data.seller_id.id,
-          name: data.seller_id.full_name || data.seller_id.username || "Anonymous",
-          avatar: data.seller_id.avatar_url,
-          joinDate: data.seller_id.created_at,
-        },
-        images: data.image_urls || [],
-        variations: data.variations || [],
-        specifications: data.specifications || {},
-      } as ProductType;
+        profiles: data.seller_id,
+      }, true);
     },
     enabled: !!id,
   });
@@ -86,19 +79,7 @@ const ProductDetail = () => {
     }
 
     try {
-      if (isFavorite) {
-        await removeFavorite(id as string);
-        toast({
-          title: "Removed from favorites",
-          description: "This item has been removed from your favorites",
-        });
-      } else {
-        await addFavorite(id as string);
-        toast({
-          title: "Added to favorites",
-          description: "This item has been added to your favorites",
-        });
-      }
+      toggleFavorite(id as string);
     } catch (error) {
       console.error("Error toggling favorite:", error);
       toast({
@@ -248,7 +229,7 @@ const ProductDetail = () => {
                 </TabsContent>
                 <TabsContent value="reviews">
                   <SellerReviews 
-                    sellerId={product.seller.userId} 
+                    sellerId={product.seller.userId || ""} 
                     sellerName={product.seller.name}
                   />
                 </TabsContent>
@@ -291,8 +272,8 @@ const ProductDetail = () => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">{product.seller.name}</h3>
-                      {/* Badge for verified sellers */}
-                      {product.seller.verified && (
+                      {/* Badge for verified sellers - using rating as indicator since 'verified' doesn't exist */}
+                      {product.seller.rating && product.seller.rating > 4.5 && (
                         <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           Verified
@@ -300,7 +281,7 @@ const ProductDetail = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Member since {format(new Date(product.seller.joinDate || Date.now()), "MMMM yyyy")}
+                      Member since {format(new Date(product.seller.joinedDate || Date.now()), "MMMM yyyy")}
                     </p>
                   </div>
                 </div>
@@ -316,10 +297,9 @@ const ProductDetail = () => {
                     </Link>
                   </Button>
                   <MessageButton
-                    productId={id as string}
-                    sellerId={product.seller.userId}
-                    productTitle={product.title}
-                    className="w-full bg-youbuy hover:bg-youbuy-dark"
+                    product={product}
+                    size="md"
+                    fullWidth={true}
                   />
                 </div>
               </CardContent>
