@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, MapPin, MessageCircle, Package, ShoppingBag, Truck, Building2 } from "lucide-react";
+import { Heart, MapPin, MessageCircle, Package, ShoppingBag, Truck, Building2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFavoriteSellers } from "@/hooks/useFavoriteSellers";
 import { useToast } from "@/hooks/use-toast";
