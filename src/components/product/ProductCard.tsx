@@ -2,11 +2,13 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart } from "lucide-react";
+import { Heart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { MessageButton } from "./MessageButton";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductCardProps {
   product: ProductType;
@@ -15,10 +17,27 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
   const productIsFavorite = isFavorite(product.id);
+  const [likes, setLikes] = useState(product.likeCount || 0);
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    // Use the existing toggleFavorite function
     toggleFavorite(product.id);
+    
+    // Update like count in the database and locally
+    if (!productIsFavorite) {
+      setLikes(prev => prev + 1);
+      await supabase
+        .from('products')
+        .update({ like_count: likes + 1 })
+        .eq('id', product.id);
+    } else {
+      setLikes(prev => Math.max(0, prev - 1));
+      await supabase
+        .from('products')
+        .update({ like_count: Math.max(0, likes - 1) })
+        .eq('id', product.id);
+    }
   };
 
   return (
@@ -60,8 +79,18 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <span className="mx-1">•</span>
           <span>{product.timeAgo}</span>
         </div>
-        <div className="mt-3">
-          <MessageButton product={product} size="sm" fullWidth />
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <div className="flex items-center">
+              <Heart className="h-3 w-3 mr-1" /> 
+              <span>{likes}</span>
+            </div>
+            <div className="flex items-center">
+              <Eye className="h-3 w-3 mr-1" /> 
+              <span>{product.viewCount || 0}</span>
+            </div>
+          </div>
+          <MessageButton product={product} size="sm" />
         </div>
       </CardContent>
     </Card>

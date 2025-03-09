@@ -117,6 +117,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_bulk_listing: boolean | null
+          like_count: number
           location: string
           price: string
           product_status: string
@@ -131,6 +132,7 @@ export type Database = {
           title: string
           updated_at: string | null
           variations: Json | null
+          view_count: number
           weight: string | null
         }
         Insert: {
@@ -141,6 +143,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_bulk_listing?: boolean | null
+          like_count?: number
           location: string
           price: string
           product_status?: string
@@ -155,6 +158,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           variations?: Json | null
+          view_count?: number
           weight?: string | null
         }
         Update: {
@@ -165,6 +169,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_bulk_listing?: boolean | null
+          like_count?: number
           location?: string
           price?: string
           product_status?: string
@@ -179,6 +184,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           variations?: Json | null
+          view_count?: number
           weight?: string | null
         }
         Relationships: []

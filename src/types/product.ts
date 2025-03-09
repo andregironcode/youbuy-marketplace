@@ -17,6 +17,8 @@ export interface ProductType {
   promotionEndDate?: string; // When promotion ends
   promotionLevel?: 'basic' | 'premium' | 'featured'; // Different promotion tiers
   createdAt: string; // ISO date string
+  viewCount?: number; // Added for view tracking
+  likeCount?: number; // Added for like tracking
   seller: {
     id: string;
     name: string;
@@ -34,7 +36,6 @@ export interface ProductType {
   category: string;
   subcategory?: string; // Added explicit subcategory field
   subSubcategory?: string; // Added explicit sub-subcategory field
-  // New fields for enhanced product listings
   variations?: ProductVariation[];
   status?: 'available' | 'reserved' | 'sold';
   reservedFor?: string; // User ID if reserved for a specific user
@@ -66,7 +67,7 @@ export interface ProductVariationOption {
   value: string;
   image?: string;
   additionalPrice?: number; // Extra cost for this option, if any
-  available: boolean; // Whether this option is in stock
+  available: boolean; // Whether this is in stock
   stockQuantity?: number; // Optional stock count
 }
 

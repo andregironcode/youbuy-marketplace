@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Star
+  Star,
+  Eye
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -39,7 +40,10 @@ const ProductDetail = () => {
   const [isSending, setIsSending] = useState(false);
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
+  const [viewCount, setViewCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const productIsFavorite = isFavorite(id || '');
+
   const productImages = product ? [
     product.image,
     ...(product.images || []),
@@ -147,6 +151,65 @@ const ProductDetail = () => {
   const selectImage = (index: number) => {
     setCurrentImageIndex(index);
   };
+
+  useEffect(() => {
+    const incrementViewCount = async () => {
+      if (!id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('view_count')
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        
+        const currentViews = data?.view_count || 0;
+        setViewCount(currentViews + 1);
+        
+        await supabase
+          .from('products')
+          .update({ view_count: currentViews + 1 })
+          .eq('id', id);
+      } catch (error) {
+        console.error('Error updating view count:', error);
+      }
+    };
+    
+    incrementViewCount();
+  }, [id]);
+
+  const handleLikeToggle = async () => {
+    if (!id) return;
+    
+    try {
+      toggleFavorite(id);
+      
+      if (!productIsFavorite) {
+        setLikeCount(prev => prev + 1);
+        await supabase
+          .from('products')
+          .update({ like_count: likeCount + 1 })
+          .eq('id', id);
+      } else {
+        setLikeCount(prev => Math.max(0, prev - 1));
+        await supabase
+          .from('products')
+          .update({ like_count: Math.max(0, likeCount - 1) })
+          .eq('id', id);
+      }
+    } catch (error) {
+      console.error('Error updating like count:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (product) {
+      setLikeCount(product.likeCount || 0);
+      setViewCount(product.viewCount || 0);
+    }
+  }, [product]);
 
   if (!product) {
     return (
@@ -395,15 +458,26 @@ const ProductDetail = () => {
                     product={product} 
                     onAddToCart={handleContactSeller}
                   />
+                  
+                  <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
+                    <div className="flex items-center">
+                      <Eye className="h-4 w-4 mr-1" /> 
+                      <span>{viewCount} views</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Heart className={`h-4 w-4 mr-1 ${productIsFavorite ? 'fill-youbuy text-youbuy' : ''}`} /> 
+                      <span>{likeCount} likes</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex flex-col space-y-2 ml-4">
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    onClick={() => toggleFavorite(product.id)}
+                    onClick={handleLikeToggle}
                     disabled={isAdding || isRemoving}
                   >
-                    <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'fill-youbuy text-youbuy' : ''}`} />
+                    <Heart className={`h-5 w-5 ${productIsFavorite ? 'fill-youbuy text-youbuy' : ''}`} />
                   </Button>
                   <Button variant="outline" size="icon">
                     <Share2 className="h-5 w-5" />

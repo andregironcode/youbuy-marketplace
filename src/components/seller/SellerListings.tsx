@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { ProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil } from "lucide-react";
+import { Pencil, Heart, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,6 +68,8 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
           createdAt: item.created_at,
           category: item.category,
           subcategory: item.subcategory,
+          viewCount: item.view_count || 0,
+          likeCount: item.like_count || 0,
           seller: {
             id: item.seller_id,
             name: "You",
@@ -140,6 +143,16 @@ export const SellerListings = ({ products: propProducts, userId, limit }: Seller
                 <div>
                   <div className="text-xl font-bold">€{product.price.toFixed(0)}</div>
                   <h3 className="font-medium">{product.title}</h3>
+                  <div className="flex items-center space-x-4 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center">
+                      <Eye className="h-3 w-3 mr-1" /> 
+                      <span>{product.viewCount || 0} views</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Heart className="h-3 w-3 mr-1" /> 
+                      <span>{product.likeCount || 0} likes</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="text-right space-y-1">
                   <div>Published</div>
