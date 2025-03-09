@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,7 @@ import { ProductFields } from "@/components/product/ProductFields";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { ProductVariation } from "@/types/product";
+import { ProductVariation, ProductSpecifications } from "@/types/product";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -31,6 +30,7 @@ const Sell = () => {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [variations, setVariations] = useState<ProductVariation[]>([]);
+  const [specifications, setSpecifications] = useState<ProductSpecifications>({});
   const [productStatus, setProductStatus] = useState<'available' | 'reserved'>('available');
   const [reservedUserId, setReservedUserId] = useState("");
   const [reservationDays, setReservationDays] = useState("3");
@@ -147,6 +147,10 @@ const Sell = () => {
       // Additional info about the listing configuration
       if (variations.length > 0) {
         console.log("Product variations:", variations);
+      }
+      
+      if (Object.keys(specifications).length > 0) {
+        console.log("Product specifications:", specifications);
       }
       
       if (productStatus === 'reserved') {
@@ -451,6 +455,8 @@ const Sell = () => {
                           subSubcategory={subSubcategory}
                           onVariationsChange={setVariations}
                           initialVariations={variations}
+                          onSpecificationsChange={setSpecifications}
+                          initialSpecifications={specifications}
                         />
                       </div>
                     )}
@@ -553,3 +559,4 @@ const Sell = () => {
 };
 
 export default Sell;
+

@@ -1,4 +1,3 @@
-
 export interface ProductType {
   id: string;
   title: string;
@@ -35,6 +34,7 @@ export interface ProductType {
   status?: 'available' | 'reserved' | 'sold';
   reservedFor?: string; // User ID if reserved for a specific user
   reservedUntil?: string; // ISO date string until when the product is reserved
+  specifications?: ProductSpecifications; // New field for category-specific attributes
 }
 
 export interface ProductVariation {
@@ -52,4 +52,41 @@ export interface ProductVariationOption {
   additionalPrice?: number; // Extra cost for this option, if any
   available: boolean; // Whether this option is in stock
   stockQuantity?: number; // Optional stock count
+}
+
+// New interface for category-specific specifications
+export interface ProductSpecifications {
+  // General
+  condition?: 'new' | 'like-new' | 'excellent' | 'good' | 'fair' | 'salvage';
+  
+  // Electronics
+  brand?: string;
+  model?: string;
+  
+  // Televisions
+  screenSize?: number; // in inches
+  resolution?: 'hd' | 'fullhd' | '4k' | '8k';
+  smartTv?: 'none' | 'basic' | 'full';
+  
+  // Mobile Phones & Tablets
+  storage?: string; // e.g., "128GB"
+  processor?: string;
+  ram?: string;
+  camera?: string;
+  
+  // Computers & Laptops
+  computerType?: 'desktop' | 'laptop' | 'tablet' | 'all-in-one';
+  graphics?: string;
+  operatingSystem?: string;
+  
+  // Furniture
+  material?: string;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  
+  // Others - extensible with additional attributes as needed
+  [key: string]: any;
 }

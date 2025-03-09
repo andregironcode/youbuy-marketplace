@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tag, Check, AlertTriangle } from "lucide-react";
+import { Tag, Check, AlertTriangle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ProductDetailsProps {
@@ -74,6 +74,127 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
     
     return null;
   };
+
+  // Render product specifications
+  const renderSpecifications = () => {
+    if (!product.specifications || Object.keys(product.specifications).length === 0) {
+      return null;
+    }
+
+    // Helper function to get human-readable name for a specification
+    const getSpecificationName = (key: string): string => {
+      const nameMap: Record<string, string> = {
+        brand: "Brand",
+        model: "Model",
+        condition: "Condition",
+        screenSize: "Screen Size",
+        resolution: "Resolution",
+        smartTv: "Smart TV",
+        storage: "Storage",
+        processor: "Processor",
+        ram: "RAM",
+        camera: "Camera",
+        computerType: "Type",
+        graphics: "Graphics",
+        operatingSystem: "OS",
+        material: "Material",
+        dimensions: "Dimensions"
+      };
+      return nameMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
+    };
+
+    // Helper function to format specification values
+    const formatSpecValue = (key: string, value: any): string => {
+      if (key === "condition") {
+        const conditionMap: Record<string, string> = {
+          "new": "New (never used)",
+          "like-new": "Like New",
+          "excellent": "Excellent",
+          "good": "Good",
+          "fair": "Fair",
+          "salvage": "For parts or not working"
+        };
+        return conditionMap[value] || value;
+      }
+      
+      if (key === "screenSize" && value) {
+        return `${value}" (${Math.round(value * 2.54)} cm)`;
+      }
+      
+      if (key === "resolution") {
+        const resolutionMap: Record<string, string> = {
+          "hd": "HD (720p)",
+          "fullhd": "Full HD (1080p)",
+          "4k": "4K Ultra HD",
+          "8k": "8K"
+        };
+        return resolutionMap[value] || value;
+      }
+      
+      if (key === "smartTv") {
+        const smartTvMap: Record<string, string> = {
+          "none": "None (Regular TV)",
+          "basic": "Basic Smart Features",
+          "full": "Full Smart TV"
+        };
+        return smartTvMap[value] || value;
+      }
+      
+      if (key === "computerType") {
+        const computerTypeMap: Record<string, string> = {
+          "desktop": "Desktop",
+          "laptop": "Laptop",
+          "tablet": "Tablet",
+          "all-in-one": "All-in-One"
+        };
+        return computerTypeMap[value] || value;
+      }
+      
+      if (key === "dimensions" && value) {
+        return `${value.length} × ${value.width} × ${value.height} cm`;
+      }
+      
+      return String(value);
+    };
+
+    // Get specifications to show excluding empty ones
+    const specsToShow = Object.entries(product.specifications)
+      .filter(([_, value]) => value !== undefined && value !== "" && value !== null)
+      .sort(([keyA], [keyB]) => {
+        // Sort to show certain specs first
+        const priority = ["brand", "model", "condition", "computerType"];
+        const indexA = priority.indexOf(keyA);
+        const indexB = priority.indexOf(keyB);
+        
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+    if (specsToShow.length === 0) return null;
+
+    return (
+      <div className="mt-4">
+        <h3 className="font-medium flex items-center mb-2">
+          <Info className="h-4 w-4 mr-1" />
+          Specifications
+        </h3>
+        <Card>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              {specsToShow.map(([key, value]) => (
+                <div key={key} className="col-span-2 sm:col-span-1 flex">
+                  <span className="font-medium min-w-[120px]">{getSpecificationName(key)}:</span>
+                  <span className="text-muted-foreground">{formatSpecValue(key, value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
   
   return (
     <div className="space-y-4">
@@ -110,6 +231,9 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         </Card>
       )}
       
+      {/* Product specifications */}
+      {renderSpecifications()}
+
       <Separator />
       
       {/* Variations selection */}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash, Plus, X } from "lucide-react";
-import { ProductVariation, ProductVariationOption } from "@/types/product";
+import { ProductVariation, ProductVariationOption, ProductSpecifications } from "@/types/product";
 
 interface ProductFieldsProps {
   category: string;
@@ -15,6 +14,8 @@ interface ProductFieldsProps {
   subSubcategory?: string;
   onVariationsChange?: (variations: ProductVariation[]) => void;
   initialVariations?: ProductVariation[];
+  onSpecificationsChange?: (specifications: ProductSpecifications) => void;
+  initialSpecifications?: ProductSpecifications;
 }
 
 export const ProductFields = ({ 
@@ -22,16 +23,33 @@ export const ProductFields = ({
   subcategory,
   subSubcategory,
   onVariationsChange,
-  initialVariations = []
+  initialVariations = [],
+  onSpecificationsChange,
+  initialSpecifications = {}
 }: ProductFieldsProps) => {
   const [variations, setVariations] = useState<ProductVariation[]>(initialVariations);
   const [activeTab, setActiveTab] = useState<string>("details");
+  const [specifications, setSpecifications] = useState<ProductSpecifications>(initialSpecifications);
 
   useEffect(() => {
     if (onVariationsChange) {
       onVariationsChange(variations);
     }
   }, [variations, onVariationsChange]);
+
+  useEffect(() => {
+    if (onSpecificationsChange) {
+      onSpecificationsChange(specifications);
+    }
+  }, [specifications, onSpecificationsChange]);
+
+  // Handler for updating specifications
+  const updateSpecification = (key: keyof ProductSpecifications, value: any) => {
+    setSpecifications(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
 
   const addVariation = () => {
     const newVariation: ProductVariation = {
@@ -248,29 +266,107 @@ export const ProductFields = ({
     );
   };
 
+  // Get common brands for a specific category
+  const getCategoryBrands = () => {
+    if (category === "electronics") {
+      if (subcategory === "televisions") {
+        return ["Samsung", "LG", "Sony", "TCL", "Hisense", "Philips", "Panasonic", "Vizio", "Sharp", "Other"];
+      } else if (subcategory === "computers" || subcategory === "laptops") {
+        return ["Apple", "Dell", "HP", "Lenovo", "Asus", "Acer", "Microsoft", "MSI", "Razer", "Alienware", "Other"];
+      } else if (subcategory === "audio") {
+        return ["Sony", "Bose", "JBL", "Sennheiser", "Apple", "Samsung", "Beats", "Audio-Technica", "Anker", "Other"];
+      }
+      return ["Samsung", "Apple", "Sony", "LG", "Philips", "Panasonic", "Dell", "HP", "Lenovo", "Other"];
+    } else if (category === "mobile") {
+      return ["Apple", "Samsung", "Google", "Xiaomi", "Huawei", "OnePlus", "Oppo", "Vivo", "Motorola", "Nokia", "Other"];
+    }
+    return [];
+  };
+
+  // Brand selector component
+  const renderBrandSelector = () => {
+    const brands = getCategoryBrands();
+    if (brands.length === 0) return null;
+
+    return (
+      <div className="space-y-2">
+        <Label htmlFor="brand">Brand</Label>
+        <Select 
+          value={specifications.brand || ""} 
+          onValueChange={(value) => updateSpecification("brand", value)}
+        >
+          <SelectTrigger id="brand">
+            <SelectValue placeholder="Select brand" />
+          </SelectTrigger>
+          <SelectContent>
+            {brands.map(brand => (
+              <SelectItem key={brand} value={brand.toLowerCase()}>
+                {brand}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
+
   // Main render function
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="details">Product Details</TabsTrigger>
+        <TabsTrigger value="specifications">Specifications</TabsTrigger>
         <TabsTrigger value="variations">Variations</TabsTrigger>
       </TabsList>
       
       <TabsContent value="details" className="mt-4 space-y-4">
-        {/* Original category-specific fields */}
+        {/* Simplified base fields that all products should have */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="condition">Condition</Label>
+            <Select 
+              value={specifications.condition || ""} 
+              onValueChange={(value: any) => updateSpecification("condition", value)}
+            >
+              <SelectTrigger id="condition">
+                <SelectValue placeholder="Select condition" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">New (never used)</SelectItem>
+                <SelectItem value="like-new">Like New</SelectItem>
+                <SelectItem value="excellent">Excellent</SelectItem>
+                <SelectItem value="good">Good</SelectItem>
+                <SelectItem value="fair">Fair</SelectItem>
+                <SelectItem value="salvage">For parts or not working</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="specifications" className="mt-4 space-y-4">
+        {/* Brand selector for appropriate categories */}
+        {renderBrandSelector()}
+        
+        {/* Televisions specific fields */}
         {category === "electronics" && subcategory === "televisions" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="brand">Brand</Label>
-              <Input id="brand" placeholder="e.g., Samsung, LG, Sony" />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="screenSize">Screen Size (inches)</Label>
-              <Input id="screenSize" type="number" placeholder="e.g., 55" />
+              <Input 
+                id="screenSize" 
+                type="number" 
+                placeholder="e.g., 55" 
+                value={specifications.screenSize || ""}
+                onChange={(e) => updateSpecification("screenSize", e.target.value ? parseFloat(e.target.value) : undefined)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="resolution">Resolution</Label>
-              <Select>
+              <Select 
+                value={specifications.resolution || ""} 
+                onValueChange={(value: any) => updateSpecification("resolution", value)}
+              >
                 <SelectTrigger id="resolution">
                   <SelectValue placeholder="Select resolution" />
                 </SelectTrigger>
@@ -283,24 +379,11 @@ export const ProductFields = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
-              <Select>
-                <SelectTrigger id="condition">
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New (never used)</SelectItem>
-                  <SelectItem value="like-new">Like New</SelectItem>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="salvage">For parts or not working</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="smartTv">Smart TV Features</Label>
-              <Select>
+              <Select 
+                value={specifications.smartTv || ""} 
+                onValueChange={(value: any) => updateSpecification("smartTv", value)}
+              >
                 <SelectTrigger id="smartTv">
                   <SelectValue placeholder="Select smart TV features" />
                 </SelectTrigger>
@@ -314,32 +397,79 @@ export const ProductFields = ({
           </div>
         )}
         
-        {/* Generic electronics fields as fallback */}
-        {category === "electronics" && subcategory !== "televisions" && (
+        {/* Computer specific fields */}
+        {category === "electronics" && (subcategory === "computers" || subcategory === "laptops") && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="brand">Brand</Label>
-              <Input id="brand" placeholder="e.g., Samsung, Apple, Sony" />
+              <Label htmlFor="computerType">Computer Type</Label>
+              <Select 
+                value={specifications.computerType || ""} 
+                onValueChange={(value: any) => updateSpecification("computerType", value)}
+              >
+                <SelectTrigger id="computerType">
+                  <SelectValue placeholder="Select computer type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desktop">Desktop</SelectItem>
+                  <SelectItem value="laptop">Laptop</SelectItem>
+                  <SelectItem value="tablet">Tablet</SelectItem>
+                  <SelectItem value="all-in-one">All-in-One</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <Input id="model" placeholder="e.g., Galaxy S21, MacBook Pro" />
+              <Input 
+                id="model" 
+                placeholder="e.g., MacBook Pro, Inspiron 15" 
+                value={specifications.model || ""}
+                onChange={(e) => updateSpecification("model", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
-              <Select>
-                <SelectTrigger id="condition">
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New (never used)</SelectItem>
-                  <SelectItem value="like-new">Like New</SelectItem>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="salvage">For parts or not working</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="processor">Processor</Label>
+              <Input 
+                id="processor" 
+                placeholder="e.g., Intel i7, AMD Ryzen 5" 
+                value={specifications.processor || ""}
+                onChange={(e) => updateSpecification("processor", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ram">RAM</Label>
+              <Input 
+                id="ram" 
+                placeholder="e.g., 16GB" 
+                value={specifications.ram || ""}
+                onChange={(e) => updateSpecification("ram", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="storage">Storage</Label>
+              <Input 
+                id="storage" 
+                placeholder="e.g., 512GB SSD" 
+                value={specifications.storage || ""}
+                onChange={(e) => updateSpecification("storage", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="graphics">Graphics</Label>
+              <Input 
+                id="graphics" 
+                placeholder="e.g., NVIDIA RTX 3080, Intel Iris" 
+                value={specifications.graphics || ""}
+                onChange={(e) => updateSpecification("graphics", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="operatingSystem">Operating System</Label>
+              <Input 
+                id="operatingSystem" 
+                placeholder="e.g., Windows 11, macOS, Linux" 
+                value={specifications.operatingSystem || ""}
+                onChange={(e) => updateSpecification("operatingSystem", e.target.value)}
+              />
             </div>
           </div>
         )}
@@ -348,45 +478,42 @@ export const ProductFields = ({
         {category === "mobile" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="brand">Brand</Label>
-              <Input id="brand" placeholder="e.g., Apple, Samsung, Google" />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <Input id="model" placeholder="e.g., iPhone 13, Galaxy S21" />
+              <Input 
+                id="model" 
+                placeholder="e.g., iPhone 13, Galaxy S21" 
+                value={specifications.model || ""}
+                onChange={(e) => updateSpecification("model", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="storage">Storage Capacity</Label>
-              <Select>
+              <Select 
+                value={specifications.storage || ""} 
+                onValueChange={(value) => updateSpecification("storage", value)}
+              >
                 <SelectTrigger id="storage">
                   <SelectValue placeholder="Select storage capacity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="16">16GB</SelectItem>
-                  <SelectItem value="32">32GB</SelectItem>
-                  <SelectItem value="64">64GB</SelectItem>
-                  <SelectItem value="128">128GB</SelectItem>
-                  <SelectItem value="256">256GB</SelectItem>
-                  <SelectItem value="512">512GB</SelectItem>
-                  <SelectItem value="1024">1TB</SelectItem>
+                  <SelectItem value="16GB">16GB</SelectItem>
+                  <SelectItem value="32GB">32GB</SelectItem>
+                  <SelectItem value="64GB">64GB</SelectItem>
+                  <SelectItem value="128GB">128GB</SelectItem>
+                  <SelectItem value="256GB">256GB</SelectItem>
+                  <SelectItem value="512GB">512GB</SelectItem>
+                  <SelectItem value="1TB">1TB</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
-              <Select>
-                <SelectTrigger id="condition">
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New (never used)</SelectItem>
-                  <SelectItem value="like-new">Like New</SelectItem>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="salvage">For parts or not working</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="camera">Camera</Label>
+              <Input 
+                id="camera" 
+                placeholder="e.g., 12MP dual camera" 
+                value={specifications.camera || ""}
+                onChange={(e) => updateSpecification("camera", e.target.value)}
+              />
             </div>
           </div>
         )}
@@ -396,53 +523,53 @@ export const ProductFields = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="material">Material</Label>
-              <Input id="material" placeholder="e.g., Wood, Glass, Metal" />
+              <Input 
+                id="material" 
+                placeholder="e.g., Wood, Glass, Metal" 
+                value={specifications.material || ""}
+                onChange={(e) => updateSpecification("material", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dimensions">Dimensions (cm)</Label>
               <div className="grid grid-cols-3 gap-2">
-                <Input id="length" placeholder="Length" />
-                <Input id="width" placeholder="Width" />
-                <Input id="height" placeholder="Height" />
+                <Input 
+                  id="length" 
+                  placeholder="Length" 
+                  value={specifications.dimensions?.length || ""}
+                  onChange={(e) => {
+                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                    updateSpecification("dimensions", {
+                      ...currentDimensions,
+                      length: e.target.value ? parseFloat(e.target.value) : 0
+                    });
+                  }}
+                />
+                <Input 
+                  id="width" 
+                  placeholder="Width" 
+                  value={specifications.dimensions?.width || ""}
+                  onChange={(e) => {
+                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                    updateSpecification("dimensions", {
+                      ...currentDimensions,
+                      width: e.target.value ? parseFloat(e.target.value) : 0
+                    });
+                  }}
+                />
+                <Input 
+                  id="height" 
+                  placeholder="Height" 
+                  value={specifications.dimensions?.height || ""}
+                  onChange={(e) => {
+                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                    updateSpecification("dimensions", {
+                      ...currentDimensions,
+                      height: e.target.value ? parseFloat(e.target.value) : 0
+                    });
+                  }}
+                />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
-              <Select>
-                <SelectTrigger id="condition">
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New (never used)</SelectItem>
-                  <SelectItem value="like-new">Like New</SelectItem>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="salvage">For parts or not working</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-        
-        {/* Default fields for other categories */}
-        {!["electronics", "mobile", "furniture"].includes(category) && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
-              <Select>
-                <SelectTrigger id="condition">
-                  <SelectValue placeholder="Select condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New (never used)</SelectItem>
-                  <SelectItem value="like-new">Like New</SelectItem>
-                  <SelectItem value="excellent">Excellent</SelectItem>
-                  <SelectItem value="good">Good</SelectItem>
-                  <SelectItem value="fair">Fair</SelectItem>
-                  <SelectItem value="salvage">For parts or not working</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         )}
