@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell, LogOut, Filter, PlusCircle } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, Bell, LogOut, PlusCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -36,12 +36,12 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
 
         <Button 
           variant="ghost" 
-          size={isMobile ? "sm" : "default"}
-          className="mr-1 md:mr-2"
+          size="sm"
+          className="mr-1 md:mr-2 whitespace-nowrap"
           onClick={onCategoryClick}
         >
           <Menu className="h-4 w-4 mr-1" />
-          <span className={isMobile ? "text-xs" : ""}>Categories</span>
+          <span className="text-xs md:text-sm">Categories</span>
         </Button>
 
         <div className="flex-1 mx-1 md:mx-2">
