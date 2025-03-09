@@ -1,12 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProductCard } from "../product/ProductCard";
+import { ProductType, convertToProductType } from "@/types/product";
 import { Button } from "../ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductType, convertToProductType } from "@/types/product";
-import { Grid2X2, List, ListFilter, Plus, ShoppingBag } from "lucide-react";
-import { Card } from "../ui/card";
+import { ListFilter, Plus } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface SellerListingsProps {
@@ -17,7 +16,7 @@ interface SellerListingsProps {
 export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<"selling" | "sold">("selling");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,61 +68,64 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
     navigate('/sell');
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy");
+    } catch (e) {
+      return "N/A";
+    }
+  };
+
   return (
     <div>
-      {/* View toggle and action buttons */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setViewMode('grid')} 
-              className={cn(
-                "h-9 w-9 p-0 rounded-md", 
-                viewMode === 'grid' 
-                  ? "bg-white shadow-sm text-youbuy" 
-                  : "bg-transparent text-gray-500"
-              )}
-            >
-              <Grid2X2 className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setViewMode('list')} 
-              className={cn(
-                "h-9 w-9 p-0 rounded-md", 
-                viewMode === 'list' 
-                  ? "bg-white shadow-sm text-youbuy" 
-                  : "bg-transparent text-gray-500"
-              )}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-gray-600 gap-2"
+      {/* Header section */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2">Your products</h2>
+        <p className="text-muted-foreground text-sm">
+          Here you can list items, manage the ones you already have and activate featured to sell them faster
+        </p>
+      </div>
+
+      {/* Tab navigation and filter */}
+      <div className="flex justify-between items-center mb-4 border-b">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab("selling")}
+            className={cn(
+              "px-4 py-3 text-sm font-medium transition-colors relative",
+              activeTab === "selling"
+                ? "text-youbuy border-b-2 border-youbuy"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            <ListFilter className="h-4 w-4" />
-            Filter
-          </Button>
+            SELLING
+          </button>
+          <button
+            onClick={() => setActiveTab("sold")}
+            className={cn(
+              "px-4 py-3 text-sm font-medium transition-colors relative",
+              activeTab === "sold"
+                ? "text-youbuy border-b-2 border-youbuy"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            SOLD
+          </button>
         </div>
         <Button 
-          onClick={handleAddProduct} 
-          className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm"
-          size="sm"
+          variant="outline" 
+          size="sm" 
+          className="text-gray-600 gap-2"
         >
-          <Plus className="mr-1 h-4 w-4" /> Upload product
+          <ListFilter className="h-4 w-4" />
+          Filter
         </Button>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="space-y-3">
           {[...Array(4)].map((_, index) => (
-            <div key={index} className="bg-gray-100 rounded-lg aspect-square animate-pulse"></div>
+            <div key={index} className="flex gap-4 border rounded-lg p-3 h-24 animate-pulse bg-gray-100"></div>
           ))}
         </div>
       ) : (
@@ -131,7 +133,7 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
           {products.length === 0 ? (
             <div className="rounded-lg bg-youbuy-light border border-youbuy/20 p-8 text-center">
               <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
-                <ShoppingBag className="h-8 w-8 text-youbuy" />
+                <Plus className="h-8 w-8 text-youbuy" />
               </div>
               <h3 className="text-lg font-medium mb-2">You don't have any products yet</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
@@ -141,26 +143,14 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
                 <Plus className="mr-2 h-4 w-4" /> Upload your first product
               </Button>
             </div>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-              <Card 
-                onClick={handleAddProduct}
-                className="bg-youbuy-light border border-youbuy/20 rounded-lg flex flex-col items-center justify-center p-6 h-full aspect-square text-youbuy-dark hover:bg-youbuy-muted cursor-pointer transition-colors"
-              >
-                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm">
-                  <Plus className="h-6 w-6 text-youbuy" />
-                </div>
-                <span className="text-center font-medium">Upload product</span>
-              </Card>
-            </div>
           ) : (
             <div className="space-y-3">
               {products.map((product) => (
-                <div key={product.id} className="flex gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                  <div className="w-20 h-20 rounded-md overflow-hidden">
+                <div key={product.id} className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex-shrink-0">
+                    <input type="checkbox" className="w-5 h-5 rounded border-gray-300" />
+                  </div>
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
                     <img 
                       src={product.image} 
                       alt={product.title} 
@@ -168,18 +158,30 @@ export const SellerListings = ({ userId, limit = 8 }: SellerListingsProps) => {
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-sm">{product.title}</h3>
-                    <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">{product.timeAgo}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
+                        <h3 className="font-medium text-sm">{product.title}</h3>
+                      </div>
+                      <div className="mt-2 sm:mt-0 text-xs text-muted-foreground grid grid-cols-2 gap-x-4">
+                        <div>
+                          <p>Published</p>
+                          <p>{formatDate(product.created_at || '')}</p>
+                        </div>
+                        <div>
+                          <p>Modified</p>
+                          <p>{formatDate(product.updated_at || '')}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center">
                     <Button 
                       size="sm" 
-                      variant="outline" 
-                      className="text-xs"
-                      onClick={() => navigate(`/profile/edit-product/${product.id}`)}
+                      className="text-white bg-youbuy hover:bg-youbuy-dark"
+                      onClick={() => {}}
                     >
-                      Edit
+                      Feature
                     </Button>
                   </div>
                 </div>
