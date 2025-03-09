@@ -1,4 +1,5 @@
 
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,8 @@ interface ChatListProps {
 }
 
 export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <>
@@ -45,8 +48,7 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
 
   const handleChatClick = (chatId: string) => {
     console.log("ChatList: Navigating to chat:", chatId);
-    // Force a full page load to ensure we reset any stale state
-    window.location.href = `/messages/${chatId}`;
+    navigate(`/messages/${chatId}`);
   };
 
   return (

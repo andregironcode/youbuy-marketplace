@@ -35,6 +35,16 @@ const Messages = () => {
     }
   }, [chatId, loadChatById]);
 
+  // Add this debugging log to track chat loading
+  useEffect(() => {
+    console.log("Current chat state:", { 
+      chatId, 
+      hasCurrentChat: !!currentChat, 
+      loadingMessages,
+      messagesCount: messages.length
+    });
+  }, [chatId, currentChat, loadingMessages, messages]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
