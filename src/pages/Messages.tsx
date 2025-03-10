@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Messages = () => {
+  const navigate = useNavigate();
   const { chatId } = useParams<{ chatId: string }>();
   const {
     chats,
@@ -25,7 +26,7 @@ const Messages = () => {
     handleSendMessage,
     handleDeleteMessage,
     handleImageUpload
-  } = useMessages(chatId || undefined);
+  } = useMessages(chatId);  // No need to check for undefined - useMessages handles it
 
   // Debug current state
   useEffect(() => {
@@ -37,6 +38,13 @@ const Messages = () => {
     });
   }, [chatId, currentChat, loadingMessages, messages]);
 
+  // If no valid chatId but chats are loaded, redirect to the first chat
+  useEffect(() => {
+    if (!chatId && chats.length > 0 && !loadingChats) {
+      navigate(`/messages/${chats[0].id}`);
+    }
+  }, [chatId, chats, loadingChats, navigate]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -44,7 +52,7 @@ const Messages = () => {
         <ProfileSidebar />
         <main className="flex-1 container py-4">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
-            {/* Chat List */}
+            {/* Chat List - Always visible on desktop, hidden on mobile when showing a chat */}
             <div className={`border rounded-lg overflow-hidden ${chatId ? 'hidden md:block' : 'block'}`}>
               <div className="p-4 border-b bg-gray-50">
                 <h2 className="font-bold text-lg">Messages</h2>

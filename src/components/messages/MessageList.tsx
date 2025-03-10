@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface MessageListProps {
   messages: MessageType[];
@@ -25,6 +25,12 @@ interface MessageListProps {
 export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => {
   const { user } = useAuth();
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
   
   if (!messages || messages.length === 0) {
     return (
@@ -108,6 +114,7 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
           </div>
         );
       })}
+      <div ref={messagesEndRef} />
     </>
   );
 };

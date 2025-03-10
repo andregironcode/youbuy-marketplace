@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -31,7 +31,8 @@ function App() {
             <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/seller/:id" element={<SellerProfile />} />
-            <Route path="/messages/*" element={<Messages />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:chatId" element={<Messages />} />
             <Route path="/category/:categoryId" element={<CategoryPage />} />
             <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
             <Route path="/category/:categoryId/:subcategoryId/:subSubcategoryId" element={<CategoryPage />} />

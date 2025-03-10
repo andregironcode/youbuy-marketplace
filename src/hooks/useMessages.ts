@@ -6,6 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatType, MessageType } from "@/types/message";
 import { products } from "@/data/products";
+import { 
+  markMessagesAsRead,
+  deleteMessage,
+  sendTextMessage, 
+  getChatUnreadCount 
+} from "@/utils/messageHelpers";
 
 export const useMessages = (chatId?: string) => {
   const { user } = useAuth();
@@ -92,12 +98,7 @@ export const useMessages = (chatId?: string) => {
             .maybeSingle();
 
           // Get unread count
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', user.id)
-            .eq('read', false)
-            .eq('product_id', chat.product_id);
+          const unreadCount = await getChatUnreadCount(user.id, chat.product_id);
 
           return {
             ...chat,
@@ -108,7 +109,7 @@ export const useMessages = (chatId?: string) => {
               image: productData.image || '',
             },
             lastMessage: lastMessageData?.content || "No messages yet",
-            unreadCount: count || 0,
+            unreadCount,
           };
         })
       );
@@ -128,7 +129,7 @@ export const useMessages = (chatId?: string) => {
 
   // Load chat by ID
   const loadChatById = useCallback(async (id: string) => {
-    if (!user) return;
+    if (!user || !id) return;
     
     console.log("loadChatById called with ID:", id);
     setLoadingMessages(true);
@@ -234,12 +235,7 @@ export const useMessages = (chatId?: string) => {
         );
         
         if (unreadMessages.length > 0) {
-          await supabase
-            .from('messages')
-            .update({ read: true })
-            .eq('receiver_id', user.id)
-            .eq('product_id', chatData.product_id)
-            .eq('read', false);
+          await markMessagesAsRead(user.id, chatData.product_id);
         }
       }
 
@@ -287,7 +283,7 @@ export const useMessages = (chatId?: string) => {
     return () => {
       supabase.removeChannel(messageSubscription);
     };
-  }, [user, navigate, fetchChats]);
+  }, [user, navigate, fetchChats, chatId, loadChatById]);
 
   // Load specific chat when chatId changes
   useEffect(() => {
@@ -306,28 +302,19 @@ export const useMessages = (chatId?: string) => {
         ? currentChat.buyer_id 
         : currentChat.seller_id;
       
-      // Insert message
-      const { error: msgError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: receiverId,
-          product_id: currentChat.product_id,
-          content: newMessage,
-        });
-        
-      if (msgError) throw msgError;
+      const success = await sendTextMessage(
+        user.id,
+        receiverId,
+        currentChat.product_id,
+        currentChat.id,
+        newMessage
+      );
       
-      // Update last_message_at in chat
-      await supabase
-        .from('chats')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', currentChat.id);
-      
-      setNewMessage("");
-      
-      // Reload messages after sending
-      loadChatById(currentChat.id);
+      if (success) {
+        setNewMessage("");
+        // Reload messages after sending
+        loadChatById(currentChat.id);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -388,56 +375,14 @@ export const useMessages = (chatId?: string) => {
   const handleDeleteMessage = async (messageId: string) => {
     if (!user || !currentChat) return;
     
-    try {
-      // First check if the message belongs to the current user
-      const { data: messageData, error: messageError } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('id', messageId)
-        .maybeSingle();
-      
-      if (messageError) throw messageError;
-      
-      if (!messageData) {
-        toast({
-          title: "Message not found",
-          description: "The message you're trying to delete no longer exists.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Verify that the current user is the sender
-      if (messageData.sender_id !== user.id) {
-        toast({
-          title: "Permission denied",
-          description: "You can only delete your own messages.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Delete the message
-      const { error: deleteError } = await supabase
-        .from('messages')
-        .delete()
-        .eq('id', messageId);
-        
-      if (deleteError) throw deleteError;
-      
+    const success = await deleteMessage(messageId, user.id);
+    if (success && currentChat) {
       // Reload messages after deletion
       loadChatById(currentChat.id);
       
       toast({
         title: "Message deleted",
         description: "Your message has been removed from the conversation."
-      });
-    } catch (error) {
-      console.error("Error deleting message:", error);
-      toast({
-        title: "Failed to delete message",
-        description: "Please try again later.",
-        variant: "destructive"
       });
     }
   };
