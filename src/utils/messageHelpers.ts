@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ChatType, MessageType } from "@/types/message";
+import { convertToProductType } from "@/types/product";
 
 /**
  * Marks messages as read for a specific chat and user
@@ -127,5 +128,126 @@ export const getChatUnreadCount = async (userId: string, productId: string) => {
   } catch (error) {
     console.error("Error getting unread count:", error);
     return 0;
+  }
+};
+
+/**
+ * Get product information from the database
+ */
+export const getProductById = async (productId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        profiles:seller_id(
+          id,
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('id', productId)
+      .maybeSingle();
+      
+    if (error) throw error;
+    
+    if (!data) {
+      return null;
+    }
+    
+    return convertToProductType(data);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return null;
+  }
+};
+
+/**
+ * Get user profile information by ID
+ */
+export const getUserProfileById = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
+};
+
+/**
+ * Enhance chat with additional information
+ */
+export const enhanceChat = async (chat: any, currentUserId: string) => {
+  if (!chat) return null;
+
+  try {
+    // Get product data
+    const product = await getProductById(chat.product_id);
+    
+    // Determine if current user is seller or buyer
+    const isUserSeller = chat.seller_id === currentUserId;
+    const otherUserId = isUserSeller ? chat.buyer_id : chat.seller_id;
+    
+    // Get other user profile
+    const otherUserProfile = await getUserProfileById(otherUserId);
+    
+    // Get last message
+    const { data: lastMessageData } = await supabase
+      .from('messages')
+      .select('content, created_at')
+      .eq('product_id', chat.product_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Get unread count
+    const unreadCount = await getChatUnreadCount(currentUserId, chat.product_id);
+
+    // Create enhanced chat object
+    return {
+      ...chat,
+      otherUser: {
+        name: otherUserProfile?.full_name || 'User',
+        avatar: otherUserProfile?.avatar_url || '',
+      },
+      product: product ? {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        image: product.image,
+      } : {
+        id: chat.product_id,
+        title: 'Product',
+        price: 0,
+        image: '/placeholder.svg',
+      },
+      lastMessage: lastMessageData?.content || "No messages yet",
+      unreadCount,
+    };
+  } catch (error) {
+    console.error("Error enhancing chat:", error);
+    return {
+      ...chat,
+      otherUser: {
+        name: 'User',
+        avatar: '',
+      },
+      product: {
+        id: chat.product_id,
+        title: 'Product',
+        price: 0,
+        image: '/placeholder.svg',
+      },
+      lastMessage: "No messages yet",
+      unreadCount: 0,
+    };
   }
 };
