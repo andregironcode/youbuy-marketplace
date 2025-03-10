@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -275,7 +276,7 @@ const ProductDetail = () => {
                     variant="outline"
                     className="w-full justify-start"
                   >
-                    <Link to={`/seller/${product.seller.userId}`}>
+                    <Link to={`/seller/${product.seller.id || product.seller.userId}`}>
                       View profile
                     </Link>
                   </Button>
