@@ -57,13 +57,6 @@ export const ChatWindow = ({
     fileInputRef.current?.click();
   };
 
-  // Get the product title with fallbacks
-  const getProductTitle = () => {
-    if (currentProduct?.title) return currentProduct.title;
-    if (currentChat?.product?.title) return currentChat.product.title;
-    return 'Product';
-  };
-
   // Chat Header - Always show this, even while loading
   const renderChatHeader = () => (
     <div className="p-3 border-b bg-gray-50 flex items-center">
@@ -93,10 +86,10 @@ export const ChatWindow = ({
           </Avatar>
           <div>
             <p className="font-medium">
-              {currentChat?.otherUser?.name || 'User'}
+              {currentChat?.otherUser?.name || 'Unknown User'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {getProductTitle()}
+              {currentProduct?.title || currentChat?.product?.title || 'Unknown Product'}
             </p>
           </div>
         </>
@@ -120,14 +113,7 @@ export const ChatWindow = ({
       );
     }
     
-    // Use product from either source, or create a fallback object
-    const productToDisplay = currentProduct || currentChat?.product || {
-      title: 'Unknown Product',
-      price: 0,
-      image: '/placeholder.svg'
-    };
-    
-    return <ProductInfoCard product={productToDisplay} />;
+    return <ProductInfoCard product={currentProduct || currentChat?.product} />;
   };
 
   // Messages area - Skeleton while loading

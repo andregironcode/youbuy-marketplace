@@ -40,9 +40,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
-  // Check if seller info is available and has the userId
-  const hasSellerLink = product.seller && product.seller.userId;
-
   return (
     <Card className="overflow-hidden group h-full">
       <Link to={`/product/${product.id}`}>
@@ -93,18 +90,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <span>{product.viewCount || 0}</span>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            {hasSellerLink && (
-              <Link 
-                to={`/seller/${product.seller.userId}`} 
-                className="text-xs text-muted-foreground hover:text-youbuy"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {product.seller.name}
-              </Link>
-            )}
-            <MessageButton product={product} size="sm" />
-          </div>
+          <MessageButton product={product} size="sm" />
         </div>
       </CardContent>
     </Card>
