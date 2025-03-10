@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProductType, convertToProductType } from "@/types/product";
+import { ProductType } from "@/types/product";
 import { Button } from "../ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { ListFilter, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -14,6 +13,8 @@ interface SellerListingsProps {
   activeTab?: "selling" | "sold";
   showTabs?: boolean;
   onTabChange?: (tab: "selling" | "sold") => void;
+  products?: ProductType[];
+  isLoading?: boolean;
 }
 
 export const SellerListings = ({ 
@@ -21,64 +22,15 @@ export const SellerListings = ({
   limit = 8, 
   activeTab = "selling",
   showTabs = false,
-  onTabChange
+  onTabChange,
+  products = [],
+  isLoading = false
 }: SellerListingsProps) => {
-  const [products, setProducts] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [internalActiveTab, setInternalActiveTab] = useState<"selling" | "sold">(activeTab);
   const navigate = useNavigate();
 
   // Use either internal or external tab state
   const currentActiveTab = onTabChange ? activeTab : internalActiveTab;
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!userId) return;
-      
-      setLoading(true);
-      
-      try {
-        console.log("Fetching products for seller ID:", userId);
-        
-        // Determine the product_status to filter by based on active tab
-        const statusFilter = currentActiveTab === "selling" ? "available" : "sold";
-        
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            *,
-            profiles:seller_id(
-              id,
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq('seller_id', userId)
-          .eq('product_status', statusFilter)
-          .order('created_at', { ascending: false })
-          .limit(limit);
-          
-        if (error) {
-          console.error('Error fetching seller products:', error);
-          setLoading(false);
-          return;
-        }
-        
-        console.log("Fetched products data:", data);
-        
-        if (data) {
-          const mappedProducts = data.map(item => convertToProductType(item));
-          setProducts(mappedProducts);
-        }
-      } catch (err) {
-        console.error('Error in seller products fetch:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProducts();
-  }, [userId, limit, currentActiveTab]);
 
   const handleAddProduct = () => {
     navigate('/sell');
@@ -104,14 +56,17 @@ export const SellerListings = ({
     }
   };
 
+  // Use passed products if available, otherwise use empty array
+  const displayProducts = products.slice(0, limit);
+
   return (
     <div>
       {/* Only show header if not controlled by parent */}
       {!onTabChange && (
         <div className="mb-6">
-          <h2 className="text-xl font-bold mb-2">Your products</h2>
+          <h2 className="text-xl font-bold mb-2">Products</h2>
           <p className="text-muted-foreground text-sm">
-            Here you can list items, manage the ones you already have and activate featured to sell them faster
+            View this seller's available products
           </p>
         </div>
       )}
@@ -154,7 +109,7 @@ export const SellerListings = ({
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, index) => (
             <div key={index} className="flex gap-4 border rounded-lg p-3 h-24 animate-pulse bg-gray-100"></div>
@@ -162,30 +117,22 @@ export const SellerListings = ({
         </div>
       ) : (
         <>
-          {products.length === 0 ? (
+          {displayProducts.length === 0 ? (
             <div className="rounded-lg bg-youbuy-light border border-youbuy/20 p-8 text-center">
               <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
                 <Plus className="h-8 w-8 text-youbuy" />
               </div>
-              <h3 className="text-lg font-medium mb-2">You don't have any {currentActiveTab === "sold" ? "sold" : ""} products yet</h3>
+              <h3 className="text-lg font-medium mb-2">No {currentActiveTab === "sold" ? "sold" : ""} products found</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {currentActiveTab === "selling" 
-                  ? "Start selling by uploading your first product. It's quick and easy!" 
-                  : "Products you've sold will appear here."}
+                  ? "This seller doesn't have any products listed at the moment." 
+                  : "This seller doesn't have any sold products yet."}
               </p>
-              {currentActiveTab === "selling" && (
-                <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy-dark text-white shadow-sm">
-                  <Plus className="mr-2 h-4 w-4" /> Upload your first product
-                </Button>
-              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {products.map((product) => (
+              {displayProducts.map((product) => (
                 <div key={product.id} className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                  <div className="flex-shrink-0">
-                    <input type="checkbox" className="w-5 h-5 rounded border-gray-300" />
-                  </div>
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
                     <img 
                       src={product.image} 
@@ -196,47 +143,25 @@ export const SellerListings = ({
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
+                        <p className="text-youbuy font-bold">€{product.price.toFixed(2)}</p>
                         <h3 className="font-medium text-sm">{product.title}</h3>
                       </div>
-                      <div className="mt-2 sm:mt-0 text-xs text-muted-foreground grid grid-cols-2 gap-x-4">
-                        <div>
-                          <p>Published</p>
-                          <p>{formatDate(product.createdAt)}</p>
-                        </div>
-                        <div>
-                          <p>Modified</p>
-                          <p>{product.createdAt ? formatDate(product.createdAt) : "N/A"}</p>
-                        </div>
+                      <div className="mt-2 sm:mt-0 text-xs text-muted-foreground">
+                        <p>Listed {product.timeAgo}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div>
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => handleEditProduct(product.id)}
+                      onClick={() => navigate(`/product/${product.id}`)}
                     >
-                      Edit
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="text-white bg-youbuy hover:bg-youbuy-dark"
-                    >
-                      Feature
+                      View
                     </Button>
                   </div>
                 </div>
               ))}
-              {currentActiveTab === "selling" && (
-                <Button 
-                  onClick={handleAddProduct}
-                  className="w-full py-6 border-2 border-dashed border-youbuy/30 bg-youbuy-light hover:bg-youbuy-muted text-youbuy-dark font-medium transition-colors"
-                  variant="ghost"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Upload product
-                </Button>
-              )}
             </div>
           )}
         </>

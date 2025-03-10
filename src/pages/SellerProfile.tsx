@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,16 +11,15 @@ import { SellerProfileHeader } from "@/components/seller/SellerProfileHeader";
 import { SellerListings } from "@/components/seller/SellerListings";
 import { SellerInformation } from "@/components/seller/SellerInformation";
 import { SellerNotFound } from "@/components/seller/SellerNotFound";
+import { Loader2 } from "lucide-react";
+import { convertToProductType } from "@/types/product";
 
 const SellerProfile = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl || "listings");
-
-  // Find seller info from the products data (in a real app, this would come from the API)
-  const sellerProducts = products.filter(p => p.seller.userId === id);
-  const sellerInfo = sellerProducts.length > 0 ? sellerProducts[0].seller : null;
+  const navigate = useNavigate();
 
   // Set active tab based on URL parameter
   useEffect(() => {
@@ -28,6 +27,53 @@ const SellerProfile = () => {
       setActiveTab(tabFromUrl);
     }
   }, [tabFromUrl]);
+
+  // Fetch seller profile
+  const { data: profile, isLoading: isLoadingProfile, error: profileError } = useQuery({
+    queryKey: ['seller-profile', id],
+    queryFn: async () => {
+      if (!id) throw new Error("No seller ID provided");
+      
+      console.log("Fetching seller profile for ID:", id);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching seller profile:", error);
+        throw error;
+      }
+      
+      console.log("Fetched seller profile:", data);
+      return data;
+    },
+    enabled: !!id
+  });
+
+  // Fetch seller's products
+  const { data: sellerProducts, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['seller-products', id],
+    queryFn: async () => {
+      if (!id) return [];
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          profiles:seller_id(*)
+        `)
+        .eq('seller_id', id)
+        .eq('product_status', 'available');
+      
+      if (error) throw error;
+      
+      return data?.map(item => convertToProductType(item)) || [];
+    },
+    enabled: !!id
+  });
 
   // Fetch seller reviews
   const { data: reviews, isLoading: isLoadingReviews } = useQuery({
@@ -45,7 +91,22 @@ const SellerProfile = () => {
     enabled: !!id
   });
 
-  if (!sellerInfo) {
+  // Handle loading state
+  if (isLoadingProfile || isLoadingProducts) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 container py-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Handle not found state
+  if (profileError || !profile) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -55,6 +116,21 @@ const SellerProfile = () => {
       </div>
     );
   }
+
+  // Create seller info object
+  const sellerInfo = {
+    userId: profile.id,
+    id: profile.id,
+    name: profile.full_name || profile.username || "Unknown Seller",
+    avatar: profile.avatar_url || '/placeholder.svg',
+    joinedDate: profile.created_at,
+    rating: 4.5, // Example rating (in a real app, calculate from reviews)
+    totalReviews: reviews?.length || 0,
+    totalListings: sellerProducts?.length || 0,
+    totalSales: 0,
+    totalPurchases: 0,
+    totalShipments: 0,
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -72,11 +148,11 @@ const SellerProfile = () => {
           >
             <TabsList className="grid grid-cols-3 w-full max-w-md">
               <TabsTrigger value="listings" className="text-center">
-                <span className="font-semibold">{sellerInfo.totalListings || sellerProducts.length}</span>
+                <span className="font-semibold">{sellerInfo.totalListings}</span>
                 <span className="ml-2">Published</span>
               </TabsTrigger>
               <TabsTrigger value="reviews" className="text-center">
-                <span className="font-semibold">{sellerInfo.totalReviews || 0}</span>
+                <span className="font-semibold">{sellerInfo.totalReviews}</span>
                 <span className="ml-2">Reviews</span>
               </TabsTrigger>
               <TabsTrigger value="info" className="text-center">
@@ -86,7 +162,11 @@ const SellerProfile = () => {
             </TabsList>
             
             <TabsContent value="listings" className="mt-6">
-              <SellerListings userId={id} />
+              <SellerListings 
+                userId={id} 
+                products={sellerProducts || []} 
+                isLoading={isLoadingProducts} 
+              />
             </TabsContent>
             
             <TabsContent value="reviews" className="mt-6">
