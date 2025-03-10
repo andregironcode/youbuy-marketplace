@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Share, Heart, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useFavorites } from "@/hooks/useFavorites";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductSpecifications } from "./ProductSpecifications"; 
+import { ProductSpecifications } from "./ProductSpecifications";
 
 interface ProductDetailsProps {
   product: ProductType;
@@ -23,7 +22,6 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
   const handleFavoriteClick = async () => {
     toggleFavorite(product.id);
     
-    // Update like count in the database and locally
     if (!isFavorited) {
       setLikeCount(prev => prev + 1);
       await supabase
@@ -52,12 +50,10 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
     }
   };
 
-  // Check if seller ID is available
   const hasSellerProfile = product.seller && product.seller.userId;
 
   return (
     <div className="flex flex-col">
-      {/* Product title and actions */}
       <div className="flex justify-between items-start gap-4 mb-4">
         <h1 className="text-2xl font-bold">{product.title}</h1>
         <div className="flex gap-2">
@@ -80,7 +76,6 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
         </div>
       </div>
 
-      {/* Price and badges */}
       <div className="flex items-center gap-2 mb-4">
         <p className="text-3xl font-bold text-youbuy">AED {product.price.toFixed(2)}</p>
         {product.isNew && (
@@ -91,7 +86,6 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
         )}
       </div>
 
-      {/* Location and date */}
       <div className="flex items-center gap-4 mb-6 text-muted-foreground">
         <div className="flex items-center">
           <MapPin className="h-4 w-4 mr-1" />
@@ -101,7 +95,6 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
         <span>{product.timeAgo}</span>
       </div>
 
-      {/* Seller info */}
       <div className="flex items-center justify-between border-t border-b py-4 mb-6">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
@@ -124,13 +117,11 @@ export const ProductDetails = ({ product }: ProductDetailsProps) => {
         <MessageButton product={product} />
       </div>
 
-      {/* Product description */}
       <div className="mb-6">
         <h2 className="font-semibold text-lg mb-2">Description</h2>
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
 
-      {/* Product specifications */}
       <ProductSpecifications product={product} />
     </div>
   );
