@@ -63,21 +63,22 @@ export const useMessages = (chatId?: string) => {
           
           // For local development, we'll use mock product data
           const productData = matchedProduct || {
+            id: chat.product_id,
             title: "Product Item",
             price: 100,
-            image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+            image: "/placeholder.svg"
           };
           
           // Get otherUser info - for mock data, we use the seller info from products
           let otherUserInfo = {
-            name: 'Unknown User',
+            name: 'User',
             avatar: '',
           };
           
           if (isUserSeller && matchedProduct) {
             // If current user is seller and the other user is buyer, we don't have buyer info in our mock data
             otherUserInfo = {
-              name: 'Potential Buyer',
+              name: 'Buyer',
               avatar: '',
             };
           } else if (matchedProduct) {
@@ -104,9 +105,10 @@ export const useMessages = (chatId?: string) => {
             ...chat,
             otherUser: otherUserInfo,
             product: {
-              title: productData.title || 'Unknown Product',
+              id: productData.id,
+              title: productData.title || 'Product',
               price: productData.price || 0,
-              image: productData.image || '',
+              image: productData.image || '/placeholder.svg',
             },
             lastMessage: lastMessageData?.content || "No messages yet",
             unreadCount,
@@ -176,7 +178,16 @@ export const useMessages = (chatId?: string) => {
       
       // Find product from mock data
       const productData = products.find(p => p.id === chatData.product_id);
-      setCurrentProduct(productData);
+      
+      // Set product data with fallback
+      const productToSet = productData || {
+        id: chatData.product_id,
+        title: "Product",
+        price: 0,
+        image: "/placeholder.svg"
+      };
+      
+      setCurrentProduct(productToSet);
       
       // Determine if user is buyer or seller
       const isUserSeller = chatData.seller_id === user.id;
@@ -184,13 +195,13 @@ export const useMessages = (chatId?: string) => {
       
       // Get otherUser info
       let otherUserInfo = {
-        name: 'Unknown User',
+        name: 'User',
         avatar: '',
       };
       
       if (isUserSeller && productData) {
         otherUserInfo = {
-          name: 'Potential Buyer',
+          name: 'Buyer',
           avatar: '',
         };
       } else if (productData) {
@@ -205,9 +216,10 @@ export const useMessages = (chatId?: string) => {
         ...chatData,
         otherUser: otherUserInfo,
         product: {
-          title: productData?.title || 'Unknown Product',
-          price: productData?.price || 0,
-          image: productData?.image || '',
+          id: productToSet.id,
+          title: productToSet.title || 'Product',
+          price: productToSet.price || 0,
+          image: productToSet.image || '/placeholder.svg',
         },
       };
       

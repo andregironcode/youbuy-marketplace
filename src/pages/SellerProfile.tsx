@@ -18,7 +18,7 @@ const SellerProfile = () => {
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl || "listings");
 
-  // Find seller info from the products data (in a real app, this would come from the API)
+  // Find seller info from the products data
   const sellerProducts = products.filter(p => p.seller.userId === id);
   const sellerInfo = sellerProducts.length > 0 ? sellerProducts[0].seller : null;
 
@@ -34,18 +34,25 @@ const SellerProfile = () => {
     queryKey: ['seller-reviews', id],
     queryFn: async () => {
       if (!id) return [];
-      const { data, error } = await supabase
-        .from('seller_reviews')
-        .select('*')
-        .eq('seller_id', id);
       
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from('seller_reviews')
+          .select('*')
+          .eq('seller_id', id);
+        
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error("Error fetching seller reviews:", error);
+        return [];
+      }
     },
     enabled: !!id
   });
 
-  if (!sellerInfo) {
+  // If seller ID is not provided or seller is not found
+  if (!id || !sellerInfo) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -91,7 +98,7 @@ const SellerProfile = () => {
             
             <TabsContent value="reviews" className="mt-6">
               <SellerReviews 
-                sellerId={id || ''} 
+                sellerId={id} 
                 sellerName={sellerInfo.name}
               />
             </TabsContent>
