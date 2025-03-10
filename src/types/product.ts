@@ -107,6 +107,9 @@ import { formatDistance } from "date-fns";
 export function convertToProductType(item: any, includeViews = false): ProductType {
   const profileData = item.profiles && typeof item.profiles === 'object' ? item.profiles : null;
   
+  // Make sure we extract the seller ID correctly
+  const sellerId = profileData?.id || item.seller_id;
+  
   return {
     id: item.id,
     title: item.title,
@@ -117,10 +120,11 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     location: item.location,
     timeAgo: formatDistance(new Date(item.created_at), new Date(), { addSuffix: true }),
     seller: {
-      id: item.seller_id,
+      // Ensure seller ID is a string
+      id: typeof sellerId === 'string' ? sellerId : String(sellerId),
       name: profileData?.full_name || 'Unknown Seller',
       avatar: profileData?.avatar_url || '/placeholder.svg',
-      joinedDate: item.created_at
+      joinedDate: profileData?.created_at || item.created_at
     },
     category: item.category,
     subcategory: item.subcategory || undefined,

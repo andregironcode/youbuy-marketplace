@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -156,6 +155,14 @@ const ProductDetail = () => {
     );
   }
 
+  // Extract the correct seller ID for navigation - ensure it's a string
+  const sellerId = typeof product.seller.id === 'object' 
+    ? (product.seller.userId || '') 
+    : product.seller.id;
+
+  console.log("Seller ID for navigation:", sellerId);
+  console.log("Full seller object:", product.seller);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -276,7 +283,7 @@ const ProductDetail = () => {
                     variant="outline"
                     className="w-full justify-start"
                   >
-                    <Link to={`/seller/${product.seller.id || product.seller.userId}`}>
+                    <Link to={`/seller/${sellerId}`}>
                       View profile
                     </Link>
                   </Button>
