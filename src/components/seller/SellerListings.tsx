@@ -1,11 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProductType } from "@/types/product";
+import { ProductType, convertToProductType } from "@/types/product";
 import { Button } from "../ui/button";
 import { ListFilter, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface SellerListingsProps {
   userId?: string;
@@ -23,14 +25,65 @@ export const SellerListings = ({
   activeTab = "selling",
   showTabs = false,
   onTabChange,
-  products = [],
-  isLoading = false
+  products: initialProducts = [],
+  isLoading: initialLoading = false
 }: SellerListingsProps) => {
   const [internalActiveTab, setInternalActiveTab] = useState<"selling" | "sold">(activeTab);
+  const [products, setProducts] = useState<ProductType[]>(initialProducts);
+  const [isLoading, setIsLoading] = useState<boolean>(initialLoading);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Use either internal or external tab state
   const currentActiveTab = onTabChange ? activeTab : internalActiveTab;
+
+  // Fetch products when userId changes or tab changes
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!userId) return;
+      
+      setIsLoading(true);
+      try {
+        console.log("Fetching products for user:", userId);
+        console.log("Current tab:", currentActiveTab);
+        
+        const status = currentActiveTab === "selling" ? "available" : "sold";
+        
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, profiles(*)')
+          .eq('seller_id', userId)
+          .eq('product_status', status)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+          
+        if (error) {
+          console.error("Error fetching products:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load products. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        console.log("Products fetched:", data);
+        
+        // Convert the data to ProductType
+        const formattedProducts = data.map(item => convertToProductType(item, true));
+        setProducts(formattedProducts);
+      } catch (error) {
+        console.error("Error in products fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Only fetch if we're not using externally provided products
+    if (initialProducts.length === 0 && userId) {
+      fetchProducts();
+    }
+  }, [userId, currentActiveTab, limit, toast, initialProducts]);
 
   const handleAddProduct = () => {
     navigate('/sell');
@@ -56,7 +109,7 @@ export const SellerListings = ({
     }
   };
 
-  // Use passed products if available, otherwise use empty array
+  // Use passed products if available, otherwise use fetched products
   const displayProducts = products.slice(0, limit);
 
   return (
@@ -125,9 +178,14 @@ export const SellerListings = ({
               <h3 className="text-lg font-medium mb-2">No {currentActiveTab === "sold" ? "sold" : ""} products found</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {currentActiveTab === "selling" 
-                  ? "This seller doesn't have any products listed at the moment." 
-                  : "This seller doesn't have any sold products yet."}
+                  ? "You don't have any products listed at the moment." 
+                  : "You don't have any sold products yet."}
               </p>
+              {currentActiveTab === "selling" && (
+                <Button onClick={handleAddProduct} className="bg-youbuy hover:bg-youbuy/90">
+                  Add product
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -151,13 +209,20 @@ export const SellerListings = ({
                       </div>
                     </div>
                   </div>
-                  <div>
+                  <div className="flex gap-2">
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={() => navigate(`/product/${product.id}`)}
                     >
                       View
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditProduct(product.id)}
+                    >
+                      Edit
                     </Button>
                   </div>
                 </div>
