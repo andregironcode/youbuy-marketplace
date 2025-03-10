@@ -31,6 +31,7 @@ export const SellerListings = ({
   const [internalActiveTab, setInternalActiveTab] = useState<"selling" | "sold">(activeTab);
   const [products, setProducts] = useState<ProductType[]>(initialProducts);
   const [isLoading, setIsLoading] = useState<boolean>(initialLoading);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -76,14 +77,26 @@ export const SellerListings = ({
         console.error("Error in products fetch:", error);
       } finally {
         setIsLoading(false);
+        setHasAttemptedFetch(true);
       }
     };
 
-    // Only fetch if we're not using externally provided products
-    if (initialProducts.length === 0 && userId) {
+    // Only fetch if we're not using externally provided products and haven't already attempted a fetch
+    if (initialProducts.length === 0 && userId && !hasAttemptedFetch) {
       fetchProducts();
+    } else if (initialProducts.length > 0 && !hasAttemptedFetch) {
+      // If we have initial products, mark as fetched and not loading
+      setHasAttemptedFetch(true);
+      setIsLoading(false);
     }
-  }, [userId, currentActiveTab, limit, toast, initialProducts]);
+  }, [userId, currentActiveTab, limit, toast, initialProducts, hasAttemptedFetch]);
+
+  // When tab changes, reset fetch state to allow a new fetch
+  useEffect(() => {
+    if (onTabChange) {
+      setHasAttemptedFetch(false);
+    }
+  }, [activeTab, onTabChange]);
 
   const handleAddProduct = () => {
     navigate('/sell');
@@ -106,11 +119,12 @@ export const SellerListings = ({
       onTabChange(tab);
     } else {
       setInternalActiveTab(tab);
+      setHasAttemptedFetch(false); // Reset fetch state when internal tab changes
     }
   };
 
   // Use passed products if available, otherwise use fetched products
-  const displayProducts = products.slice(0, limit);
+  const displayProducts = initialProducts.length > 0 ? initialProducts.slice(0, limit) : products.slice(0, limit);
 
   return (
     <div>
