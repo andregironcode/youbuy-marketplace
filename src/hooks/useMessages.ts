@@ -5,14 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatType, MessageType } from "@/types/message";
+import { products } from "@/data/products";
 import { 
   markMessagesAsRead,
   deleteMessage,
-  sendTextMessage,
-  getChatUnreadCount,
-  getProductById,
-  getUserProfileById,
-  enhanceChat
+  sendTextMessage, 
+  getChatUnreadCount 
 } from "@/utils/messageHelpers";
 
 export const useMessages = (chatId?: string) => {
@@ -53,19 +51,72 @@ export const useMessages = (chatId?: string) => {
       
       console.log("Chats fetched:", data);
 
-      if (!data || data.length === 0) {
-        setChats([]);
-        setLoadingChats(false);
-        return;
-      }
-
-      // Enhance chats with additional information
+      // Get products from our local data for this demo
       const enhancedChats = await Promise.all(
-        data.map(chat => enhanceChat(chat, user.id))
+        (data || []).map(async (chat) => {
+          // Determine if user is buyer or seller
+          const isUserSeller = chat.seller_id === user.id;
+          const otherUserId = isUserSeller ? chat.buyer_id : chat.seller_id;
+          
+          // Find matching product from our local data
+          const matchedProduct = products.find(p => p.id === chat.product_id);
+          
+          // For local development, we'll use mock product data
+          const productData = matchedProduct || {
+            id: chat.product_id,
+            title: "Product Item",
+            price: 100,
+            image: "/placeholder.svg"
+          };
+          
+          // Get otherUser info - for mock data, we use the seller info from products
+          let otherUserInfo = {
+            name: 'User',
+            avatar: '',
+          };
+          
+          if (isUserSeller && matchedProduct) {
+            // If current user is seller and the other user is buyer, we don't have buyer info in our mock data
+            otherUserInfo = {
+              name: 'Buyer',
+              avatar: '',
+            };
+          } else if (matchedProduct) {
+            // If current user is buyer, use the seller info from our mock data
+            otherUserInfo = {
+              name: matchedProduct.seller.name,
+              avatar: matchedProduct.seller.avatar,
+            };
+          }
+
+          // Get last message
+          const { data: lastMessageData } = await supabase
+            .from('messages')
+            .select('content, created_at')
+            .eq('product_id', chat.product_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Get unread count
+          const unreadCount = await getChatUnreadCount(user.id, chat.product_id);
+
+          return {
+            ...chat,
+            otherUser: otherUserInfo,
+            product: {
+              id: productData.id,
+              title: productData.title || 'Product',
+              price: productData.price || 0,
+              image: productData.image || '/placeholder.svg',
+            },
+            lastMessage: lastMessageData?.content || "No messages yet",
+            unreadCount,
+          };
+        })
       );
 
-      // Filter out any null chats (in case enhancement failed)
-      setChats(enhancedChats.filter(Boolean) as ChatType[]);
+      setChats(enhancedChats);
     } catch (error) {
       console.error("Error fetching chats:", error);
       toast({
@@ -125,39 +176,50 @@ export const useMessages = (chatId?: string) => {
         return;
       }
       
-      // Get product data
-      const product = await getProductById(chatData.product_id);
-      setCurrentProduct(product || {
+      // Find product from mock data
+      const productData = products.find(p => p.id === chatData.product_id);
+      
+      // Set product data with fallback
+      const productToSet = productData || {
         id: chatData.product_id,
         title: "Product",
         price: 0,
         image: "/placeholder.svg"
-      });
+      };
+      
+      setCurrentProduct(productToSet);
       
       // Determine if user is buyer or seller
       const isUserSeller = chatData.seller_id === user.id;
       const otherUserId = isUserSeller ? chatData.buyer_id : chatData.seller_id;
       
-      // Get other user profile
-      const otherUserProfile = await getUserProfileById(otherUserId);
+      // Get otherUser info
+      let otherUserInfo = {
+        name: 'User',
+        avatar: '',
+      };
       
-      // Prepare enhanced chat data
+      if (isUserSeller && productData) {
+        otherUserInfo = {
+          name: 'Buyer',
+          avatar: '',
+        };
+      } else if (productData) {
+        otherUserInfo = {
+          name: productData.seller.name,
+          avatar: productData.seller.avatar,
+        };
+      }
+      
+      // Set enhanced chat data
       const enhancedChatData = {
         ...chatData,
-        otherUser: {
-          name: otherUserProfile?.full_name || 'User',
-          avatar: otherUserProfile?.avatar_url || '',
-        },
-        product: product ? {
-          id: product.id,
-          title: product.title,
-          price: product.price,
-          image: product.image,
-        } : {
-          id: chatData.product_id,
-          title: 'Product',
-          price: 0,
-          image: '/placeholder.svg',
+        otherUser: otherUserInfo,
+        product: {
+          id: productToSet.id,
+          title: productToSet.title || 'Product',
+          price: productToSet.price || 0,
+          image: productToSet.image || '/placeholder.svg',
         },
       };
       
