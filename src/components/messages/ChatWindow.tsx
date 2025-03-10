@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,6 @@ export const ChatWindow = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Scroll to bottom of messages whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -48,7 +46,6 @@ export const ChatWindow = ({
     const files = e.target.files;
     if (files && files.length > 0 && handleImageUpload) {
       handleImageUpload(files[0]);
-      // Reset the input to allow uploading the same file again
       e.target.value = '';
     }
   };
@@ -57,7 +54,6 @@ export const ChatWindow = ({
     fileInputRef.current?.click();
   };
 
-  // Chat Header - Always show this, even while loading
   const renderChatHeader = () => (
     <div className="p-3 border-b bg-gray-50 flex items-center">
       <Button 
@@ -97,7 +93,6 @@ export const ChatWindow = ({
     </div>
   );
 
-  // Product Info - Skeleton while loading
   const renderProductInfo = () => {
     if (loading) {
       return (
@@ -113,10 +108,12 @@ export const ChatWindow = ({
       );
     }
     
-    return <ProductInfoCard product={currentProduct || currentChat?.product} />;
+    return <ProductInfoCard 
+      product={currentProduct || currentChat?.product} 
+      productId={currentChat?.product_id}
+    />;
   };
 
-  // Messages area - Skeleton while loading
   const renderMessages = () => {
     if (loading) {
       return (
@@ -156,7 +153,6 @@ export const ChatWindow = ({
       {renderProductInfo()}
       {renderMessages()}
 
-      {/* Input Area - Always show this */}
       <div className="p-3 border-t">
         <div className="flex space-x-2">
           <Textarea

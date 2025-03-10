@@ -1,7 +1,48 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ChatType, MessageType } from "@/types/message";
+import { products } from "@/data/products";
+
+/**
+ * Fetch product information by product ID
+ */
+export const fetchProductInfo = async (productId: string) => {
+  try {
+    // First try to get from database
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    
+    if (data) {
+      return {
+        id: data.id,
+        title: data.title,
+        price: parseFloat(data.price),
+        image: data.image_urls?.[0] || '/placeholder.svg',
+      };
+    }
+    
+    // Fallback to local data if not found in database
+    const localProduct = products.find(p => p.id === productId);
+    if (localProduct) {
+      return {
+        id: localProduct.id,
+        title: localProduct.title,
+        price: localProduct.price,
+        image: localProduct.image,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error fetching product info:", error);
+    return null;
+  }
+};
 
 /**
  * Marks messages as read for a specific chat and user
