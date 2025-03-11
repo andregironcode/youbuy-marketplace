@@ -11,6 +11,7 @@ import Sell from "./pages/Sell";
 import Favorites from "./pages/Favorites";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import SearchPage from "./pages/SearchPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -36,6 +37,7 @@ function App() {
             <Route path="/category/:categoryId" element={<CategoryPage />} />
             <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
             <Route path="/category/:categoryId/:subcategoryId/:subSubcategoryId" element={<CategoryPage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/sell" element={<Sell />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/notifications" element={<Notifications />} />

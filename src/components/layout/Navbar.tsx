@@ -1,8 +1,6 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { SearchBar } from "@/components/search/SearchBar";
 
 export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) => {
   const isMobile = useIsMobile();
@@ -99,14 +98,7 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
         </Button>
 
         <div className="flex-1 mx-1 md:mx-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="w-full pl-8 bg-muted text-sm h-9"
-            />
-          </div>
+          <SearchBar />
         </div>
 
         <div className="flex items-center justify-end space-x-1 md:space-x-2">
