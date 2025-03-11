@@ -1,4 +1,3 @@
-
 export interface ProductType {
   id: string;
   title: string;
@@ -110,6 +109,11 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
   // Make sure we extract the seller ID correctly
   const sellerId = profileData?.id || item.seller_id;
   
+  // Create coordinates object if latitude and longitude exist
+  const coordinates = (item.latitude && item.longitude) 
+    ? { latitude: parseFloat(item.latitude), longitude: parseFloat(item.longitude) }
+    : undefined;
+  
   return {
     id: item.id,
     title: item.title,
@@ -118,6 +122,7 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     image: item.image_urls?.[0] || '/placeholder.svg',
     images: item.image_urls || [],
     location: item.location,
+    coordinates,
     timeAgo: formatDistance(new Date(item.created_at), new Date(), { addSuffix: true }),
     seller: {
       // Ensure seller ID is a string

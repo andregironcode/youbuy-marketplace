@@ -117,8 +117,10 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_bulk_listing: boolean | null
+          latitude: number | null
           like_count: number
           location: string
+          longitude: number | null
           price: string
           product_status: string
           promotion_level: string
@@ -143,8 +145,10 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_bulk_listing?: boolean | null
+          latitude?: number | null
           like_count?: number
           location: string
+          longitude?: number | null
           price: string
           product_status?: string
           promotion_level?: string
@@ -169,8 +173,10 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_bulk_listing?: boolean | null
+          latitude?: number | null
           like_count?: number
           location?: string
+          longitude?: number | null
           price?: string
           product_status?: string
           promotion_level?: string
@@ -256,7 +262,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_distance: {
+        Args: {
+          lat1: number
+          lon1: number
+          lat2: number
+          lon2: number
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

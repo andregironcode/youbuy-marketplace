@@ -17,6 +17,7 @@ import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar, MessageCircle, Shop
 import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { LocationMap } from "@/components/map/LocationMap";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -336,12 +337,27 @@ const ProductDetail = () => {
             {/* Location info */}
             <Card>
               <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Location</h3>
-                    <p className="text-sm text-muted-foreground">{product.location || "Not specified"}</p>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium">Location</h3>
+                      <p className="text-sm text-muted-foreground">{product.location || "Not specified"}</p>
+                    </div>
                   </div>
+                  
+                  {/* Show approximate location map if coordinates are available */}
+                  {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
+                    <LocationMap
+                      latitude={product.coordinates.latitude}
+                      longitude={product.coordinates.longitude}
+                      height="150px"
+                      zoom={13}
+                      interactive={false}
+                      showMarker={true}
+                      approximate={true}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>

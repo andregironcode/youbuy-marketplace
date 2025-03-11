@@ -20,6 +20,7 @@ const Sell = () => {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [subSubcategory, setSubSubcategory] = useState("");
@@ -188,6 +189,15 @@ const Sell = () => {
       return;
     }
 
+    if (!coordinates) {
+      toast({
+        title: "Location required",
+        description: "Please set a location for your item",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const listingsToCreate = isBulkListing ? parseInt(bulkQuantity) || 1 : 1;
     
     if (listingsToCreate > 1 && variations.length > 0) {
@@ -220,6 +230,8 @@ const Sell = () => {
         price,
         description,
         location,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
         category,
         subcategory,
         sub_subcategory: subSubcategory,
@@ -374,6 +386,8 @@ const Sell = () => {
           <LocationStep 
             location={location}
             setLocation={setLocation}
+            coordinates={coordinates}
+            setCoordinates={setCoordinates}
             setCurrentStep={setCurrentStep}
           />
         );
@@ -387,6 +401,7 @@ const Sell = () => {
             imagePreviewUrls={imagePreviewUrls}
             specifications={specifications}
             weight={weight}
+            coordinates={coordinates}
             shippingOptions={shippingOptions}
             setCurrentStep={setCurrentStep}
             handleSubmit={handleSubmit}

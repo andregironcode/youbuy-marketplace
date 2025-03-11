@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SellStep } from "@/types/sellForm";
 import { ProductSpecifications } from "@/types/product";
+import { LocationMap } from "@/components/map/LocationMap";
 
 interface PreviewStepProps {
   title: string;
@@ -20,6 +21,7 @@ interface PreviewStepProps {
   imagePreviewUrls: string[];
   specifications: ProductSpecifications;
   weight: string;
+  coordinates: { latitude: number; longitude: number } | null;
   shippingOptions: {
     inPersonMeetup: boolean;
     platformShipping: boolean;
@@ -38,6 +40,7 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
   imagePreviewUrls,
   specifications,
   weight,
+  coordinates,
   shippingOptions,
   setCurrentStep,
   handleSubmit,
@@ -71,6 +74,19 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                 <span className="text-xl font-bold">{price ? `AED ${price}` : ''}</span>
                 <span className="text-sm text-muted-foreground">{location}</span>
               </div>
+              
+              {/* Location Map */}
+              {coordinates && (
+                <div className="h-[150px] rounded-md overflow-hidden">
+                  <LocationMap
+                    latitude={coordinates.latitude}
+                    longitude={coordinates.longitude}
+                    height="150px"
+                    interactive={false}
+                    showMarker={true}
+                  />
+                </div>
+              )}
               
               <div>
                 <h4 className="font-medium">Description</h4>
