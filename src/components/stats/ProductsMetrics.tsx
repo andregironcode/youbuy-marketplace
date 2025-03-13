@@ -43,21 +43,21 @@ export const ProductsMetrics = () => {
           }
         }}
       >
-        <BarChart data={data} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}> {/* Reduced margins */}
+        <BarChart data={data} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis 
             dataKey="name" 
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11 }} {/* Set smaller font size */}
+            tick={{ fontSize: 11 }}
           />
           <YAxis 
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11 }} {/* Set smaller font size */}
+            tick={{ fontSize: 11 }}
           />
           <Tooltip />
-          <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} /> {/* Reduced icon size and font size */}
+          <Legend iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
           <Bar dataKey="views" fill="#4338CA" radius={[4, 4, 0, 0]} />
           <Bar dataKey="likes" fill="#EC4899" radius={[4, 4, 0, 0]} />
           <Bar dataKey="messages" fill="#10B981" radius={[4, 4, 0, 0]} />
