@@ -1,7 +1,6 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,7 +27,6 @@ const Favorites = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <div className="flex-1 flex">
         <ProfileSidebar />
         <div className="flex-1 p-6">

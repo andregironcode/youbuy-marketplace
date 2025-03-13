@@ -1,7 +1,6 @@
 
 import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
 import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
@@ -47,7 +46,6 @@ const Messages = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <div className="flex flex-1 overflow-hidden">
         <ProfileSidebar />
         <main className="flex-1 container py-4">
