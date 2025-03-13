@@ -6,7 +6,6 @@ import { ProductType } from "@/types/product";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { convertToProductType } from "@/types/product";
-import { CategoryNav } from "@/components/category/CategoryNav";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 
 const CategoryPage = () => {
@@ -130,8 +129,6 @@ const CategoryPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <CategoryNav selectedCategory={selectedCategory} setSelectedCategory={handleCategoryChange} />
-      
       <CategoryBrowser 
         open={showCategories} 
         onOpenChange={setShowCategories} 
