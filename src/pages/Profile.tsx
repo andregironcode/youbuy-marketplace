@@ -13,8 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { CreditCard, AlertTriangle } from "lucide-react";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
+import { ProfileHelp } from "@/components/profile/ProfileHelp";
 
-// Products Page Component
 const ProductsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -208,7 +208,6 @@ const ProductsPage = () => {
   );
 };
 
-// Placeholder components for other sections
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="flex-1 p-6">
     <h1 className="text-2xl font-bold mb-4">{title}</h1>
@@ -216,7 +215,6 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
-// Purchases Page Component
 const PurchasesPage = () => {
   return (
     <div className="flex-1 p-6">
@@ -231,7 +229,6 @@ const PurchasesPage = () => {
   );
 };
 
-// Sales Page Component
 const SalesPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -239,7 +236,6 @@ const SalesPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const setupSuccess = searchParams.get('setup') === 'success';
   
-  // Query seller account data
   const { data: sellerAccount, isLoading: loadingAccount, refetch } = useQuery({
     queryKey: ["sellerAccount", user?.id],
     queryFn: async () => {
@@ -257,7 +253,6 @@ const SalesPage = () => {
     enabled: !!user,
   });
   
-  // Refetch data when setup is successful
   useEffect(() => {
     if (setupSuccess) {
       refetch();
@@ -288,7 +283,6 @@ const SalesPage = () => {
       
       if (response.error) throw new Error(response.error);
       
-      // Redirect to Stripe onboarding
       window.location.href = response.data.url;
     } catch (error) {
       console.error("Error creating seller account:", error);
@@ -313,7 +307,6 @@ const SalesPage = () => {
       
       if (response.error) throw new Error(response.error);
       
-      // Redirect to Stripe dashboard
       window.location.href = response.data.url;
     } catch (error) {
       console.error("Error updating seller account:", error);
@@ -391,7 +384,6 @@ const SalesPage = () => {
   );
 };
 
-// Redirect component for the Inbox (leads to Messages page)
 const InboxPage = () => {
   const navigate = useNavigate();
   
@@ -402,7 +394,6 @@ const InboxPage = () => {
   return null;
 };
 
-// Redirect component for Favorites (leads to main Favorites page)
 const FavoritesRedirect = () => {
   const navigate = useNavigate();
   
@@ -413,11 +404,18 @@ const FavoritesRedirect = () => {
   return null;
 };
 
-// Update the Settings page component to use our new ProfileSettings component
 const SettingsPage = () => {
   return (
     <div className="flex-1">
       <ProfileSettings />
+    </div>
+  );
+};
+
+const HelpPage = () => {
+  return (
+    <div className="flex-1">
+      <ProfileHelp />
     </div>
   );
 };
@@ -452,7 +450,7 @@ const Profile = () => {
           <Route path="stats" element={<StatsOverview />} />
           <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="help" element={<PlaceholderPage title="Help" />} />
+          <Route path="help" element={<HelpPage />} />
         </Routes>
       </div>
     </div>
