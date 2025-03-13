@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -185,7 +186,7 @@ const ProductsPage = () => {
 
   return (
     <div className="flex-1 p-6">
-      <div className="mb-6">
+      <div className="mb-6 text-left">
         <h1 className="text-2xl font-bold">Your products</h1>
         <p className="text-muted-foreground">
           Here you can list items, manage the ones you already have and activate featured to sell them faster
@@ -210,15 +211,15 @@ const ProductsPage = () => {
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="flex-1 p-6">
-    <h1 className="text-2xl font-bold mb-4">{title}</h1>
-    <p className="text-muted-foreground">This section is under development.</p>
+    <h1 className="text-2xl font-bold mb-4 text-left">{title}</h1>
+    <p className="text-muted-foreground text-left">This section is under development.</p>
   </div>
 );
 
 const PurchasesPage = () => {
   return (
     <div className="flex-1 p-6">
-      <div className="mb-6">
+      <div className="mb-6 text-left">
         <h1 className="text-2xl font-bold">Your Purchases</h1>
         <p className="text-muted-foreground">
           Track your order history and view details of items you've bought
@@ -320,7 +321,7 @@ const SalesPage = () => {
 
   return (
     <div className="flex-1 p-6">
-      <div className="mb-6">
+      <div className="mb-6 text-left">
         <h1 className="text-2xl font-bold">Your Sales</h1>
         <p className="text-muted-foreground">
           Track your sold items and manage orders from buyers
@@ -330,16 +331,16 @@ const SalesPage = () => {
       {user && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center">
+            <CardTitle className="text-lg flex items-center text-left">
               <CreditCard className="mr-2 h-5 w-5" />
               Seller Payment Account
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loadingAccount ? (
-              <p>Loading account information...</p>
+              <p className="text-left">Loading account information...</p>
             ) : sellerAccount ? (
-              <div>
+              <div className="text-left">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Stripe Connect Account</p>
@@ -366,7 +367,7 @@ const SalesPage = () => {
                 )}
               </div>
             ) : (
-              <div>
+              <div className="text-left">
                 <p className="mb-4">
                   Set up your payment account to start selling and receiving payments securely.
                 </p>
@@ -438,20 +439,22 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col md:flex-row">
         <ProfileSidebar />
-        <Routes>
-          <Route path="/" element={<Navigate to="/profile/products" replace />} />
-          <Route path="purchases" element={<PurchasesPage />} />
-          <Route path="sales" element={<SalesPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="inbox" element={<InboxPage />} />
-          <Route path="favorites" element={<FavoritesRedirect />} />
-          <Route path="stats" element={<StatsOverview />} />
-          <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="help" element={<HelpPage />} />
-        </Routes>
+        <main className="flex-1 overflow-auto">
+          <Routes>
+            <Route path="/" element={<Navigate to="/profile/products" replace />} />
+            <Route path="purchases" element={<PurchasesPage />} />
+            <Route path="sales" element={<SalesPage />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="inbox" element={<InboxPage />} />
+            <Route path="favorites" element={<FavoritesRedirect />} />
+            <Route path="stats" element={<StatsOverview />} />
+            <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="help" element={<HelpPage />} />
+          </Routes>
+        </main>
       </div>
     </div>
   );

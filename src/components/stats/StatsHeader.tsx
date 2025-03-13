@@ -13,7 +13,7 @@ export const StatsHeader = () => {
   };
   
   return (
-    <div className="flex flex-col gap-4 sm:flex-row items-start sm:items-center justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row items-start sm:items-center justify-between text-left">
       <div>
         <h1 className="text-2xl font-bold">Statistics & Insights</h1>
         <p className="text-muted-foreground">

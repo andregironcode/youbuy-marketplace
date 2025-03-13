@@ -224,7 +224,7 @@ export function ProfileHelp() {
   );
 
   return (
-    <div className="container py-6 max-w-5xl">
+    <div className="container max-w-5xl mx-auto px-4 py-6 text-left">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Help Center</h1>
         <p className="text-muted-foreground">
@@ -322,7 +322,7 @@ export function ProfileHelp() {
           {!searchQuery ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {supportCategories.map(category => (
-                <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow text-left">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div className="flex items-center">
                       <div className="mr-2 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
@@ -354,7 +354,7 @@ export function ProfileHelp() {
                       {category.faqs.map((faq, index) => (
                         <AccordionItem key={index} value={`${category.id}-${index}`} className="border rounded-md px-4">
                           <AccordionTrigger className="py-4 text-left">{faq.question}</AccordionTrigger>
-                          <AccordionContent className="pt-0 pb-4 text-muted-foreground">
+                          <AccordionContent className="pt-0 pb-4 text-muted-foreground text-left">
                             {faq.answer}
                           </AccordionContent>
                         </AccordionItem>
@@ -400,8 +400,8 @@ export function ProfileHelp() {
                 )
                 .map((faq, index) => (
                   <AccordionItem key={index} value={`${category.id}-${index}`} className="border rounded-md px-4">
-                    <AccordionTrigger className="py-4">{faq.question}</AccordionTrigger>
-                    <AccordionContent className="pt-0 pb-4 text-muted-foreground">
+                    <AccordionTrigger className="py-4 text-left">{faq.question}</AccordionTrigger>
+                    <AccordionContent className="pt-0 pb-4 text-muted-foreground text-left">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
@@ -434,7 +434,7 @@ export function ProfileHelp() {
       
       {/* Contact Options */}
       <div className="mt-12 p-6 border rounded-lg bg-muted/30">
-        <h2 className="text-xl font-semibold mb-4">Still need help?</h2>
+        <h2 className="text-xl font-semibold mb-4 text-left">Still need help?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center" onClick={() => setContactFormOpen(true)}>
             <Mail className="h-8 w-8 mb-2" />
