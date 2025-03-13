@@ -79,10 +79,10 @@ const CheckoutPage = () => {
     try {
       // 1. Create order record using the stored procedure
       const { data: orderData, error: orderError } = await supabase.rpc('create_order', {
-        p_product_id: id, // `id` is already a string from useParams
+        p_product_id: id, // id is a string from useParams
         p_buyer_id: user.id,
         p_seller_id: product.seller.id,
-        p_amount: parseFloat(product.price),
+        p_amount: product.price, // Fixed: the price should be passed as a string
         p_status: 'paid',
         p_delivery_details: deliveryDetails
       });
