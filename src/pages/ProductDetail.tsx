@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -120,7 +120,6 @@ const ProductDetail = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
         <main className="flex-1 container py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="animate-pulse bg-gray-200 rounded-lg h-[400px]"></div>
@@ -138,7 +137,6 @@ const ProductDetail = () => {
   if (error || !product) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
         <main className="flex-1 container py-8">
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-8">
@@ -166,7 +164,6 @@ const ProductDetail = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-1 container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column: Product images */}

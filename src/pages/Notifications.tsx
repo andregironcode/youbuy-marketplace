@@ -1,5 +1,4 @@
 
-import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Bell, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -61,7 +60,6 @@ const NotificationItem = ({ notification }: { notification: typeof notifications
 const Notifications = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-1 container py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl font-bold mb-6">Notifications</h1>

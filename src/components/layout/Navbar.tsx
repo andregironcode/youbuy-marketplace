@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
@@ -15,9 +16,18 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showCategories, setShowCategories] = useState(false);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
+  };
+
+  const toggleCategories = () => {
+    setShowCategories(!showCategories);
+    // Call the external onCategoryClick if provided
+    if (onCategoryClick) {
+      onCategoryClick();
+    }
   };
 
   const getInitials = () => {
@@ -91,7 +101,7 @@ export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) =>
           variant="ghost" 
           size="sm"
           className="mr-1 md:mr-2 whitespace-nowrap"
-          onClick={onCategoryClick}
+          onClick={toggleCategories}
         >
           <Menu className="h-4 w-4 mr-1" />
           <span className="text-xs md:text-sm">Categories</span>

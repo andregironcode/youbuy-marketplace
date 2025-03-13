@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { searchProducts } from "@/utils/searchUtils";
 import { ProductType } from "@/types/product";
@@ -51,7 +50,6 @@ const SearchPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1 container py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Search Results</h1>
