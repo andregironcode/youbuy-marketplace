@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { searchProducts, getCategorySuggestions } from "@/utils/searchUtils";
 import { ProductType } from "@/types/product";
-import { Loader2, Search as SearchIcon } from "lucide-react";
+import { Loader2, Search as SearchIcon, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SearchResultsProps {
@@ -58,6 +58,11 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
     if (onSelectResult) onSelectResult();
   };
 
+  const handleSearchInCategory = (category: string) => {
+    navigate(`/search?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`);
+    if (onSelectResult) onSelectResult();
+  };
+
   const handleResultClick = () => {
     if (onSelectResult) onSelectResult();
   };
@@ -80,15 +85,24 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
               <h3 className="text-xs font-medium text-muted-foreground mb-2 px-2">Categories</h3>
               <div className="space-y-1">
                 {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant="ghost"
-                    className="w-full justify-start text-sm h-auto py-2"
-                    onClick={() => handleCategoryClick(category)}
-                  >
-                    <SearchIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                    <span>{query} in <span className="font-semibold">{category}</span></span>
-                  </Button>
+                  <div key={category} className="flex flex-col space-y-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm h-auto py-2"
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                      <span>Browse <span className="font-semibold">{category}</span></span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm h-auto py-2"
+                      onClick={() => handleSearchInCategory(category)}
+                    >
+                      <SearchIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                      <span>Search "{query}" in <span className="font-semibold">{category}</span></span>
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
