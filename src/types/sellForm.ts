@@ -37,4 +37,15 @@ export interface SellFormData {
   promotionLevel: 'none' | 'basic' | 'premium' | 'featured';
   sellerId?: string;
   createdAt?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  returnPolicy?: string;
+  warranty?: string;
+  dimensions?: {
+    width?: string;
+    depth?: string;
+    height?: string;
+  };
 }
