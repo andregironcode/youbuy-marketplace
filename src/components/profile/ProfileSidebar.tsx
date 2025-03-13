@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,11 @@ export const ProfileSidebar = () => {
     }
     return user.email?.charAt(0).toUpperCase() || "U";
   };
+  
+  // Check if the current path starts with the item path
+  const isPathActive = (itemPath: string) => {
+    return location.pathname.startsWith(itemPath);
+  };
 
   return (
     <aside className="w-60 bg-sidebar border-r h-[calc(100vh-64px)] flex flex-col">
@@ -70,7 +76,7 @@ export const ProfileSidebar = () => {
       <nav className="flex-1">
         <ul className="space-y-0">
           {sidebarItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = isPathActive(item.path);
             return (
               <li key={item.path}>
                 <Link
