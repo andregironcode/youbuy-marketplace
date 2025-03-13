@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { categoryNav } from "@/data/categories";
 import { Filter, LayoutGrid } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface CategoryNavProps {
   selectedCategory: string;
@@ -13,9 +14,19 @@ interface CategoryNavProps {
 export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryNavProps) => {
   const isMobile = useIsMobile();
   const [showGrid, setShowGrid] = useState(false);
+  const navigate = useNavigate();
   
   // Only show main categories in the top navigation bar (limited number)
   const mainCategories = categoryNav.slice(0, isMobile ? 3 : 6);
+  
+  const handleCategoryClick = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    if (categoryId === "all") {
+      navigate("/");
+    } else {
+      navigate(`/category/${categoryId}`);
+    }
+  };
   
   return (
     <div className="border-b">
@@ -26,7 +37,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
             variant={selectedCategory === "all" ? "default" : "outline"}
             size="sm"
             className={selectedCategory === "all" ? "bg-youbuy hover:bg-youbuy-dark" : "hover:bg-youbuy/10 hover:text-youbuy"}
-            onClick={() => setSelectedCategory("all")}
+            onClick={() => handleCategoryClick("all")}
           >
             All Categories
           </Button>
@@ -37,7 +48,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
               variant={selectedCategory === category.id ? "default" : "outline"}
               size="sm"
               className={selectedCategory === category.id ? "bg-youbuy hover:bg-youbuy-dark" : "hover:bg-youbuy/10 hover:text-youbuy"}
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => handleCategoryClick(category.id)}
             >
               {category.name}
             </Button>
@@ -67,7 +78,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
                   selectedCategory === category.id ? "bg-youbuy/10 text-youbuy" : ""
                 }`}
                 onClick={() => {
-                  setSelectedCategory(category.id);
+                  handleCategoryClick(category.id);
                   setShowGrid(false);
                 }}
               >

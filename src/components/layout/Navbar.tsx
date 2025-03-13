@@ -25,12 +25,12 @@ export const Navbar = () => {
   };
 
   const toggleCategories = () => {
-    // Dispatch a custom event that pages can listen for
+    // Dispatch a custom event that all pages can listen for
     const event = new CustomEvent('toggleCategories');
     window.dispatchEvent(event);
     
     // Log to verify the event is being dispatched
-    console.log('Categories toggle event dispatched');
+    console.log('Categories toggle event dispatched from Navbar');
   };
 
   const getInitials = () => {

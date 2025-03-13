@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +9,8 @@ import { publishProduct, updatePromotionLevel } from "@/utils/productUtils";
 import { SellFormSteps } from "@/components/sell/SellFormSteps";
 import { PromoteDialog } from "@/components/sell/PromoteDialog";
 import { useNavigate } from "react-router-dom";
+import { CategoryBrowser } from "@/components/category/CategoryBrowser";
+import { useCategoryToggle } from "@/hooks/useCategoryToggle";
 
 const SellContent = () => {
   const { 
@@ -27,6 +30,7 @@ const SellContent = () => {
   } = useImageUpload();
   
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const { showCategories, setShowCategories } = useCategoryToggle();
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -49,6 +53,20 @@ const SellContent = () => {
       subcategory: subcategoryId || "",
       subSubcategory: subSubcategoryId || ""
     });
+  };
+
+  const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
+    if (categoryId === "all") {
+      navigate("/");
+    } else if (subSubcategoryId) {
+      navigate(`/category/${categoryId}/${subcategoryId}/${subSubcategoryId}`);
+    } else if (subcategoryId) {
+      navigate(`/category/${categoryId}/${subcategoryId}`);
+    } else {
+      navigate(`/category/${categoryId}`);
+    }
+    
+    setShowCategories(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +180,12 @@ const SellContent = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <CategoryBrowser 
+        open={showCategories} 
+        onOpenChange={setShowCategories} 
+        onSelectCategory={handleCategorySelect} 
+      />
+      
       <main className="flex-1 container py-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">

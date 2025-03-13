@@ -8,12 +8,15 @@ interface SellFormContextType {
   currentStep: SellStep;
   setCurrentStep: (step: SellStep) => void;
   getStepProgress: () => number;
+  showBulkListing: boolean;
+  setShowBulkListing: (show: boolean) => void;
 }
 
 const SellFormContext = createContext<SellFormContextType | undefined>(undefined);
 
 export const SellFormProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentStep, setCurrentStep] = useState<SellStep>("title");
+  const [showBulkListing, setShowBulkListing] = useState(false);
   
   const [formData, setFormData] = useState<SellFormData>({
     title: "",
@@ -39,7 +42,8 @@ export const SellFormProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       shippingCost: 0
     },
     promotionLevel: 'none',
-    coordinates: null
+    coordinates: null,
+    showBulkListing: false
   });
 
   const updateFormData = (data: Partial<SellFormData>) => {
@@ -58,7 +62,9 @@ export const SellFormProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updateFormData, 
       currentStep, 
       setCurrentStep,
-      getStepProgress
+      getStepProgress,
+      showBulkListing,
+      setShowBulkListing
     }}>
       {children}
     </SellFormContext.Provider>
