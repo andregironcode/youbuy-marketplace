@@ -8,6 +8,7 @@ import { BuyingActivity } from "./BuyingActivity";
 import { SellerMetrics } from "./SellerMetrics";
 import { StatsHeader } from "./StatsHeader";
 import { TopProducts } from "./TopProducts";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const StatsOverview = () => {
   const { user } = useAuth();
@@ -15,19 +16,19 @@ export const StatsOverview = () => {
   if (!user) return null;
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="flex-1 p-6 flex flex-col h-[calc(100vh-4rem)]"> {/* Fixed height container */}
       <StatsHeader />
       
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="overview" className="flex-1 flex flex-col mt-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="selling">Selling</TabsTrigger>
           <TabsTrigger value="buying">Buying</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="flex-1 space-y-4 relative">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
@@ -39,7 +40,7 @@ export const StatsOverview = () => {
                 <p className="text-xs text-muted-foreground">+2 from last month</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
@@ -52,7 +53,7 @@ export const StatsOverview = () => {
                 <p className="text-xs text-muted-foreground">+18.1% from last month</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
@@ -65,7 +66,7 @@ export const StatsOverview = () => {
                 <p className="text-xs text-muted-foreground">+4.6% from last month</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" className="h-4 w-4 text-muted-foreground">
@@ -79,62 +80,62 @@ export const StatsOverview = () => {
             </Card>
           </div>
           
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 h-[calc(100%-5.5rem)]">
+            <Card className="col-span-4 shadow-sm">
+              <CardHeader className="py-3">
                 <CardTitle>Sales Overview</CardTitle>
                 <CardDescription>
                   Your sales performance for the last 6 months
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
+              <CardContent className="p-0 h-[calc(100%-5rem)]">
                 <SalesChart />
               </CardContent>
             </Card>
-            <Card className="col-span-3">
-              <CardHeader>
+            <Card className="col-span-3 shadow-sm">
+              <CardHeader className="py-3">
                 <CardTitle>Top Products</CardTitle>
                 <CardDescription>
                   Your most viewed products this month
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[calc(100%-5rem)] overflow-hidden">
                 <TopProducts />
               </CardContent>
             </Card>
           </div>
         </TabsContent>
         
-        <TabsContent value="selling" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-2">
-              <CardHeader>
+        <TabsContent value="selling" className="flex-1 space-y-4 relative">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 h-full">
+            <Card className="col-span-2 shadow-sm">
+              <CardHeader className="py-3">
                 <CardTitle>Product Metrics</CardTitle>
                 <CardDescription>Performance of your active listings</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[calc(100%-5rem)]">
                 <ProductsMetrics />
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
+            <Card className="shadow-sm">
+              <CardHeader className="py-3">
                 <CardTitle>Seller Performance</CardTitle>
                 <CardDescription>Your seller metrics</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[calc(100%-5rem)]">
                 <SellerMetrics />
               </CardContent>
             </Card>
           </div>
         </TabsContent>
         
-        <TabsContent value="buying" className="space-y-4">
-          <Card>
-            <CardHeader>
+        <TabsContent value="buying" className="flex-1 space-y-4 relative h-full">
+          <Card className="h-full shadow-sm">
+            <CardHeader className="py-3">
               <CardTitle>Buying Activity</CardTitle>
               <CardDescription>Track your purchases over time</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-[calc(100%-5rem)]">
               <BuyingActivity />
             </CardContent>
           </Card>

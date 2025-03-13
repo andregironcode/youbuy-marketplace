@@ -26,8 +26,8 @@ export const SellerMetrics = () => {
   const averageRating = 4.8; // This would be calculated from real data
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
+    <div className="h-full flex flex-col justify-between">
+      <div className="space-y-2 mb-2">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-muted-foreground">Total Products</span>
           <span className="font-bold">{totalProducts}</span>
@@ -40,7 +40,7 @@ export const SellerMetrics = () => {
               {[...Array(5)].map((_, i) => (
                 <svg
                   key={i}
-                  className={`w-4 h-4 ${
+                  className={`w-3.5 h-3.5 ${
                     i < Math.floor(averageRating) ? 'text-yellow-400' : 'text-muted'
                   }`}
                   xmlns="http://www.w3.org/2000/svg"
@@ -63,7 +63,7 @@ export const SellerMetrics = () => {
         </div>
       </div>
 
-      <div className="h-[200px]">
+      <div className="flex-1">
         <ChartContainer
           config={{
             available: {
@@ -80,13 +80,13 @@ export const SellerMetrics = () => {
             }
           }}
         >
-          <PieChart>
+          <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={80}
+              innerRadius={50}
+              outerRadius={70}
               paddingAngle={5}
               dataKey="value"
             >

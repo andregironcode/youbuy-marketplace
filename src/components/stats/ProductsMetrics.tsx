@@ -26,7 +26,7 @@ const data = [
 
 export const ProductsMetrics = () => {
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-full w-full">
       <ChartContainer
         config={{
           views: {
@@ -43,7 +43,7 @@ export const ProductsMetrics = () => {
           }
         }}
       >
-        <BarChart data={data}>
+        <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis 
             dataKey="name" 

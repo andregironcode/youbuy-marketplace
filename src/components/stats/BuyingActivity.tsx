@@ -30,18 +30,18 @@ export const BuyingActivity = () => {
   const totalPurchases = data.reduce((acc, curr) => acc + curr.purchases, 0);
   
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
+    <div className="h-full flex flex-col">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-4">
+        <Card className="shadow-sm">
+          <CardHeader className="py-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalSpent}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="shadow-sm">
+          <CardHeader className="py-2">
             <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
           </CardHeader>
           <CardContent>
@@ -50,7 +50,7 @@ export const BuyingActivity = () => {
         </Card>
       </div>
       
-      <div className="h-[300px]">
+      <div className="flex-1">
         <ChartContainer
           config={{
             purchases: {
@@ -63,7 +63,7 @@ export const BuyingActivity = () => {
             }
           }}
         >
-          <LineChart data={data}>
+          <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis 
               dataKey="month" 
@@ -88,7 +88,7 @@ export const BuyingActivity = () => {
               type="monotone" 
               dataKey="purchases" 
               stroke="#8B5CF6" 
-              activeDot={{ r: 8 }} 
+              activeDot={{ r: 6 }} 
             />
             <Line 
               yAxisId="right"

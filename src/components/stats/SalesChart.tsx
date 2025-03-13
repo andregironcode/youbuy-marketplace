@@ -26,7 +26,7 @@ const data = [
 
 export const SalesChart = () => {
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-full w-full">
       <ChartContainer
         config={{
           sales: {
@@ -39,7 +39,7 @@ export const SalesChart = () => {
           }
         }}
       >
-        <AreaChart data={data}>
+        <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
           <defs>
             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#1E40AF" stopOpacity={0.8}/>
@@ -59,7 +59,7 @@ export const SalesChart = () => {
           <YAxis 
             tickLine={false}
             axisLine={false}
-            padding={{ top: 20, bottom: 0 }}
+            padding={{ top: 10, bottom: 0 }}
           />
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <Tooltip content={<CustomTooltip />} />
