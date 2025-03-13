@@ -28,7 +28,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen w-full">
             <Navbar />
             <div className="flex-1 flex flex-col w-full">
               <Routes>
