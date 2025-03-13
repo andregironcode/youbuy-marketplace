@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -6,6 +7,7 @@ import { SellerListings } from "@/components/seller/SellerListings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsOverview } from "@/components/stats/StatsOverview";
+import { PurchaseHistory } from "@/components/purchases/PurchaseHistory";
 
 // Products Page Component
 const ProductsPage = () => {
@@ -213,6 +215,21 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
+// Purchases Page Component
+const PurchasesPage = () => {
+  return (
+    <div className="flex-1 p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Your Purchases</h1>
+        <p className="text-muted-foreground">
+          Track your order history and view details of items you've bought
+        </p>
+      </div>
+      <PurchaseHistory />
+    </div>
+  );
+};
+
 // Redirect component for the Inbox (leads to Messages page)
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -258,7 +275,7 @@ const Profile = () => {
         <ProfileSidebar />
         <Routes>
           <Route path="/" element={<Navigate to="/profile/products" replace />} />
-          <Route path="purchases" element={<PlaceholderPage title="Purchases" />} />
+          <Route path="purchases" element={<PurchasesPage />} />
           <Route path="sales" element={<PlaceholderPage title="Sales" />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="inbox" element={<InboxPage />} />
