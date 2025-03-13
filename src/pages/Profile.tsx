@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -8,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsOverview } from "@/components/stats/StatsOverview";
 import { PurchaseHistory } from "@/components/purchases/PurchaseHistory";
+import { SalesHistory } from "@/components/sales/SalesHistory";
 
 // Products Page Component
 const ProductsPage = () => {
@@ -17,11 +17,9 @@ const ProductsPage = () => {
   const [activeTab, setActiveTab] = useState<"selling" | "sold">("selling");
 
   useEffect(() => {
-    // Create products for the user when they visit the profile page
     const createUserProducts = async () => {
       if (!user) return;
 
-      // Check if user already has products
       const { data: existingProducts, error } = await supabase
         .from('products')
         .select('id')
@@ -33,11 +31,9 @@ const ProductsPage = () => {
         return;
       }
 
-      // Only create products if user doesn't have any
       if (!existingProducts || existingProducts.length === 0) {
         setCreating(true);
         
-        // Sample products data mimicking wallapop-style listings
         const sampleProducts = [
           {
             title: "iPhone 13 Pro - Excellent Condition",
@@ -230,6 +226,21 @@ const PurchasesPage = () => {
   );
 };
 
+// Sales Page Component
+const SalesPage = () => {
+  return (
+    <div className="flex-1 p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Your Sales</h1>
+        <p className="text-muted-foreground">
+          Track your sold items and manage orders from buyers
+        </p>
+      </div>
+      <SalesHistory />
+    </div>
+  );
+};
+
 // Redirect component for the Inbox (leads to Messages page)
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -256,7 +267,6 @@ const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
@@ -276,7 +286,7 @@ const Profile = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/profile/products" replace />} />
           <Route path="purchases" element={<PurchasesPage />} />
-          <Route path="sales" element={<PlaceholderPage title="Sales" />} />
+          <Route path="sales" element={<SalesPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="inbox" element={<InboxPage />} />
           <Route path="favorites" element={<FavoritesRedirect />} />
