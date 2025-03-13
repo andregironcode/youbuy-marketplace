@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckoutForm } from "@/components/checkout/CheckoutForm";
+import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/CheckoutForm";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { Loader2, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,7 +20,7 @@ const CheckoutPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<'address' | 'payment' | 'confirmation'>('address');
-  const [deliveryDetails, setDeliveryDetails] = useState({
+  const [deliveryDetails, setDeliveryDetails] = useState<CheckoutFormValues>({
     fullName: "",
     address: "",
     city: "",
@@ -61,7 +61,7 @@ const CheckoutPage = () => {
     enabled: !!id,
   });
 
-  const handleDeliveryDetailsChange = (details: any) => {
+  const handleDeliveryDetailsChange = (details: CheckoutFormValues) => {
     setDeliveryDetails(details);
     setStep('payment');
   };
@@ -77,19 +77,16 @@ const CheckoutPage = () => {
     }
 
     try {
-      // 1. Create order record
+      // 1. Create order record using raw SQL query
       const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          product_id: id,
-          buyer_id: user.id,
-          seller_id: product.seller.id,
-          amount: product.price,
-          status: "paid",
-          delivery_details: deliveryDetails
-        })
-        .select()
-        .single();
+        .rpc('create_order', {
+          p_product_id: id,
+          p_buyer_id: user.id,
+          p_seller_id: product.seller.id,
+          p_amount: product.price,
+          p_status: 'paid',
+          p_delivery_details: deliveryDetails
+        });
 
       if (orderError) throw orderError;
 
@@ -284,6 +281,6 @@ const CheckoutPage = () => {
       </main>
     </div>
   );
-};
+}
 
 export default CheckoutPage;

@@ -44,7 +44,7 @@ const formSchema = z.object({
   instructions: z.string().optional(),
 });
 
-type CheckoutFormValues = z.infer<typeof formSchema>;
+export type CheckoutFormValues = z.infer<typeof formSchema>;
 
 interface CheckoutFormProps {
   initialValues?: Partial<CheckoutFormValues>;

@@ -108,6 +108,50 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount: number
+          buyer_id: string
+          created_at: string
+          delivery_details: Json
+          id: string
+          product_id: string
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          buyer_id: string
+          created_at?: string
+          delivery_details: Json
+          id?: string
+          product_id: string
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          delivery_details?: Json
+          id?: string
+          product_id?: string
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           bulk_quantity: string | null
@@ -121,6 +165,7 @@ export type Database = {
           like_count: number
           location: string
           longitude: number | null
+          order_id: string | null
           price: string
           product_status: string
           promotion_level: string
@@ -149,6 +194,7 @@ export type Database = {
           like_count?: number
           location: string
           longitude?: number | null
+          order_id?: string | null
           price: string
           product_status?: string
           promotion_level?: string
@@ -177,6 +223,7 @@ export type Database = {
           like_count?: number
           location?: string
           longitude?: number | null
+          order_id?: string | null
           price?: string
           product_status?: string
           promotion_level?: string
@@ -199,6 +246,13 @@ export type Database = {
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -273,7 +327,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      order_status:
+        | "pending"
+        | "paid"
+        | "processing"
+        | "out_for_delivery"
+        | "delivered"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
