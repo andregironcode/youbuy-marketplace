@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +25,8 @@ const ProductDetail = () => {
   const { favorites, toggleFavorite } = useFavorites();
   const [activeImage, setActiveImage] = useState(0);
 
-  // Fetch product details
+  const navigate = useNavigate();
+
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -49,13 +49,11 @@ const ProductDetail = () => {
 
       if (error) throw error;
       
-      // Increment view count
       await supabase
         .from("products")
         .update({ view_count: (data.view_count || 0) + 1 })
         .eq("id", id);
 
-      // Convert raw data to ProductType
       return convertToProductType({
         ...data,
         profiles: data.seller_id,
@@ -64,7 +62,6 @@ const ProductDetail = () => {
     enabled: !!id,
   });
 
-  // Handle favorite toggling
   const isFavorite = favorites.some((favorite) => favorite === id);
 
   const handleToggleFavorite = async () => {
@@ -88,7 +85,6 @@ const ProductDetail = () => {
     }
   };
 
-  // Handle share button
   const handleShare = async () => {
     try {
       if (navigator.share) {
@@ -98,7 +94,6 @@ const ProductDetail = () => {
           url: window.location.href,
         });
       } else {
-        // Fallback for browsers that don't support native sharing
         await navigator.clipboard.writeText(window.location.href);
         toast({
           title: "Link copied",
@@ -115,6 +110,18 @@ const ProductDetail = () => {
         });
       }
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to purchase this item",
+      });
+      return;
+    }
+    
+    navigate(`/checkout/${id}`);
   };
 
   if (isLoading) {
@@ -154,7 +161,6 @@ const ProductDetail = () => {
     );
   }
 
-  // Extract the correct seller ID for navigation - ensure it's a string
   const sellerId = typeof product.seller.id === 'object' 
     ? (product.seller.userId || '') 
     : product.seller.id;
@@ -166,7 +172,6 @@ const ProductDetail = () => {
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column: Product images */}
           <div className="lg:col-span-2 space-y-4">
             <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
               {product.images && product.images.length > 0 ? (
@@ -182,7 +187,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Thumbnail gallery */}
             {product.images && product.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
@@ -202,7 +206,6 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Product activity stats */}
             <div className="flex items-center text-sm text-muted-foreground space-x-4">
               <span className="flex items-center">
                 <Star className="mr-1 h-4 w-4" />
@@ -220,15 +223,12 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            {/* Product Details section - no more tabs */}
             <div className="mt-8">
               <ProductDetails product={product} />
             </div>
           </div>
 
-          {/* Right sidebar: Seller info, actions */}
           <div className="space-y-4">
-            {/* Action buttons */}
             <div className="flex space-x-2 mb-4">
               <Button
                 variant="outline"
@@ -248,7 +248,6 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Seller information card */}
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
@@ -261,7 +260,6 @@ const ProductDetail = () => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">{product.seller.name}</h3>
-                      {/* Badge for verified sellers - using rating as indicator since 'verified' doesn't exist */}
                       {product.seller.rating && product.seller.rating > 4.5 && (
                         <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
                           <ShieldCheck className="h-3 w-3 mr-1" />
@@ -286,7 +284,6 @@ const ProductDetail = () => {
                     </Link>
                   </Button>
                   
-                  {/* More prominent message button */}
                   <Button
                     variant="default"
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -298,7 +295,6 @@ const ProductDetail = () => {
                         });
                         return;
                       }
-                      // Use the existing MessageButton component's dialog functionality
                       document.getElementById("message-button-trigger")?.click();
                     }}
                   >
@@ -306,19 +302,18 @@ const ProductDetail = () => {
                     Message Seller
                   </Button>
                   
-                  {/* Buy now button - even more prominent */}
                   <Button 
                     className="w-full bg-youbuy hover:bg-youbuy-dark text-white mt-2 py-6 text-lg font-semibold"
                     disabled={
                       product.status === 'sold' || 
                       product.status === 'reserved'
                     }
+                    onClick={handleBuyNow}
                   >
                     <ShoppingBag className="mr-2 h-5 w-5" />
                     Buy Now
                   </Button>
                   
-                  {/* Hidden message button to trigger the dialog */}
                   <div className="hidden">
                     <MessageButton
                       id="message-button-trigger"
@@ -331,7 +326,6 @@ const ProductDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Location info */}
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-3">
@@ -343,7 +337,6 @@ const ProductDetail = () => {
                     </div>
                   </div>
                   
-                  {/* Show approximate location map if coordinates are available */}
                   {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
                     <LocationMap
                       latitude={product.coordinates.latitude}
@@ -359,7 +352,6 @@ const ProductDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Safety tips */}
             <Card className="bg-gray-50 border-gray-200">
               <CardContent className="p-4">
                 <h3 className="font-medium mb-2 flex items-center">
