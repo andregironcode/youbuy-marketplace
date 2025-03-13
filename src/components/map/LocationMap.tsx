@@ -34,8 +34,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const circleRadius = useRef<mapboxgl.CircleLayer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mapInitialized, setMapInitialized] = useState(false);
 
   // Initialize map
   useEffect(() => {
@@ -44,12 +44,14 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     const initializeMap = async () => {
       setLoading(true);
       
-      // Create map instance
+      // Create map instance with default center if no coordinates provided
+      const initialCenter = [longitude || -74.5, latitude || 40];
+      
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [longitude || 0, latitude || 0],
-        zoom: zoom,
+        center: initialCenter,
+        zoom: latitude && longitude ? zoom : 2,
         interactive: interactive,
       });
 
@@ -61,15 +63,24 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       // Wait for map to load
       map.current.on('load', () => {
         setLoading(false);
+        setMapInitialized(true);
         
         if (latitude && longitude) {
+          // Center map on provided coordinates
+          map.current?.setCenter([longitude, latitude]);
+          map.current?.setZoom(zoom);
+          
           // Add marker if coordinates are provided
           if (showMarker) {
             if (!approximate) {
               // Regular marker for exact location
-              marker.current = new mapboxgl.Marker({ color: '#ff385c' })
-                .setLngLat([longitude, latitude])
-                .addTo(map.current!);
+              if (marker.current) {
+                marker.current.setLngLat([longitude, latitude]);
+              } else {
+                marker.current = new mapboxgl.Marker({ color: '#ff385c' })
+                  .setLngLat([longitude, latitude])
+                  .addTo(map.current!);
+              }
             } else {
               // Add a circle for approximate location
               if (map.current?.getSource('radius-source')) {

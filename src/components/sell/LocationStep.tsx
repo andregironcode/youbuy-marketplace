@@ -33,18 +33,10 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   setCurrentStep,
 }) => {
   const [searchValue, setSearchValue] = useState(location);
-  const [mapInitialized, setMapInitialized] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const { toast } = useToast();
 
   const isLocationValid = location.length >= 3 && coordinates !== null;
-
-  useEffect(() => {
-    // If we have coordinates but no initialized map, set the flag
-    if (coordinates && !mapInitialized) {
-      setMapInitialized(true);
-    }
-  }, [coordinates, mapInitialized]);
 
   // Get user's current location
   const handleGetCurrentLocation = async () => {
@@ -93,6 +85,11 @@ export const LocationStep: React.FC<LocationStepProps> = ({
       const coords = await geocodeAddress(searchValue);
       setCoordinates({ latitude: coords.lat, longitude: coords.lng });
       setLocation(searchValue);
+      
+      toast({
+        title: "Location found",
+        description: "Location has been set successfully."
+      });
     } catch (error) {
       console.error("Error geocoding address:", error);
       toast({
@@ -110,6 +107,11 @@ export const LocationStep: React.FC<LocationStepProps> = ({
     setCoordinates({ latitude: lat, longitude: lng });
     setSearchValue(address);
     setLocation(address);
+    
+    toast({
+      title: "Location selected",
+      description: "Location has been set from the map."
+    });
   };
 
   return (
@@ -158,7 +160,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             )}
           </div>
           
-          <div className="rounded-md overflow-hidden">
+          <div className="rounded-md overflow-hidden border">
             <LocationMap 
               latitude={coordinates?.latitude}
               longitude={coordinates?.longitude}
@@ -166,7 +168,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
               zoom={coordinates ? 14 : 2}
               onLocationSelect={handleLocationSelect}
               showMarker={!!coordinates}
-              className={!coordinates ? "bg-muted" : ""}
             />
           </div>
           
