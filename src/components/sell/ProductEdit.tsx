@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Info, ArrowUpToLine, X, Ruler, Shield, TruckReturn, AlertCircle } from "lucide-react";
+import { Info, ArrowUpToLine, X, Ruler, Shield, ArrowLeft, AlertCircle } from "lucide-react";
 import { ProductFields } from "@/components/product/ProductFields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
@@ -330,7 +330,7 @@ export const ProductEdit = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const onSubmit = async (data: ProductFormValues) => {
     if (!product || !user) return;
     
     setSaving(true);
@@ -389,7 +389,7 @@ export const ProductEdit = () => {
     } finally {
       setSaving(false);
     }
-  });
+  };
   
   const handleSave = () => {
     form.handleSubmit(onSubmit)();
@@ -461,7 +461,6 @@ export const ProductEdit = () => {
                         <Input
                           {...field}
                           placeholder="e.g., Samsung Galaxy S21 Ultra 5G 128GB"
-                          error={form.formState.errors.title?.message}
                         />
                       </FormControl>
                       <FormDescription>
@@ -500,7 +499,6 @@ export const ProductEdit = () => {
                             type="number"
                             min="0"
                             step="0.01"
-                            error={form.formState.errors.price?.message}
                           />
                         </FormControl>
                         <FormMessage />
@@ -534,7 +532,6 @@ export const ProductEdit = () => {
                           {...field}
                           placeholder="Describe your item in detail"
                           rows={4}
-                          error={form.formState.errors.description?.message}
                         />
                       </FormControl>
                       <div className="flex justify-between text-xs text-muted-foreground">
@@ -754,7 +751,7 @@ export const ProductEdit = () => {
                 <div className="space-y-6">
                   <div className="bg-muted/30 p-4 rounded-lg">
                     <h3 className="font-medium flex items-center">
-                      <TruckReturn className="h-4 w-4 mr-2 text-youbuy" />
+                      <ArrowLeft className="h-4 w-4 mr-2 text-youbuy" />
                       Return and warranty information
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -768,7 +765,7 @@ export const ProductEdit = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          <TruckReturn className="h-4 w-4" />
+                          <ArrowLeft className="h-4 w-4" />
                           Return Policy
                         </FormLabel>
                         <FormControl>
@@ -842,4 +839,3 @@ export const ProductEdit = () => {
     </div>
   );
 };
-
