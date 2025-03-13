@@ -48,4 +48,5 @@ export interface SellFormData {
     depth?: string;
     height?: string;
   };
+  showBulkListing?: boolean;
 }
