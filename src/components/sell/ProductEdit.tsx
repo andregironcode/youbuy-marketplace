@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,9 +10,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, ArrowUpToLine, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Info, ArrowUpToLine, X, Ruler, Shield, TruckReturn, AlertCircle } from "lucide-react";
 import { ProductFields } from "@/components/product/ProductFields";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+const productSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title cannot exceed 100 characters"),
+  price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Price must be a positive number"),
+  description: z.string().min(20, "Description must be at least 20 characters").max(640, "Description cannot exceed 640 characters"),
+  condition: z.string().optional(),
+  width: z.string().optional(),
+  depth: z.string().optional(),
+  height: z.string().optional(),
+  returnPolicy: z.string().optional(),
+  warranty: z.string().optional(),
+});
+
+type ProductFormValues = z.infer<typeof productSchema>;
 
 export const ProductEdit = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,10 +42,12 @@ export const ProductEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [product, setProduct] = useState<ProductType | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
   
   // Form state
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("€");
   const [description, setDescription] = useState("");
@@ -35,15 +55,36 @@ export const ProductEdit = () => {
   const [images, setImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [returnPolicy, setReturnPolicy] = useState("");
+  const [warranty, setWarranty] = useState("");
   
   // Item measurements
   const [width, setWidth] = useState("");
   const [depth, setDepth] = useState("");
   const [height, setHeight] = useState("");
   
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
   // Specifications
   const [specifications, setSpecifications] = useState<ProductSpecifications>({});
   
+  // Setup form with validation
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      title: "",
+      price: "",
+      description: "",
+      condition: "",
+      width: "",
+      depth: "",
+      height: "",
+      returnPolicy: "",
+      warranty: "",
+    },
+  });
+
   useEffect(() => {
     if (!user) {
       toast({
@@ -125,6 +166,7 @@ export const ProductEdit = () => {
         // Set form values
         setTitle(transformedProduct.title);
         setCategory(`${transformedProduct.category}${transformedProduct.subcategory ? ` > ${transformedProduct.subcategory}` : ''}`);
+        setSubcategory(transformedProduct.subcategory || "");
         setPrice(transformedProduct.price.toString());
         setDescription(transformedProduct.description);
         setImages(transformedProduct.images || []);
@@ -138,7 +180,24 @@ export const ProductEdit = () => {
             setDepth(parsedSpecifications.dimensions.length?.toString() || "");
             setHeight(parsedSpecifications.dimensions.height?.toString() || "");
           }
+          
+          // Set return policy and warranty if they exist
+          setReturnPolicy(parsedSpecifications.returnPolicy || "");
+          setWarranty(parsedSpecifications.warranty || "");
         }
+
+        // Update form values
+        form.reset({
+          title: transformedProduct.title,
+          price: transformedProduct.price.toString(),
+          description: transformedProduct.description,
+          condition: parsedSpecifications.condition || "",
+          width: parsedSpecifications.dimensions?.width?.toString() || "",
+          depth: parsedSpecifications.dimensions?.length?.toString() || "",
+          height: parsedSpecifications.dimensions?.height?.toString() || "",
+          returnPolicy: parsedSpecifications.returnPolicy || "",
+          warranty: parsedSpecifications.warranty || "",
+        });
       } catch (error) {
         console.error("Error fetching product:", error);
         toast({
@@ -152,7 +211,7 @@ export const ProductEdit = () => {
     };
     
     fetchProduct();
-  }, [id, user, navigate, toast]);
+  }, [id, user, navigate, toast, form]);
   
   // Handle specifications change from ProductFields component
   const handleSpecificationsChange = (newSpecifications: ProductSpecifications) => {
@@ -251,7 +310,27 @@ export const ProductEdit = () => {
     return uploadedUrls;
   };
   
-  const handleSave = async () => {
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!title.trim() || title.length < 5) {
+      newErrors.title = "Title must be at least 5 characters";
+    }
+    
+    const priceValue = parseFloat(price);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      newErrors.price = "Price must be a positive number";
+    }
+    
+    if (description.trim().length < 20) {
+      newErrors.description = "Description must be at least 20 characters";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const onSubmit = form.handleSubmit(async (data) => {
     if (!product || !user) return;
     
     setSaving(true);
@@ -263,23 +342,25 @@ export const ProductEdit = () => {
       // Combine existing and new images
       const allImageUrls = [...images, ...newUploadedImageUrls];
       
-      // Update specifications with dimensions
+      // Update specifications with dimensions, return policy, and warranty
       const updatedSpecifications = {
         ...specifications,
-        condition,
+        condition: data.condition,
+        returnPolicy: data.returnPolicy,
+        warranty: data.warranty,
         dimensions: {
-          width: width ? parseFloat(width) : undefined,
-          length: depth ? parseFloat(depth) : undefined,
-          height: height ? parseFloat(height) : undefined
+          width: data.width ? parseFloat(data.width) : undefined,
+          length: data.depth ? parseFloat(data.depth) : undefined,
+          height: data.height ? parseFloat(data.height) : undefined
         }
       };
       
       const { error } = await supabase
         .from('products')
         .update({
-          title,
-          description,
-          price,
+          title: data.title,
+          description: data.description,
+          price: data.price,
           image_urls: allImageUrls,
           specifications: updatedSpecifications
         })
@@ -308,6 +389,10 @@ export const ProductEdit = () => {
     } finally {
       setSaving(false);
     }
+  });
+  
+  const handleSave = () => {
+    form.handleSubmit(onSubmit)();
   };
   
   if (loading) {
@@ -349,227 +434,398 @@ export const ProductEdit = () => {
           </Button>
         </div>
       </div>
-      
-      {/* Item Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Item information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Samsung Galaxy S21 Ultra 5G 128GB"
-            />
-          </div>
+
+      <Form {...form}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="details">Basic Details</TabsTrigger>
+            <TabsTrigger value="specifications">Specifications</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
+            <TabsTrigger value="policies">Policies</TabsTrigger>
+          </TabsList>
           
-          <div className="space-y-2">
-            <Label htmlFor="category">Category and subcategory</Label>
-            <Select disabled value="category">
-              <SelectTrigger id="category">
-                <SelectValue placeholder={category || "Select category"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="category">{category}</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              To change category, please create a new listing
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                type="number"
-                min="0"
-                step="0.01"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger id="currency">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="€">€ (Euro)</SelectItem>
-                  <SelectItem value="$">$ (USD)</SelectItem>
-                  <SelectItem value="£">£ (GBP)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <Label>Item measurements</Label>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <Label htmlFor="width" className="text-xs">Width in cm</Label>
-                <Input
-                  id="width"
-                  value={width}
-                  onChange={(e) => setWidth(e.target.value)}
-                  type="number"
-                  min="0"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="depth" className="text-xs">Depth in cm</Label>
-                <Input
-                  id="depth"
-                  value={depth}
-                  onChange={(e) => setDepth(e.target.value)}
-                  type="number"
-                  min="0"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="height" className="text-xs">Height in cm</Label>
-                <Input
-                  id="height"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  type="number"
-                  min="0"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your item in detail"
-              rows={4}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Add relevant information such as condition, model, color...</span>
-              <span>{description.length}/640</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="condition">Condition</Label>
-            <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger id="condition">
-                <SelectValue placeholder="Select condition" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="like-new">Like new</SelectItem>
-                <SelectItem value="excellent">Excellent</SelectItem>
-                <SelectItem value="good">Good</SelectItem>
-                <SelectItem value="fair">Fair</SelectItem>
-                <SelectItem value="salvage">For parts or not working</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Photos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Photos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="bg-muted/30 p-4 rounded-lg">
-              <h3 className="font-medium flex items-center">
-                <Info className="h-4 w-4 mr-2 text-youbuy" />
-                Upload at least 4 photos
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                When you show the item from different angles, people appreciate it.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-              {/* Existing images */}
-              {images.map((url, index) => (
-                <div key={`existing-${index}`} className="relative group aspect-square">
-                  <img 
-                    src={url} 
-                    alt={`Product ${index + 1}`} 
-                    className="h-full w-full object-cover rounded-md"
-                  />
-                  <Button 
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
-                    onClick={() => removeExistingImage(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                  {index === 0 && images.length > 0 && (
-                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 py-0.5 rounded">
-                      Main photo
-                    </span>
+          <TabsContent value="details" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Item information</CardTitle>
+                <CardDescription>Edit the basic details of your product</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Samsung Galaxy S21 Ultra 5G 128GB"
+                          error={form.formState.errors.title?.message}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Choose a title that will help buyers find your product
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
+                />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category and subcategory</Label>
+                  <Select disabled value="category">
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder={category || "Select category"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="category">{category}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    To change category, please create a new listing
+                  </p>
                 </div>
-              ))}
-              
-              {/* New image previews */}
-              {newImagePreviews.map((url, index) => (
-                <div key={`new-${index}`} className="relative group aspect-square">
-                  <img 
-                    src={url} 
-                    alt={`New upload ${index + 1}`} 
-                    className="h-full w-full object-cover rounded-md"
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            error={form.formState.errors.price?.message}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Button 
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
-                    onClick={() => removeNewImage(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger id="currency">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="€">€ (Euro)</SelectItem>
+                        <SelectItem value="$">$ (USD)</SelectItem>
+                        <SelectItem value="£">£ (GBP)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              ))}
-              
-              {/* Upload placeholder */}
-              {images.length + newImages.length < 10 && (
-                <div 
-                  className="border-2 border-dashed rounded-md aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => document.getElementById('photo-upload')?.click()}
-                >
-                  <ArrowUpToLine className="h-6 w-6 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Add photo</span>
-                  <input 
-                    type="file" 
-                    id="photo-upload" 
-                    multiple 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={handleImageUpload}
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Describe your item in detail"
+                          rows={4}
+                          error={form.formState.errors.description?.message}
+                        />
+                      </FormControl>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Add relevant information such as condition, model, color...</span>
+                        <span>{field.value?.length || 0}/640</span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="specifications" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Item specifications</CardTitle>
+                <CardDescription>Add detailed specifications about your product</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="condition"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Condition</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select condition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="like-new">Like new</SelectItem>
+                          <SelectItem value="excellent">Excellent</SelectItem>
+                          <SelectItem value="good">Good</SelectItem>
+                          <SelectItem value="fair">Fair</SelectItem>
+                          <SelectItem value="salvage">For parts or not working</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-muted-foreground" />
+                    <Label>Item dimensions</Label>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="width"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Width in cm</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              placeholder="Width"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="depth"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Depth in cm</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              placeholder="Depth"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Height in cm</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              placeholder="Height"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                {/* Category-specific fields rendered by ProductFields component */}
+                <ProductFields 
+                  category={product.category} 
+                  subcategory={subcategory}
+                  onSpecificationsChange={handleSpecificationsChange}
+                  initialSpecifications={specifications}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="photos" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Photos</CardTitle>
+                <CardDescription>Upload clear photos from different angles</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <h3 className="font-medium flex items-center">
+                      <Info className="h-4 w-4 mr-2 text-youbuy" />
+                      Upload at least 4 photos
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      When you show the item from different angles, people appreciate it.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                    {/* Existing images */}
+                    {images.map((url, index) => (
+                      <div key={`existing-${index}`} className="relative group aspect-square">
+                        <img 
+                          src={url} 
+                          alt={`Product ${index + 1}`} 
+                          className="h-full w-full object-cover rounded-md"
+                        />
+                        <Button 
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                          onClick={() => removeExistingImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        {index === 0 && images.length > 0 && (
+                          <span className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 py-0.5 rounded">
+                            Main photo
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* New image previews */}
+                    {newImagePreviews.map((url, index) => (
+                      <div key={`new-${index}`} className="relative group aspect-square">
+                        <img 
+                          src={url} 
+                          alt={`New upload ${index + 1}`} 
+                          className="h-full w-full object-cover rounded-md"
+                        />
+                        <Button 
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                          onClick={() => removeNewImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    
+                    {/* Upload placeholder */}
+                    {images.length + newImages.length < 10 && (
+                      <div 
+                        className="border-2 border-dashed rounded-md aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => document.getElementById('photo-upload')?.click()}
+                      >
+                        <ArrowUpToLine className="h-6 w-6 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Add photo</span>
+                        <input 
+                          type="file" 
+                          id="photo-upload" 
+                          multiple 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleImageUpload}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
+                    You can upload up to 10 images (max 5MB each)
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="policies" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Return Policy & Warranty</CardTitle>
+                <CardDescription>Set your policies to build buyer confidence</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <h3 className="font-medium flex items-center">
+                      <TruckReturn className="h-4 w-4 mr-2 text-youbuy" />
+                      Return and warranty information
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Clear policies help buyers make confident purchase decisions
+                    </p>
+                  </div>
+                
+                  <FormField
+                    control={form.control}
+                    name="returnPolicy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <TruckReturn className="h-4 w-4" />
+                          Return Policy
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            rows={3}
+                            placeholder="e.g., Returns accepted within 14 days if item is in original condition"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Describe your return policy including any conditions or timeframes
+                        </FormDescription>
+                      </FormItem>
+                    )}
                   />
+                  
+                  <FormField
+                    control={form.control}
+                    name="warranty"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Warranty Information
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            rows={3}
+                            placeholder="e.g., 30-day warranty on all electrical components"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          If your item includes a warranty, describe the terms here
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                
+                  <div className="p-3 border border-amber-200 rounded-md bg-amber-50 text-amber-800 text-sm">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">Important note:</p>
+                        <p className="mt-1">
+                          Make sure your policies comply with local consumer protection laws. Clear and fair
+                          policies can help you avoid disputes and improve your seller rating.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-            
-            <p className="text-xs text-muted-foreground mt-2">
-              You can upload up to 10 images (max 5MB each)
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </Form>
       
       <div className="flex justify-between items-center">
         <Button variant="outline" onClick={() => navigate("/profile/products")}>
@@ -586,3 +842,4 @@ export const ProductEdit = () => {
     </div>
   );
 };
+
