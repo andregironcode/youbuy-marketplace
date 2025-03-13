@@ -90,7 +90,7 @@ export const PurchaseHistory = () => {
 
           if (productError) {
             console.error("Error fetching product:", productError);
-            return order;
+            return order as Order; // Cast to Order type
           }
 
           const product = {
@@ -108,8 +108,9 @@ export const PurchaseHistory = () => {
 
           return {
             ...order,
+            status: order.status as OrderStatus, // Cast string to OrderStatus
             product
-          };
+          } as Order;
         })
       );
 
@@ -235,7 +236,7 @@ export const PurchaseHistory = () => {
                       <div className="text-sm">
                         <div className="flex justify-between mb-1">
                           <span>Product Price:</span>
-                          <span>AED {selectedOrder.product?.price.toFixed(2)}</span>
+                          <span>AED {selectedOrder.product?.price.toFixed(2) || selectedOrder.amount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between mb-1">
                           <span>Delivery Fee:</span>
