@@ -1,11 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { products } from "@/data/products";
 import { SellerReviews } from "@/components/product/SellerReviews";
 import { SellerProfileHeader } from "@/components/seller/SellerProfileHeader";
 import { SellerListings } from "@/components/seller/SellerListings";
@@ -19,7 +17,6 @@ const SellerProfile = () => {
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl || "listings");
-  const navigate = useNavigate();
 
   // Set active tab based on URL parameter
   useEffect(() => {
@@ -95,7 +92,6 @@ const SellerProfile = () => {
   if (isLoadingProfile || isLoadingProducts) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
         <main className="flex-1 container py-8">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
@@ -109,7 +105,6 @@ const SellerProfile = () => {
   if (profileError || !profile) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
         <main className="flex-1 container py-8">
           <SellerNotFound />
         </main>
@@ -134,7 +129,6 @@ const SellerProfile = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-1 container py-6">
         {/* Seller profile header */}
         <SellerProfileHeader sellerInfo={sellerInfo} />
