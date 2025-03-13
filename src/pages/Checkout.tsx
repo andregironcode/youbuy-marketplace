@@ -11,7 +11,7 @@ import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/CheckoutForm";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { Loader2, ArrowLeft, ShoppingBag, CreditCard } from "lucide-react";
+import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -293,7 +293,7 @@ const CheckoutPage = () => {
                 <CardTitle className="flex items-center">
                   {step === 'address' && <><ShoppingBag className="mr-2 h-5 w-5" />Delivery Details</>}
                   {step === 'payment' && <><CreditCard className="mr-2 h-5 w-5" />Payment Information</>}
-                  {step === 'confirmation' && <><Check className="mr-2 h-5 w-5" />Order Confirmation</>}
+                  {step === 'confirmation' && <><CheckCircle className="mr-2 h-5 w-5" />Order Confirmation</>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
