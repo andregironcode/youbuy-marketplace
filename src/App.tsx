@@ -12,7 +12,6 @@ import Messages from "@/pages/Messages";
 import Sell from "@/pages/Sell";
 import Favorites from "@/pages/Favorites";
 import Profile from "@/pages/Profile";
-import ProfileStats from "@/pages/ProfileStats";
 import ProductDetail from "@/pages/ProductDetail";
 import ProductEditPage from "@/pages/ProductEditPage";
 import SellerProfile from "@/pages/SellerProfile";
@@ -41,7 +40,7 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Navbar />
-            <main>
+            <main className="min-h-[calc(100vh-64px)]">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />

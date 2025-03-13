@@ -18,7 +18,7 @@ export default function ProfileStats() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
+    <div className="flex min-h-[calc(100vh-64px)]">
       <ProfileSidebar />
       
       <div className="flex-1 overflow-y-auto p-6">
