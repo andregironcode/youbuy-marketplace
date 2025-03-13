@@ -38,15 +38,15 @@ export const TopProducts = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2"> {/* Reduced space-y-3 to space-y-2 */}
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-muted animate-pulse"></div>
-            <div className="space-y-1.5">
-              <div className="h-3.5 w-28 bg-muted animate-pulse rounded-md"></div>
-              <div className="h-2.5 w-20 bg-muted animate-pulse rounded-md"></div>
+          <div key={i} className="flex items-center gap-2"> {/* Reduced gap-3 to gap-2 */}
+            <div className="w-8 h-8 rounded-md bg-muted animate-pulse"></div> {/* Reduced size */}
+            <div className="space-y-1"> {/* Reduced space-y-1.5 to space-y-1 */}
+              <div className="h-3 w-24 bg-muted animate-pulse rounded-md"></div> {/* Reduced height */}
+              <div className="h-2 w-16 bg-muted animate-pulse rounded-md"></div> {/* Reduced height and width */}
             </div>
-            <div className="ml-auto h-4 w-14 bg-muted animate-pulse rounded-md"></div>
+            <div className="ml-auto h-3 w-12 bg-muted animate-pulse rounded-md"></div> {/* Reduced height and width */}
           </div>
         ))}
       </div>
@@ -55,18 +55,18 @@ export const TopProducts = () => {
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-4">
+      <div className="text-center py-2 text-sm"> {/* Reduced padding and font size */}
         <p className="text-muted-foreground">No products found</p>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-full pr-4">
-      <div className="space-y-3">
+    <ScrollArea className="h-full pr-2"> {/* Reduced right padding */}
+      <div className="space-y-2"> {/* Reduced space-y-3 to space-y-2 */}
         {products.map((product) => (
-          <div key={product.id} className="flex items-center gap-3">
-            <Avatar className="h-9 w-9 rounded-md">
+          <div key={product.id} className="flex items-center gap-2"> {/* Reduced gap-3 to gap-2 */}
+            <Avatar className="h-8 w-8 rounded-md"> {/* Reduced size */}
               <AvatarImage 
                 src={product.image} 
                 alt={product.title} 
@@ -77,12 +77,14 @@ export const TopProducts = () => {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium line-clamp-1 text-sm">{product.title}</p>
+              <p className="font-medium line-clamp-1 text-xs"> {/* Reduced text-sm to text-xs */}
+                {product.title}
+              </p>
               <p className="text-xs text-muted-foreground">
                 ${product.price}
               </p>
             </div>
-            <div className="ml-auto font-medium text-sm">
+            <div className="ml-auto font-medium text-xs"> {/* Reduced text-sm to text-xs */}
               {product.viewCount} views
             </div>
           </div>

@@ -39,7 +39,7 @@ export const SalesChart = () => {
           }
         }}
       >
-        <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+        <AreaChart data={data} margin={{ top: 5, right: 15, left: 5, bottom: 5 }}> {/* Reduced margins */}
           <defs>
             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#1E40AF" stopOpacity={0.8}/>
@@ -54,12 +54,14 @@ export const SalesChart = () => {
             dataKey="month" 
             tickLine={false}
             axisLine={false}
-            padding={{ left: 10, right: 10 }}
+            padding={{ left: 5, right: 5 }} {/* Reduced padding */}
+            tick={{ fontSize: 12 }} {/* Set smaller font size */}
           />
           <YAxis 
             tickLine={false}
             axisLine={false}
-            padding={{ top: 10, bottom: 0 }}
+            padding={{ top: 5, bottom: 0 }} {/* Reduced padding */}
+            tick={{ fontSize: 12 }} {/* Set smaller font size */}
           />
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <Tooltip content={<CustomTooltip />} />
@@ -86,7 +88,7 @@ export const SalesChart = () => {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-background border rounded-md shadow-md p-3">
+      <div className="bg-background border rounded-md shadow-md p-2 text-xs"> {/* Reduced padding and font size */}
         <p className="font-medium">{label}</p>
         <p className="text-blue-700">Sales: ${payload[0].value}</p>
         <p className="text-blue-400">Views: {payload[1].value}</p>
