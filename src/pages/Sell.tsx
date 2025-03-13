@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -43,7 +42,7 @@ const Sell = () => {
   const [weight, setWeight] = useState("");
   const [shippingOptions, setShippingOptions] = useState({
     inPersonMeetup: true,
-    platformShipping: true,  // Platform shipping is mandatory
+    platformShipping: true,
     shippingCost: 0
   });
   
@@ -415,7 +414,6 @@ const Sell = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-1 container py-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
