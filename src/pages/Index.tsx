@@ -5,12 +5,14 @@ import { useAuth } from "@/context/AuthContext";
 import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCategories, setShowCategories] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -56,21 +58,29 @@ const Index = () => {
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     console.log("Selected category:", categoryId, subcategoryId, subSubcategoryId);
-    // Here you would filter products by category
+    
+    if (categoryId === "all") {
+      navigate("/");
+    } else if (subSubcategoryId) {
+      navigate(`/category/${categoryId}/${subcategoryId}/${subSubcategoryId}`);
+    } else if (subcategoryId) {
+      navigate(`/category/${categoryId}/${subcategoryId}`);
+    } else {
+      navigate(`/category/${categoryId}`);
+    }
+    
     setShowCategories(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Removed the Navbar component from here as it's already in App.tsx */}
       <main className="flex-1 container py-8">
-        {showCategories && (
-          <CategoryBrowser 
-            open={showCategories} 
-            onOpenChange={setShowCategories} 
-            onSelectCategory={handleCategorySelect} 
-          />
-        )}
+        {/* CategoryBrowser component */}
+        <CategoryBrowser 
+          open={showCategories} 
+          onOpenChange={setShowCategories} 
+          onSelectCategory={handleCategorySelect} 
+        />
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Discover amazing deals nearby</h1>

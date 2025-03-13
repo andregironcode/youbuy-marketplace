@@ -10,24 +10,30 @@ import { Badge } from "@/components/ui/badge";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { SearchBar } from "@/components/search/SearchBar";
+import { useLocation } from "react-router-dom";
 
-export const Navbar = ({ onCategoryClick }: { onCategoryClick?: () => void }) => {
+export const Navbar = () => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showCategories, setShowCategories] = useState(false);
+  const location = useLocation();
+  
+  // This will be used to communicate with the current page
+  // to trigger showing categories
+  const [showCategoriesFlag, setShowCategoriesFlag] = useState(false);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
   };
 
   const toggleCategories = () => {
-    setShowCategories(!showCategories);
-    // Call the external onCategoryClick if provided
-    if (onCategoryClick) {
-      onCategoryClick();
-    }
+    // Toggle the flag - the current page should be watching this
+    setShowCategoriesFlag(prev => !prev);
+    
+    // Dispatch a custom event that pages can listen for
+    const event = new CustomEvent('toggleCategories');
+    window.dispatchEvent(event);
   };
 
   const getInitials = () => {
