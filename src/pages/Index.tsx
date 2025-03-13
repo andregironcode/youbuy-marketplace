@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +12,19 @@ const Index = () => {
   const [showCategories, setShowCategories] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleToggleCategories = () => {
+      console.log("Toggle categories event received in Index");
+      setShowCategories(prev => !prev);
+    };
+
+    window.addEventListener('toggleCategories', handleToggleCategories);
+    
+    return () => {
+      window.removeEventListener('toggleCategories', handleToggleCategories);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -51,10 +63,6 @@ const Index = () => {
     
     fetchProducts();
   }, []);
-
-  const toggleCategories = () => {
-    setShowCategories(!showCategories);
-  };
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     console.log("Selected category:", categoryId, subcategoryId, subSubcategoryId);

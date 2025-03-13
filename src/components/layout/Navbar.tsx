@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
@@ -18,22 +17,18 @@ export const Navbar = () => {
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
-  
-  // This will be used to communicate with the current page
-  // to trigger showing categories
-  const [showCategoriesFlag, setShowCategoriesFlag] = useState(false);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
   };
 
   const toggleCategories = () => {
-    // Toggle the flag - the current page should be watching this
-    setShowCategoriesFlag(prev => !prev);
-    
     // Dispatch a custom event that pages can listen for
     const event = new CustomEvent('toggleCategories');
     window.dispatchEvent(event);
+    
+    // Log to verify the event is being dispatched
+    console.log('Categories toggle event dispatched');
   };
 
   const getInitials = () => {
@@ -43,7 +38,6 @@ export const Navbar = () => {
     return user?.email?.charAt(0).toUpperCase() || "U";
   };
 
-  // Fetch unread messages count
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
@@ -164,7 +158,6 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMobile && showMobileMenu && (
         <div className="container py-4 border-t">
           <nav className="flex flex-col space-y-3">

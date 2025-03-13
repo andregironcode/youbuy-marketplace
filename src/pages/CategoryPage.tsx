@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
 import { categories } from "@/data/categories";
 import { ProductType } from "@/types/product";
@@ -12,14 +11,16 @@ import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 
 const CategoryPage = () => {
   const { categoryId, subcategoryId, subSubcategoryId } = useParams();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCategories, setShowCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
 
-  // Listen for the custom event from Navbar
+  // Listen for the toggleCategories event from Navbar
   useEffect(() => {
     const handleToggleCategories = () => {
+      console.log("Toggle categories event received in CategoryPage");
       setShowCategories(prev => !prev);
     };
 
@@ -111,12 +112,18 @@ const CategoryPage = () => {
   };
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
-    // This would typically navigate to the new category
-    window.location.href = subcategoryId 
-      ? (subSubcategoryId 
-          ? `/category/${categoryId}/${subcategoryId}/${subSubcategoryId}`
-          : `/category/${categoryId}/${subcategoryId}`)
-      : `/category/${categoryId}`;
+    // Use the navigate function instead of directly modifying window.location
+    if (categoryId === "all") {
+      navigate("/");
+    } else if (subcategoryId) {
+      if (subSubcategoryId) {
+        navigate(`/category/${categoryId}/${subcategoryId}/${subSubcategoryId}`);
+      } else {
+        navigate(`/category/${categoryId}/${subcategoryId}`);
+      }
+    } else {
+      navigate(`/category/${categoryId}`);
+    }
     
     setShowCategories(false);
   };
