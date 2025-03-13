@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import Messages from "@/pages/Messages";
 import Sell from "@/pages/Sell";
 import Favorites from "@/pages/Favorites";
 import Profile from "@/pages/Profile";
-import ProfileStats from "@/pages/ProfileStats"; // Import the new ProfileStats page
+import ProfileStats from "@/pages/ProfileStats";
 import ProductDetail from "@/pages/ProductDetail";
 import ProductEditPage from "@/pages/ProductEditPage";
 import SellerProfile from "@/pages/SellerProfile";
@@ -47,7 +48,7 @@ function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/sell" element={<Sell />} />
                 <Route path="/favorites" element={<Favorites />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/*" element={<Profile />} />
                 <Route path="/profile/stats" element={<ProfileStats />} />
                 <Route path="/profile/purchases" element={<h1>Purchases</h1>} />
                 <Route path="/profile/sales" element={<h1>Sales</h1>} />
