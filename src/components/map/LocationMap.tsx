@@ -45,7 +45,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       setLoading(true);
       
       // Create map instance with default center if no coordinates provided
-      const initialCenter = [longitude || -74.5, latitude || 40];
+      // Explicitly type as [number, number] to match LngLatLike requirements
+      const initialCenter: [number, number] = [longitude || -74.5, latitude || 40];
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
