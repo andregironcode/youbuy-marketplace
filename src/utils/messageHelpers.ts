@@ -1,9 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ChatType, MessageType } from "@/types/message";
-import { products } from "@/data/products";
 import { createMessageNotification } from "./notificationUtils";
+import { products } from "@/data/products";
 
 /**
  * Fetch product information by product ID

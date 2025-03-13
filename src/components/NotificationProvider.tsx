@@ -7,7 +7,7 @@ export const NotificationProvider = () => {
   
   return (
     <Toaster 
-      theme={theme as "light" | "dark" | "system"} 
+      theme={(theme as "light" | "dark" | "system") || "light"} 
       position="top-right"
       closeButton
       richColors

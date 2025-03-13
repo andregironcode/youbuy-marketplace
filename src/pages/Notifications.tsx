@@ -19,8 +19,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { markNotificationAsRead, deleteNotification } from "@/utils/notificationUtils";
 
-export interface NotificationType {
+// Define the notification type
+interface NotificationType {
   id: string;
   type: "message" | "alert" | "system";
   title: string;
@@ -43,17 +45,17 @@ const NotificationItem = ({
 }) => {
   return (
     <div 
-      className={`p-4 hover:bg-muted/50 ${!notification.read ? 'bg-youbuy-muted' : ''}`}
+      className={`p-4 hover:bg-muted/50 ${!notification.read ? 'bg-muted/30' : ''}`}
       onClick={() => !notification.read && onRead(notification.id)}
     >
       <div className="flex">
         <div className="mr-4">
           {notification.type === "message" ? (
-            <MessageSquare className="h-6 w-6 text-youbuy" />
+            <MessageSquare className="h-6 w-6 text-blue-500" />
           ) : notification.type === "alert" ? (
-            <Bell className="h-6 w-6 text-youbuy" />
+            <Bell className="h-6 w-6 text-amber-500" />
           ) : (
-            <AlertCircle className="h-6 w-6 text-youbuy" />
+            <AlertCircle className="h-6 w-6 text-green-500" />
           )}
         </div>
         <div className="flex-1">
@@ -206,15 +208,9 @@ const Notifications = () => {
     }
   }, [user]);
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
+  const handleMarkAsRead = async (notificationId: string) => {
+    const success = await markNotificationAsRead(notificationId);
+    if (success) {
       setNotifications(prevNotifications => 
         prevNotifications.map(notification => 
           notification.id === notificationId 
@@ -222,35 +218,15 @@ const Notifications = () => {
             : notification
         )
       );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
     }
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
+  const handleDeleteNotification = async (notificationId: string) => {
+    const success = await deleteNotification(notificationId);
+    if (success) {
       setNotifications(prevNotifications => 
         prevNotifications.filter(notification => notification.id !== notificationId)
       );
-
-      toast({
-        title: "Notification deleted",
-        description: "The notification has been successfully removed."
-      });
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      toast({
-        title: "Failed to delete notification",
-        description: "Please try again later.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -315,8 +291,8 @@ const Notifications = () => {
                       <NotificationItem 
                         key={notification.id} 
                         notification={notification} 
-                        onRead={markAsRead}
-                        onDelete={deleteNotification}
+                        onRead={handleMarkAsRead}
+                        onDelete={handleDeleteNotification}
                       />
                     ))
                   ) : (
