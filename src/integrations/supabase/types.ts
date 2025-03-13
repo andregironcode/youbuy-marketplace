@@ -113,33 +113,54 @@ export type Database = {
           amount: number
           buyer_id: string
           created_at: string
+          delivery_confirmed_at: string | null
           delivery_details: Json
+          dispute_deadline: string | null
+          dispute_reason: string | null
+          dispute_status: string | null
           id: string
+          payment_status: string | null
           product_id: string
           seller_id: string
           status: string
+          stripe_payment_intent_id: string | null
+          stripe_transfer_id: string | null
           updated_at: string
         }
         Insert: {
           amount: number
           buyer_id: string
           created_at?: string
+          delivery_confirmed_at?: string | null
           delivery_details: Json
+          dispute_deadline?: string | null
+          dispute_reason?: string | null
+          dispute_status?: string | null
           id?: string
+          payment_status?: string | null
           product_id: string
           seller_id: string
           status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
           buyer_id?: string
           created_at?: string
+          delivery_confirmed_at?: string | null
           delivery_details?: Json
+          dispute_deadline?: string | null
+          dispute_reason?: string | null
+          dispute_status?: string | null
           id?: string
+          payment_status?: string | null
           product_id?: string
           seller_id?: string
           status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -151,6 +172,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_fees: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          fee_percentage: number
+          id: string
+          minimum_fee: number
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          fee_percentage?: number
+          id?: string
+          minimum_fee?: number
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          fee_percentage?: number
+          id?: string
+          minimum_fee?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -281,6 +329,39 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      seller_accounts: {
+        Row: {
+          account_status: string | null
+          charges_enabled: boolean | null
+          created_at: string | null
+          id: string
+          payout_enabled: boolean | null
+          stripe_account_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_status?: string | null
+          charges_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          payout_enabled?: boolean | null
+          stripe_account_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_status?: string | null
+          charges_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          payout_enabled?: boolean | null
+          stripe_account_id?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

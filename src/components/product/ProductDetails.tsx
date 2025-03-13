@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { ProductType, ProductVariation, ProductVariationOption } from "@/types/product";
+import { useNavigate } from "react-router-dom";
+import { ProductType } from "@/types/product";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tag, Check, AlertTriangle, Info, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductDetailsProps {
   product: ProductType;
@@ -17,6 +20,9 @@ interface ProductDetailsProps {
 export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) => {
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({});
   const [price, setPrice] = useState(product.price);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   // Function to handle variation selection
   const handleVariationSelect = (variationId: string, optionId: string) => {
@@ -48,6 +54,24 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
     return product.variations
       .filter(v => v.required)
       .every(v => selectedVariations[v.id]);
+  };
+  
+  // Handle Buy Now button click
+  const handleBuyNow = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to purchase this item",
+        variant: "destructive"
+      });
+      navigate("/auth?redirect=/product/" + product.id);
+      return;
+    }
+    
+    // Check if the seller has a Stripe account set up
+    if (product.id) {
+      navigate(`/checkout/${product.id}`);
+    }
   };
   
   // Render the product status badge
@@ -299,7 +323,7 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
       
-      {/* Changed to Buy Now button as requested */}
+      {/* Buy Now button */}
       <Button 
         className="w-full bg-youbuy hover:bg-youbuy-dark mt-4"
         disabled={
@@ -307,6 +331,7 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
           product.status === 'reserved' || 
           !areAllRequiredVariationsSelected()
         }
+        onClick={handleBuyNow}
       >
         {product.status === 'sold' 
           ? 'Sold Out' 

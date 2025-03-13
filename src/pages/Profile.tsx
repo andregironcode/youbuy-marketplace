@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { SellerListings } from "@/components/seller/SellerListings";
@@ -8,6 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { StatsOverview } from "@/components/stats/StatsOverview";
 import { PurchaseHistory } from "@/components/purchases/PurchaseHistory";
 import { SalesHistory } from "@/components/sales/SalesHistory";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { CreditCard, AlertTriangle } from "lucide-react";
 
 // Products Page Component
 const ProductsPage = () => {
@@ -228,6 +233,98 @@ const PurchasesPage = () => {
 
 // Sales Page Component
 const SalesPage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const setupSuccess = searchParams.get('setup') === 'success';
+  
+  // Query seller account data
+  const { data: sellerAccount, isLoading: loadingAccount, refetch } = useQuery({
+    queryKey: ["sellerAccount", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      const { data, error } = await supabase
+        .from("seller_accounts")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+  
+  // Refetch data when setup is successful
+  useEffect(() => {
+    if (setupSuccess) {
+      refetch();
+      toast({
+        title: "Stripe setup complete",
+        description: "Your payment account has been set up successfully.",
+      });
+    }
+  }, [setupSuccess, refetch, toast]);
+  
+  const handleCreateSellerAccount = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: userData } = await supabase
+        .from("profiles")
+        .select("full_name, username")
+        .eq("id", user.id)
+        .single();
+      
+      const response = await supabase.functions.invoke('stripe-payment/create-connect-account', {
+        body: {
+          userId: user.id,
+          email: user.email,
+          name: userData?.full_name || userData?.username || "Seller",
+        }
+      });
+      
+      if (response.error) throw new Error(response.error);
+      
+      // Redirect to Stripe onboarding
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error("Error creating seller account:", error);
+      toast({
+        title: "Error",
+        description: "Could not set up your payment account. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleUpdateSellerAccount = async () => {
+    if (!user || !sellerAccount?.stripe_account_id) return;
+    
+    try {
+      const response = await supabase.functions.invoke('stripe-payment/create-connect-account', {
+        body: {
+          userId: user.id,
+          email: user.email,
+        }
+      });
+      
+      if (response.error) throw new Error(response.error);
+      
+      // Redirect to Stripe dashboard
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error("Error updating seller account:", error);
+      toast({
+        title: "Error",
+        description: "Could not access your payment account. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="flex-1 p-6">
       <div className="mb-6">
@@ -236,6 +333,59 @@ const SalesPage = () => {
           Track your sold items and manage orders from buyers
         </p>
       </div>
+      
+      {user && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <CreditCard className="mr-2 h-5 w-5" />
+              Seller Payment Account
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingAccount ? (
+              <p>Loading account information...</p>
+            ) : sellerAccount ? (
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Stripe Connect Account</p>
+                    <p className="text-sm text-muted-foreground">
+                      Status: {sellerAccount.charges_enabled ? (
+                        <span className="text-green-600">Active</span>
+                      ) : (
+                        <span className="text-amber-600">Setup needed</span>
+                      )}
+                    </p>
+                  </div>
+                  <Button onClick={handleUpdateSellerAccount}>
+                    {sellerAccount.charges_enabled ? "Manage Account" : "Complete Setup"}
+                  </Button>
+                </div>
+                
+                {!sellerAccount.charges_enabled && (
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      You need to complete your Stripe account setup to receive payments for your sales.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className="mb-4">
+                  Set up your payment account to start selling and receiving payments securely.
+                </p>
+                <Button onClick={handleCreateSellerAccount}>
+                  Set Up Payment Account
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
       <SalesHistory />
     </div>
   );

@@ -2,17 +2,44 @@
 import { ProductType } from "@/types/product";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Shield } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderSummaryProps {
   product: ProductType;
 }
 
 export function OrderSummary({ product }: OrderSummaryProps) {
-  // Calculate delivery fee based on price (just for demo purposes)
-  const deliveryFee = product.price < 50 ? 10 : 0;
-  const serviceCharge = product.price * 0.05; // 5% service charge
-  const total = product.price + deliveryFee + serviceCharge;
+  // Fetch platform fee from the database
+  const { data: platformFeeData } = useQuery({
+    queryKey: ["platformFees"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("platform_fees")
+        .select("*")
+        .eq("active", true)
+        .limit(1)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Calculate fees based on price
+  const productPrice = parseFloat(product.price);
+  const deliveryFee = productPrice < 50 ? 10 : 0;
+  const feePercentage = platformFeeData?.fee_percentage || 5.0;
+  const minimumFee = platformFeeData?.minimum_fee || 1.0;
+  
+  // Calculate service fee (platform fee)
+  const serviceCharge = Math.max(
+    productPrice * (feePercentage / 100),
+    minimumFee
+  );
+  
+  const total = productPrice + deliveryFee + serviceCharge;
 
   return (
     <Card>
@@ -42,7 +69,7 @@ export function OrderSummary({ product }: OrderSummaryProps) {
         <div className="space-y-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Price</span>
-            <span>AED {product.price.toFixed(2)}</span>
+            <span>AED {productPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Delivery Fee</span>
@@ -53,7 +80,7 @@ export function OrderSummary({ product }: OrderSummaryProps) {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Service Charge</span>
+            <span className="text-muted-foreground">Service Fee ({feePercentage}%)</span>
             <span>AED {serviceCharge.toFixed(2)}</span>
           </div>
           <Separator />
@@ -63,9 +90,17 @@ export function OrderSummary({ product }: OrderSummaryProps) {
           </div>
         </div>
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-md text-xs">
+        <div className="mt-4 p-3 bg-gray-50 rounded-md text-xs space-y-2">
+          <div className="flex items-start">
+            <Shield className="h-4 w-4 text-youbuy mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Buyer Protection</p>
+              <p className="text-muted-foreground">
+                Your payment is held securely until you confirm receipt of the item.
+              </p>
+            </div>
+          </div>
           <p className="text-muted-foreground">
-            Same day delivery available for orders placed before 3pm. 
             Free delivery on orders over AED 50.
           </p>
         </div>
