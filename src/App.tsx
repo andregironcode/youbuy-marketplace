@@ -45,7 +45,7 @@ function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/seller/:id" element={<SellerProfile />} />
                 <Route path="/sell" element={<Sell />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/*" element={<Profile />} />
                 <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:chatId" element={<Messages />} />
