@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
+import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { SellerListings } from "@/components/seller/SellerListings";
 import { supabase } from "@/integrations/supabase/client";
@@ -259,6 +260,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Navbar />
       <div className="flex-1 flex">
         <ProfileSidebar />
         <Routes>
