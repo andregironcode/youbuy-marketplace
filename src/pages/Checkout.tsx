@@ -109,7 +109,7 @@ const CheckoutPage = () => {
         p_product_id: id,
         p_buyer_id: user.id,
         p_seller_id: product.seller.id,
-        p_amount: parseFloat(product.price),
+        p_amount: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
         p_status: 'pending',
         p_delivery_details: deliveryDetails
       });
@@ -133,7 +133,7 @@ const CheckoutPage = () => {
       const response = await supabase.functions.invoke('stripe-payment/create-payment-intent', {
         body: {
           orderId: newOrderId,
-          amount: parseFloat(product!.price),
+          amount: typeof product!.price === 'string' ? parseFloat(product!.price) : product!.price,
           buyerId: user!.id,
           sellerId: product!.seller.id,
           productId: id

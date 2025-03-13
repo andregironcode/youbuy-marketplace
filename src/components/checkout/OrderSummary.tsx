@@ -28,7 +28,7 @@ export function OrderSummary({ product }: OrderSummaryProps) {
   });
 
   // Calculate fees based on price
-  const productPrice = parseFloat(product.price);
+  const productPrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
   const deliveryFee = productPrice < 50 ? 10 : 0;
   const feePercentage = platformFeeData?.fee_percentage || 5.0;
   const minimumFee = platformFeeData?.minimum_fee || 1.0;
