@@ -49,13 +49,6 @@ function App() {
                 <Route path="/sell" element={<Sell />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/profile/*" element={<Profile />} />
-                <Route path="/profile/stats" element={<ProfileStats />} />
-                <Route path="/profile/purchases" element={<h1>Purchases</h1>} />
-                <Route path="/profile/sales" element={<h1>Sales</h1>} />
-                <Route path="/profile/products" element={<h1>Products</h1>} />
-                <Route path="/profile/wallet" element={<h1>Wallet</h1>} />
-                <Route path="/profile/settings" element={<h1>Settings</h1>} />
-                <Route path="/profile/help" element={<h1>Help</h1>} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/product/:id/edit" element={<ProductEditPage />} />
                 <Route path="/seller/:id" element={<SellerProfile />} />
