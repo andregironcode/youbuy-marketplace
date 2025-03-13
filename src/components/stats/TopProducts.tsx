@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductType } from "@/types/product";
+import { ProductType, convertToProductType } from "@/types/product";
 import { useQuery } from "@tanstack/react-query";
 
 export const TopProducts = () => {
@@ -15,13 +15,22 @@ export const TopProducts = () => {
       
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          profiles:seller_id(
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
         .eq("seller_id", user.id)
         .order("view_count", { ascending: false })
         .limit(5);
         
       if (error) throw error;
-      return data as ProductType[];
+      
+      // Convert the raw data to ProductType format
+      return data.map(item => convertToProductType(item, true));
     },
     enabled: !!user,
   });
@@ -57,7 +66,7 @@ export const TopProducts = () => {
         <div key={product.id} className="flex items-center gap-4">
           <Avatar className="h-10 w-10 rounded-md">
             <AvatarImage 
-              src={product.image_urls?.[0]} 
+              src={product.image} 
               alt={product.title} 
               className="object-cover"
             />
@@ -72,7 +81,7 @@ export const TopProducts = () => {
             </p>
           </div>
           <div className="ml-auto font-medium">
-            {product.view_count} views
+            {product.viewCount} views
           </div>
         </div>
       ))}
