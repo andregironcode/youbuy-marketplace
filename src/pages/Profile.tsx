@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
-import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/context/AuthContext";
 import { SellerListings } from "@/components/seller/SellerListings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { StatsOverview } from "@/components/stats/StatsOverview";
 
 // Products Page Component
 const ProductsPage = () => {
@@ -260,7 +260,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <div className="flex-1 flex">
         <ProfileSidebar />
         <Routes>
@@ -270,7 +269,7 @@ const Profile = () => {
           <Route path="products" element={<ProductsPage />} />
           <Route path="inbox" element={<InboxPage />} />
           <Route path="favorites" element={<FavoritesRedirect />} />
-          <Route path="stats" element={<PlaceholderPage title="Stats" />} />
+          <Route path="stats" element={<StatsOverview />} />
           <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
           <Route path="help" element={<PlaceholderPage title="Help" />} />
