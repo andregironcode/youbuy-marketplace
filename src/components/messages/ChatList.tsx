@@ -56,6 +56,7 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
       {chats.map((chat) => {
         const isActive = currentChatId === chat.id;
         const userName = chat.otherUser?.name || 'User';
+        const productTitle = chat.product?.title || 'Product';
         
         return (
           <div 
@@ -79,7 +80,7 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
                   {chat.lastMessage || "No messages yet"}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  {chat.product?.title || 'Product'}
+                  {productTitle}
                 </p>
               </div>
             </div>

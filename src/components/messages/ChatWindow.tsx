@@ -56,6 +56,7 @@ export const ChatWindow = ({
   };
 
   const userName = currentChat?.otherUser?.name || 'User';
+  const productTitle = currentProduct?.title || currentChat?.product?.title || 'Product';
 
   const renderChatHeader = () => (
     <div className="p-3 border-b bg-gray-50 flex items-center">
@@ -88,7 +89,7 @@ export const ChatWindow = ({
               {userName}
             </p>
             <p className="text-xs text-muted-foreground">
-              {currentProduct?.title || currentChat?.product?.title || 'Product'}
+              {productTitle}
             </p>
           </div>
         </>

@@ -27,6 +27,18 @@ export const useMessages = (chatId?: string) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<any>(null);
 
+  // Enhanced function to get user display name
+  const getUserDisplayName = (userData: any) => {
+    if (!userData) return "User";
+    return userData.name || userData.full_name || userData.username || "User";
+  };
+
+  // Enhanced function to get product display name
+  const getProductDisplayName = (productData: any) => {
+    if (!productData) return "Product";
+    return productData.title || "Product";
+  };
+
   // Fetch chats
   const fetchChats = useCallback(async () => {
     if (!user) return;
@@ -70,22 +82,51 @@ export const useMessages = (chatId?: string) => {
           
           // Get otherUser info - for mock data, we use the seller info from products
           let otherUserInfo = {
-            name: 'Unknown User',
+            name: 'User',
             avatar: '',
           };
           
-          if (isUserSeller && matchedProduct) {
-            // If current user is seller and the other user is buyer, we don't have buyer info in our mock data
-            otherUserInfo = {
-              name: 'Potential Buyer',
-              avatar: '',
-            };
-          } else if (matchedProduct) {
-            // If current user is buyer, use the seller info from our mock data
-            otherUserInfo = {
-              name: matchedProduct.seller.name,
-              avatar: matchedProduct.seller.avatar,
-            };
+          // Try to get user profile from Supabase first
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name, username, avatar_url')
+              .eq('id', otherUserId)
+              .maybeSingle();
+              
+            if (profileData) {
+              otherUserInfo = {
+                name: profileData.full_name || profileData.username || 'User',
+                avatar: profileData.avatar_url || '',
+              };
+            } else if (isUserSeller && matchedProduct) {
+              // If user profile not found and current user is seller, use generic buyer name
+              otherUserInfo = {
+                name: 'Potential Buyer',
+                avatar: '',
+              };
+            } else if (matchedProduct) {
+              // If user profile not found and current user is buyer, use seller info from mock data
+              otherUserInfo = {
+                name: matchedProduct.seller.name || 'Seller',
+                avatar: matchedProduct.seller.avatar || '',
+              };
+            }
+          } catch (profileError) {
+            console.error("Error fetching other user profile:", profileError);
+            
+            // Fallback to mock data
+            if (isUserSeller && matchedProduct) {
+              otherUserInfo = {
+                name: 'Potential Buyer',
+                avatar: '',
+              };
+            } else if (matchedProduct) {
+              otherUserInfo = {
+                name: matchedProduct.seller.name || 'Seller',
+                avatar: matchedProduct.seller.avatar || '',
+              };
+            }
           }
 
           // Get last message
@@ -104,7 +145,7 @@ export const useMessages = (chatId?: string) => {
             ...chat,
             otherUser: otherUserInfo,
             product: {
-              title: productData.title || 'Unknown Product',
+              title: productData.title || 'Product',
               price: productData.price || 0,
               image: productData.image || '',
             },
@@ -182,22 +223,53 @@ export const useMessages = (chatId?: string) => {
       const isUserSeller = chatData.seller_id === user.id;
       const otherUserId = isUserSeller ? chatData.buyer_id : chatData.seller_id;
       
-      // Get otherUser info
+      // Get otherUser info from profile if possible
       let otherUserInfo = {
-        name: 'Unknown User',
+        name: 'User',
         avatar: '',
       };
       
-      if (isUserSeller && productData) {
-        otherUserInfo = {
-          name: 'Potential Buyer',
-          avatar: '',
-        };
-      } else if (productData) {
-        otherUserInfo = {
-          name: productData.seller.name,
-          avatar: productData.seller.avatar,
-        };
+      // Try to get user profile from Supabase first
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url')
+          .eq('id', otherUserId)
+          .maybeSingle();
+          
+        if (profileData) {
+          otherUserInfo = {
+            name: profileData.full_name || profileData.username || 'User',
+            avatar: profileData.avatar_url || '',
+          };
+        } else if (isUserSeller && productData) {
+          // Fallback for buyer when profile not available
+          otherUserInfo = {
+            name: 'Potential Buyer',
+            avatar: '',
+          };
+        } else if (productData) {
+          // Fallback for seller when profile not available
+          otherUserInfo = {
+            name: productData.seller.name || 'Seller',
+            avatar: productData.seller.avatar || '',
+          };
+        }
+      } catch (profileError) {
+        console.error("Error fetching other user profile:", profileError);
+        
+        // Fallback to mock data
+        if (isUserSeller && productData) {
+          otherUserInfo = {
+            name: 'Potential Buyer',
+            avatar: '',
+          };
+        } else if (productData) {
+          otherUserInfo = {
+            name: productData.seller.name || 'Seller',
+            avatar: productData.seller.avatar || '',
+          };
+        }
       }
       
       // Set enhanced chat data
@@ -205,7 +277,7 @@ export const useMessages = (chatId?: string) => {
         ...chatData,
         otherUser: otherUserInfo,
         product: {
-          title: productData?.title || 'Unknown Product',
+          title: productData?.title || 'Product',
           price: productData?.price || 0,
           image: productData?.image || '',
         },
