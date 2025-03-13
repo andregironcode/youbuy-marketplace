@@ -1,7 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ChatType, MessageType } from "@/types/message";
 import { products } from "@/data/products";
+import { createMessageNotification } from "./notificationUtils";
 
 /**
  * Fetch product information by product ID
@@ -122,14 +124,16 @@ export const sendTextMessage = async (
 ) => {
   try {
     // Insert message
-    const { error: msgError } = await supabase
+    const { data: messageData, error: msgError } = await supabase
       .from('messages')
       .insert({
         sender_id: userId,
         receiver_id: receiverId,
         product_id: productId,
         content,
-      });
+      })
+      .select()
+      .single();
       
     if (msgError) throw msgError;
     
@@ -138,6 +142,28 @@ export const sendTextMessage = async (
       .from('chats')
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', chatId);
+    
+    // Create notification for the receiver
+    // Get sender name
+    const { data: senderData } = await supabase
+      .from('profiles')
+      .select('full_name, username')
+      .eq('id', userId)
+      .single();
+    
+    // Get product info
+    const productInfo = await fetchProductInfo(productId);
+    
+    if (senderData && productInfo) {
+      const senderName = senderData.full_name || senderData.username || "Someone";
+      await createMessageNotification(
+        receiverId,
+        senderName,
+        content,
+        productInfo.title,
+        chatId
+      );
+    }
     
     return true;
   } catch (error) {

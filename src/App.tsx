@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -26,38 +25,43 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <div className="flex flex-col min-h-screen w-full">
-            <Navbar />
-            <div className="flex-1 flex flex-col w-full">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/checkout/:id" element={<CheckoutPage />} />
-                <Route path="/category/:categoryId" element={<CategoryPage />} />
-                <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
-                <Route
-                  path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
-                  element={<CategoryPage />}
-                />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/seller/:id" element={<SellerProfile />} />
-                <Route path="/sell" element={<Sell />} />
-                <Route path="/profile/*" element={<Profile />} />
-                <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/messages/:chatId" element={<Messages />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </div>
-          <Toaster />
-        </Router>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <NotificationProvider />
+            <Router>
+              <div className="flex flex-col min-h-screen w-full">
+                <Navbar />
+                <div className="flex-1 flex flex-col w-full">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/checkout/:id" element={<CheckoutPage />} />
+                    <Route path="/category/:categoryId" element={<CategoryPage />} />
+                    <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
+                    <Route
+                      path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
+                      element={<CategoryPage />}
+                    />
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/seller/:id" element={<SellerProfile />} />
+                    <Route path="/sell" element={<Sell />} />
+                    <Route path="/profile/*" element={<Profile />} />
+                    <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/messages/:chatId" element={<Messages />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </div>
+            </Router>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

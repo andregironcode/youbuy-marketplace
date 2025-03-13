@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
@@ -16,6 +17,7 @@ export const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const location = useLocation();
 
   const toggleMobileMenu = () => {
@@ -41,28 +43,40 @@ export const Navbar = () => {
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
+      setNotificationCount(0);
       return;
     }
 
-    const fetchUnreadCount = async () => {
+    const fetchUnreadCounts = async () => {
       try {
-        const { count, error } = await supabase
+        // Fetch unread messages
+        const { count: messageCount, error: messageError } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
           .eq('receiver_id', user.id)
           .eq('read', false);
         
-        if (error) throw error;
-        setUnreadCount(count || 0);
+        if (messageError) throw messageError;
+        setUnreadCount(messageCount || 0);
+        
+        // Fetch unread notifications
+        const { count: notifCount, error: notifError } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        
+        if (notifError) throw notifError;
+        setNotificationCount(notifCount || 0);
       } catch (error) {
-        console.error('Error fetching unread count:', error);
+        console.error('Error fetching unread counts:', error);
       }
     };
 
-    fetchUnreadCount();
+    fetchUnreadCounts();
 
     // Subscribe to new messages
-    const channel = supabase
+    const messagesChannel = supabase
       .channel('public:messages')
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -70,7 +84,7 @@ export const Navbar = () => {
         table: 'messages',
         filter: `receiver_id=eq.${user.id}`
       }, () => {
-        fetchUnreadCount();
+        fetchUnreadCounts();
       })
       .on('postgres_changes', { 
         event: 'UPDATE', 
@@ -78,12 +92,34 @@ export const Navbar = () => {
         table: 'messages',
         filter: `receiver_id=eq.${user.id}`
       }, () => {
-        fetchUnreadCount();
+        fetchUnreadCounts();
+      })
+      .subscribe();
+      
+    // Subscribe to new notifications
+    const notificationsChannel = supabase
+      .channel('public:notifications')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        fetchUnreadCounts();
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        fetchUnreadCounts();
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(notificationsChannel);
     };
   }, [user]);
 
@@ -121,8 +157,9 @@ export const Navbar = () => {
           ) : (
             <>
               <Link to="/notifications">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-9 w-9 relative">
                   <Bell className="h-5 w-5" />
+                  <UnreadBadge count={notificationCount} />
                 </Button>
               </Link>
               {user ? (
@@ -164,8 +201,11 @@ export const Navbar = () => {
             <Link to="/sell" className="py-2 px-3 hover:bg-muted rounded-md">
               Sell an item
             </Link>
-            <Link to="/notifications" className="py-2 px-3 hover:bg-muted rounded-md">
+            <Link to="/notifications" className="py-2 px-3 hover:bg-muted rounded-md flex justify-between items-center">
               Notifications
+              {notificationCount > 0 && (
+                <Badge className="bg-youbuy">{notificationCount}</Badge>
+              )}
             </Link>
             {user ? (
               <>
