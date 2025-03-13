@@ -325,6 +325,17 @@ export type Database = {
         }
         Returns: number
       }
+      create_order: {
+        Args: {
+          p_product_id: string
+          p_buyer_id: string
+          p_seller_id: string
+          p_amount: number
+          p_status: string
+          p_delivery_details: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       order_status:
