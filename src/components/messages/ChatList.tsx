@@ -55,6 +55,7 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
     <>
       {chats.map((chat) => {
         const isActive = currentChatId === chat.id;
+        const userName = chat.otherUser?.name || 'User';
         
         return (
           <div 
@@ -65,11 +66,11 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
             <div className="flex items-center space-x-3">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={chat.otherUser?.avatar} />
-                <AvatarFallback>{chat.otherUser?.name?.substring(0, 2) || '??'}</AvatarFallback>
+                <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
-                  <p className="font-medium truncate">{chat.otherUser?.name || 'Unknown User'}</p>
+                  <p className="font-medium truncate">{userName}</p>
                   <span className="text-xs text-muted-foreground">
                     {formatChatTime(chat.last_message_at)}
                   </span>
@@ -78,7 +79,7 @@ export const ChatList = ({ chats, loading, currentChatId }: ChatListProps) => {
                   {chat.lastMessage || "No messages yet"}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  {chat.product?.title || 'Unknown Product'}
+                  {chat.product?.title || 'Product'}
                 </p>
               </div>
             </div>

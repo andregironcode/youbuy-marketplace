@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,8 @@ export const ChatWindow = ({
     fileInputRef.current?.click();
   };
 
+  const userName = currentChat?.otherUser?.name || 'User';
+
   const renderChatHeader = () => (
     <div className="p-3 border-b bg-gray-50 flex items-center">
       <Button 
@@ -77,15 +80,15 @@ export const ChatWindow = ({
           <Avatar className="h-10 w-10 mr-3">
             <AvatarImage src={currentChat?.otherUser?.avatar} />
             <AvatarFallback>
-              {currentChat?.otherUser?.name?.substring(0, 2) || '??'}
+              {userName.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <p className="font-medium">
-              {currentChat?.otherUser?.name || 'Unknown User'}
+              {userName}
             </p>
             <p className="text-xs text-muted-foreground">
-              {currentProduct?.title || currentChat?.product?.title || 'Unknown Product'}
+              {currentProduct?.title || currentChat?.product?.title || 'Product'}
             </p>
           </div>
         </>
