@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { CreditCard, AlertTriangle } from "lucide-react";
+import { ProfileSettings } from "@/components/profile/ProfileSettings";
 
 // Products Page Component
 const ProductsPage = () => {
@@ -413,6 +413,15 @@ const FavoritesRedirect = () => {
   return null;
 };
 
+// Update the Settings page component to use our new ProfileSettings component
+const SettingsPage = () => {
+  return (
+    <div className="flex-1">
+      <ProfileSettings />
+    </div>
+  );
+};
+
 const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -442,7 +451,7 @@ const Profile = () => {
           <Route path="favorites" element={<FavoritesRedirect />} />
           <Route path="stats" element={<StatsOverview />} />
           <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
-          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<PlaceholderPage title="Help" />} />
         </Routes>
       </div>
