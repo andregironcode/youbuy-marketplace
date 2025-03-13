@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useAuth } from "@/context/AuthContext";
 import { ProductType, convertToProductType } from "@/types/product";
@@ -63,7 +62,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar onCategoryClick={toggleCategories} />
+      {/* Removed the Navbar component from here as it's already in App.tsx */}
       <main className="flex-1 container py-8">
         {showCategories && (
           <CategoryBrowser 
