@@ -51,6 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAdminStatusChecked(true);
             console.log("Initial admin check result:", adminResult);
           }
+        } else {
+          if (isMounted) {
+            setAdminStatusChecked(true);
+          }
         }
         
         setLoading(false);
@@ -114,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       
+      console.log("Performing RPC call to check admin status");
       const { data, error } = await supabase.rpc('is_admin');
       
       setIsCheckingAdmin(false);
@@ -136,8 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (!error) {
-        const isAdminUser = await checkIsAdmin();
-        setIsAdmin(isAdminUser);
+        // We don't need to check admin status here, the onAuthStateChange handler will do it
+        console.log("Sign in successful, admin check will happen via auth state change");
       }
       return { error };
     } catch (error) {

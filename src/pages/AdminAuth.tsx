@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,22 +22,16 @@ const AdminAuth = () => {
   
   // Check if already logged in and is admin
   useEffect(() => {
-    const checkAuthStatus = () => {
-      if (!user) return;
-      
-      if (adminStatusChecked) {
-        if (isAdmin) {
-          console.log("User already verified as admin via context, redirecting");
-          toast({
-            title: "Welcome back",
-            description: "You are already logged in as admin"
-          });
-          navigate('/admin/dashboard');
-        }
-      }
-    };
+    if (!user || !adminStatusChecked) return;
     
-    checkAuthStatus();
+    if (isAdmin) {
+      console.log("User already verified as admin via context, redirecting");
+      toast({
+        title: "Welcome back",
+        description: "You are already logged in as admin"
+      });
+      navigate('/admin/dashboard');
+    }
   }, [user, isAdmin, adminStatusChecked, navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
