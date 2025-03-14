@@ -64,11 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				youbuy: {
-					DEFAULT: '#00a5a8',
+					DEFAULT: '#25AFEF',
 					foreground: '#ffffff',
-					light: '#e6f7f7',
-					dark: '#00787a',
-					muted: '#e0f2f2',
+					light: '#e6f6fd',
+					dark: '#1a87ba',
+					muted: '#e0f3fb',
 				}
 			},
 			borderRadius: {
