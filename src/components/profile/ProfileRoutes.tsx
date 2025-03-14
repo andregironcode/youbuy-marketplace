@@ -59,10 +59,10 @@ export const ProfileRoutes = () => {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
         
-        {/* Admin Routes */}
+        {/* Admin Routes - Fix: changed from admin/help to admin-help */}
         {isAdmin && (
           <>
-            <Route path="admin/help" element={<AdminHelpPage />} />
+            <Route path="admin-help" element={<AdminHelpPage />} />
           </>
         )}
       </Routes>
