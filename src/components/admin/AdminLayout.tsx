@@ -20,10 +20,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    let isMounted = true; // Track if component is mounted
+    let isMounted = true;
     
     const verifyAdminAccess = async () => {
-      // Skip verification if still loading
+      console.log("Verify admin access called. User:", user?.id, "Admin checked:", adminStatusChecked, "Is admin:", isAdmin);
+      
+      // Skip verification if still loading auth
       if (loading) {
         console.log("Auth still loading, waiting...");
         return;
@@ -63,40 +65,47 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       }
 
       // If we get here, admin status is still being checked
-      if (verificationAttempts < 3) {
-        console.log(`Verification attempt ${verificationAttempts + 1}/3`);
+      if (verificationAttempts < 2) { // Reduced from 3 to 2 attempts
+        console.log(`Verification attempt ${verificationAttempts + 1}/2`);
         if (isMounted) {
           setVerificationAttempts(prev => prev + 1);
         
-          // Make a direct admin check attempt
-          try {
-            const adminResult = await checkIsAdmin();
-            console.log("Direct admin check result:", adminResult);
+          // Make a direct admin check attempt with delay to prevent race conditions
+          timeoutId = setTimeout(async () => {
+            if (!isMounted) return;
             
-            if (isMounted) {
-              if (adminResult) {
-                setVerificationState('success');
-              } else {
-                setVerificationState('failed');
-                toast({
-                  variant: "destructive",
-                  title: "Access denied",
-                  description: "You don't have admin privileges"
-                });
-                navigate("/");
+            try {
+              // Force a recheck of admin status
+              const adminResult = await checkIsAdmin();
+              console.log("Direct admin check result:", adminResult);
+              
+              if (isMounted) {
+                if (adminResult) {
+                  setVerificationState('success');
+                } else {
+                  // Wait for one more check from the context before giving up
+                  if (verificationAttempts >= 1) {
+                    setVerificationState('failed');
+                    toast({
+                      variant: "destructive",
+                      title: "Access denied",
+                      description: "You don't have admin privileges"
+                    });
+                    navigate("/");
+                  }
+                }
+              }
+            } catch (error) {
+              console.error("Admin check error:", error);
+              // Only schedule next check on first attempt
+              if (isMounted && verificationAttempts === 0) {
+                // Next check will happen automatically via increment above
               }
             }
-          } catch (error) {
-            console.error("Admin check error:", error);
-            
-            // Schedule next check only if we have errors
-            if (isMounted) {
-              timeoutId = setTimeout(verifyAdminAccess, 1000);
-            }
-          }
+          }, 1000); // Longer delay to ensure auth is settled
         }
       } else {
-        // Give up after 3 attempts
+        // Give up after max attempts
         console.log("Max verification attempts reached, redirecting");
         if (isMounted) {
           setVerificationState('failed');
@@ -127,7 +136,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         <p className="text-lg font-medium">Verifying admin access...</p>
         {verificationAttempts > 0 && (
           <p className="text-sm text-muted-foreground mt-2">
-            Attempt {verificationAttempts}/3...
+            Attempt {verificationAttempts}/2...
           </p>
         )}
       </div>

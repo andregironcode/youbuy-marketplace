@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
@@ -8,7 +7,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
-  adminStatusChecked: boolean; // New flag to track if admin status was checked
+  adminStatusChecked: boolean;
   checkIsAdmin: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
@@ -27,30 +26,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
-  const [adminStatusChecked, setAdminStatusChecked] = useState(false); // Track if we've checked admin status
+  const [adminStatusChecked, setAdminStatusChecked] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    let isMounted = true; // Track if component is mounted
+    let isMounted = true;
 
-    // Get initial session
     const initializeAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        const session = data.session;
+        const initialSession = data.session;
         
         if (!isMounted) return;
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
         
-        if (session?.user) {
-          console.log("Initial session, checking admin status for:", session.user.id);
-          const adminResult = await checkIsAdmin();
-          if (isMounted) {
-            setIsAdmin(adminResult);
-            setAdminStatusChecked(true);
-            console.log("Initial admin check result:", adminResult);
-          }
+        setAuthInitialized(true);
+        
+        if (initialSession?.user) {
+          console.log("Initial session, checking admin status for:", initialSession.user.id);
+          
+          setTimeout(async () => {
+            if (!isMounted) return;
+            
+            try {
+              const adminResult = await checkIsAdmin();
+              if (isMounted) {
+                setIsAdmin(adminResult);
+                setAdminStatusChecked(true);
+                console.log("Initial admin check result:", adminResult);
+              }
+            } catch (error) {
+              console.error("Error in initial admin check:", error);
+              if (isMounted) {
+                setAdminStatusChecked(true);
+              }
+            }
+          }, 500);
         } else {
           if (isMounted) {
             setAdminStatusChecked(true);
@@ -62,32 +75,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error initializing auth:", error);
         if (isMounted) {
           setLoading(false);
-          setAdminStatusChecked(true); // Mark as checked even on error to prevent loops
+          setAuthInitialized(true);
+          setAdminStatusChecked(true);
         }
       }
     };
 
     initializeAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log("Auth state changed:", event, newSession?.user?.id);
       
       if (!isMounted) return;
       
-      setSession(session);
-      setUser(session?.user ?? null);
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
       
-      // Reset admin status check when auth state changes
       setAdminStatusChecked(false);
       
-      if (session?.user) {
-        const adminResult = await checkIsAdmin();
-        if (isMounted) {
-          console.log("Auth change admin check result:", adminResult);
-          setIsAdmin(adminResult);
-          setAdminStatusChecked(true);
-        }
+      if (newSession?.user) {
+        setTimeout(async () => {
+          if (!isMounted) return;
+          
+          try {
+            const adminResult = await checkIsAdmin();
+            if (isMounted) {
+              console.log("Auth change admin check result:", adminResult);
+              setIsAdmin(adminResult);
+              setAdminStatusChecked(true);
+            }
+          } catch (error) {
+            console.error("Error in auth change admin check:", error);
+            if (isMounted) {
+              setAdminStatusChecked(true);
+            }
+          }
+        }, 500);
       } else {
         setIsAdmin(false);
         setAdminStatusChecked(true);
@@ -102,23 +125,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function checkIsAdmin(): Promise<boolean> {
     try {
-      // If already checking, don't start another check
       if (isCheckingAdmin) {
         console.log("Already checking admin status, returning current value:", isAdmin);
         return isAdmin;
       }
       
       setIsCheckingAdmin(true);
-      console.log("Checking admin status in AuthContext");
+      console.log("Checking admin status in AuthContext, user:", user?.id);
       
-      // Ensure we have a valid session
-      if (!user) {
-        console.log("No user logged in, cannot be admin");
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentSession = sessionData.session;
+      
+      if (!currentSession?.user) {
+        console.log("No valid session found in checkIsAdmin");
         setIsCheckingAdmin(false);
         return false;
       }
       
-      console.log("Performing RPC call to check admin status");
+      console.log("Performing RPC call to check admin status with session:", currentSession.user.id);
       const { data, error } = await supabase.rpc('is_admin');
       
       setIsCheckingAdmin(false);
@@ -139,13 +163,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signIn(email: string, password: string) {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error) {
-        // We don't need to check admin status here, the onAuthStateChange handler will do it
-        console.log("Sign in successful, admin check will happen via auth state change");
-      }
+      setLoading(false);
       return { error };
     } catch (error) {
+      setLoading(false);
       return { error: error as Error };
     }
   }
