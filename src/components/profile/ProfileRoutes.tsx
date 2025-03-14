@@ -13,17 +13,12 @@ import { useCategoryToggle } from "@/hooks/useCategoryToggle";
 import { useNavigate } from "react-router-dom";
 import { PremiumPage } from "./pages/PremiumPage";
 import { WalletPage } from "./pages/WalletPage";
-import { AdminHelpPage } from "./pages/admin/AdminHelpPage";
 import { useAuth } from "@/context/AuthContext";
 
 export const ProfileRoutes = () => {
   const { showCategories, setShowCategories } = useCategoryToggle();
   const navigate = useNavigate();
-  const { user } = useAuth();
   
-  // Mock admin check - in a real app, this would check admin status in the database
-  const isAdmin = user?.email === "admin@youbuy.com";
-
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     if (categoryId === "all") {
       navigate("/");
@@ -58,13 +53,6 @@ export const ProfileRoutes = () => {
         <Route path="wallet" element={<WalletPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
-        
-        {/* Admin Routes */}
-        {isAdmin && (
-          <>
-            <Route path="admin/help" element={<AdminHelpPage />} />
-          </>
-        )}
       </Routes>
     </>
   );
