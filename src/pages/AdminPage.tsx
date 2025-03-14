@@ -115,12 +115,12 @@ const AdminPage = () => {
   return (
     <Routes>
       <Route element={<AdminLayout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<Navigate to="/admin/users" replace />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="help-articles" element={<HelpArticlesPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<Navigate to="/admin/users" replace />} />
       </Route>
     </Routes>
   );

@@ -18,7 +18,7 @@ export const AdminLayout = () => {
         
         // If at the root admin path, redirect to the dashboard
         if (adminStatus && window.location.pathname === "/admin") {
-          navigate("/admin");
+          navigate("/admin/users");
         }
       }
     };
