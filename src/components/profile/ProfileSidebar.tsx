@@ -85,8 +85,8 @@ export const ProfileSidebar = () => {
         </div>
       </div>
       
-      <nav className="flex-1 overflow-y-auto">
-        <ul className="space-y-0">
+      <nav className="flex-1 overflow-y-auto py-2">
+        <ul className="space-y-0.5">
           {sidebarItems.map((item) => {
             const isActive = isPathActive(item.path);
             return (
@@ -94,7 +94,7 @@ export const ProfileSidebar = () => {
                 <Link
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
                     isActive 
                       ? "bg-youbuy text-white font-bold shadow-md" 
                       : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
@@ -114,7 +114,7 @@ export const ProfileSidebar = () => {
                 onOpenChange={setAdminOpen}
                 className="w-full"
               >
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium hover:bg-youbuy/20 hover:text-youbuy">
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium hover:bg-youbuy/20 hover:text-youbuy">
                   <div className="flex items-center gap-3">
                     <ShieldAlert className="h-5 w-5" />
                     <span>Admin Panel</span>
@@ -130,7 +130,7 @@ export const ProfileSidebar = () => {
                           <Link
                             to={item.path}
                             className={cn(
-                              "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                              "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
                               isActive 
                                 ? "bg-youbuy text-white font-bold shadow-md" 
                                 : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
