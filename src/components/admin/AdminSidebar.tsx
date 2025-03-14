@@ -34,7 +34,8 @@ export const AdminSidebar = () => {
   };
   
   const isPathActive = (itemPath: string) => {
-    return location.pathname === itemPath || location.pathname.startsWith(`${itemPath}/`);
+    return location.pathname === itemPath || 
+           (itemPath !== "/admin" && location.pathname.startsWith(itemPath));
   };
 
   return (

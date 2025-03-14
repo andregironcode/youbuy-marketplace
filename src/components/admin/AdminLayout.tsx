@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AdminSidebar } from "./AdminSidebar";
 import { Loader2 } from "lucide-react";
@@ -15,6 +15,11 @@ export const AdminLayout = () => {
       if (user) {
         const adminStatus = await checkIsAdmin();
         console.log("Admin layout verification:", adminStatus);
+        
+        // If at the root admin path, redirect to the dashboard
+        if (adminStatus && window.location.pathname === "/admin") {
+          navigate("/admin");
+        }
       }
     };
     
