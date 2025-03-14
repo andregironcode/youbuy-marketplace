@@ -19,7 +19,10 @@ import { useAuth } from "@/context/AuthContext";
 export const ProfileRoutes = () => {
   const { showCategories, setShowCategories } = useCategoryToggle();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  
+  // Mock admin check - in a real app, this would check admin status in the database
+  const isAdmin = user?.email === "admin@youbuy.com";
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     if (categoryId === "all") {
@@ -56,10 +59,10 @@ export const ProfileRoutes = () => {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
         
-        {/* Admin Routes - Only show for admin users */}
+        {/* Admin Routes */}
         {isAdmin && (
           <>
-            <Route path="admin-help" element={<AdminHelpPage />} />
+            <Route path="admin/help" element={<AdminHelpPage />} />
           </>
         )}
       </Routes>

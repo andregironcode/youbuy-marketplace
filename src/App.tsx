@@ -21,7 +21,6 @@ import Favorites from "@/pages/Favorites";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import CheckoutPage from "@/pages/Checkout";
-import AdminPage from "@/pages/AdminPage";
 import "./App.css";
 
 // Create a client
@@ -36,44 +35,33 @@ function App() {
             <Toaster />
             <NotificationProvider />
             <Router>
-              <Routes>
-                {/* Admin routes - completely separate from regular app routes */}
-                <Route path="/admin/*" element={<AdminPage />} />
-                
-                {/* Regular app routes with navbar */}
-                <Route
-                  path="*"
-                  element={
-                    <div className="flex flex-col min-h-screen w-full">
-                      <Navbar />
-                      <div className="flex-1 flex flex-col w-full">
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/auth" element={<Auth />} />
-                          <Route path="/product/:id" element={<ProductDetail />} />
-                          <Route path="/checkout/:id" element={<CheckoutPage />} />
-                          <Route path="/category/:categoryId" element={<CategoryPage />} />
-                          <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
-                          <Route
-                            path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
-                            element={<CategoryPage />}
-                          />
-                          <Route path="/search" element={<SearchPage />} />
-                          <Route path="/seller/:id" element={<SellerProfile />} />
-                          <Route path="/sell" element={<Sell />} />
-                          <Route path="/profile/*" element={<Profile />} />
-                          <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
-                          <Route path="/messages" element={<Messages />} />
-                          <Route path="/messages/:chatId" element={<Messages />} />
-                          <Route path="/favorites" element={<Favorites />} />
-                          <Route path="/notifications" element={<Notifications />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </div>
-                    </div>
-                  }
-                />
-              </Routes>
+              <div className="flex flex-col min-h-screen w-full">
+                <Navbar />
+                <div className="flex-1 flex flex-col w-full">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/checkout/:id" element={<CheckoutPage />} />
+                    <Route path="/category/:categoryId" element={<CategoryPage />} />
+                    <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
+                    <Route
+                      path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
+                      element={<CategoryPage />}
+                    />
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/seller/:id" element={<SellerProfile />} />
+                    <Route path="/sell" element={<Sell />} />
+                    <Route path="/profile/*" element={<Profile />} />
+                    <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/messages/:chatId" element={<Messages />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </div>
             </Router>
           </TooltipProvider>
         </AuthProvider>

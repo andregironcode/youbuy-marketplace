@@ -437,41 +437,11 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      assign_admin_role: {
-        Args: {
-          target_user_id: string
-        }
-        Returns: boolean
-      }
       calculate_distance: {
         Args: {
           lat1: number
@@ -492,12 +462,6 @@ export type Database = {
         }
         Returns: string
       }
-      is_admin: {
-        Args: {
-          user_uuid?: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       order_status:
@@ -507,7 +471,6 @@ export type Database = {
         | "out_for_delivery"
         | "delivered"
         | "cancelled"
-      user_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never

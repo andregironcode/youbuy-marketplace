@@ -1,6 +1,7 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, Shield } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -18,15 +19,17 @@ export const Navbar = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
   const location = useLocation();
-  const isAdmin = user?.user_metadata?.admin;
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
   };
 
   const toggleCategories = () => {
+    // Dispatch a custom event that all pages can listen for
     const event = new CustomEvent('toggleCategories');
     window.dispatchEvent(event);
+    
+    // Log to verify the event is being dispatched
     console.log('Categories toggle event dispatched from Navbar');
   };
 
@@ -46,6 +49,7 @@ export const Navbar = () => {
 
     const fetchUnreadCounts = async () => {
       try {
+        // Fetch unread messages
         const { count: messageCount, error: messageError } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
@@ -55,6 +59,7 @@ export const Navbar = () => {
         if (messageError) throw messageError;
         setUnreadCount(messageCount || 0);
         
+        // Fetch unread notifications
         const { count: notifCount, error: notifError } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
@@ -70,6 +75,7 @@ export const Navbar = () => {
 
     fetchUnreadCounts();
 
+    // Subscribe to new messages
     const messagesChannel = supabase
       .channel('public:messages')
       .on('postgres_changes', { 
@@ -90,6 +96,7 @@ export const Navbar = () => {
       })
       .subscribe();
       
+    // Subscribe to new notifications
     const notificationsChannel = supabase
       .channel('public:notifications')
       .on('postgres_changes', { 
@@ -163,13 +170,6 @@ export const Navbar = () => {
                       <UnreadBadge count={unreadCount} />
                     </Button>
                   </Link>
-                  {isAdmin && (
-                    <Link to="/admin">
-                      <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Admin">
-                        <Shield className="h-5 w-5 text-youbuy" />
-                      </Button>
-                    </Link>
-                  )}
                   <Link to="/profile">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.user_metadata?.avatar_url} />
@@ -228,12 +228,6 @@ export const Navbar = () => {
             ) : (
               <Link to="/auth" className="py-2 px-3 hover:bg-muted rounded-md">
                 Sign in / Register
-              </Link>
-            )}
-            {user && isAdmin && (
-              <Link to="/admin" className="py-2 px-3 hover:bg-muted rounded-md flex items-center">
-                <Shield className="h-4 w-4 mr-2 text-youbuy" />
-                Admin Dashboard
               </Link>
             )}
           </nav>

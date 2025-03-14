@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type SidebarItem = {
   icon: React.ElementType;
@@ -42,14 +43,16 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 const adminItems: SidebarItem[] = [
-  // Fixed admin route to match the ProfileRoutes component
-  { icon: HelpCircle, label: "Help Articles", path: "/profile/admin-help" },
+  { icon: HelpCircle, label: "Help Articles", path: "/profile/admin/help" },
 ];
 
 export const ProfileSidebar = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [adminOpen, setAdminOpen] = useState(false);
+  
+  // Mock admin check - in a real app, this would check admin status in the database
+  const isAdmin = user?.email === "admin@youbuy.com";
   
   if (!user) return null;
   
@@ -66,8 +69,8 @@ export const ProfileSidebar = () => {
 
   return (
     <aside className="w-60 bg-sidebar border-r flex flex-col h-screen">
-      {/* User profile section */}
-      <div className="p-4 border-b">
+      {/* Fixed height user profile section */}
+      <div className="p-4 border-b shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.user_metadata?.avatar_url} />
@@ -84,8 +87,8 @@ export const ProfileSidebar = () => {
         </div>
       </div>
       
-      {/* Navigation section - removed ScrollArea */}
-      <div className="flex-grow overflow-auto">
+      {/* Scrollable navigation area */}
+      <ScrollArea className="flex-1">
         <nav className="py-2">
           <ul className="space-y-0.5">
             {sidebarItems.map((item) => {
@@ -150,10 +153,10 @@ export const ProfileSidebar = () => {
             )}
           </ul>
         </nav>
-      </div>
+      </ScrollArea>
       
-      {/* Sign-out button section */}
-      <div className="p-3 border-t mt-auto">
+      {/* Fixed sign-out button at bottom */}
+      <div className="p-3 border-t shrink-0">
         <Button 
           variant="ghost" 
           className="w-full justify-start hover:bg-red-100 hover:text-red-600 hover:font-semibold text-red-500 transition-all"

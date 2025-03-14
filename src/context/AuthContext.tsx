@@ -2,14 +2,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
-import { toast } from "sonner";
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  isAdmin: boolean;
-  checkIsAdmin: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
   }>;
@@ -25,80 +22,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // Check admin status when session is set
-      if (session?.user) {
-        checkIsAdmin().then(isAdmin => {
-          setIsAdmin(isAdmin);
-          console.log("Initial admin check:", isAdmin);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      // Check admin status when auth state changes
-      if (session?.user) {
-        checkIsAdmin().then(isAdmin => {
-          setIsAdmin(isAdmin);
-          console.log("Auth change admin check:", isAdmin);
-        });
-      } else {
-        setIsAdmin(false);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkIsAdmin(): Promise<boolean> {
-    if (!user) return false;
-    
-    try {
-      // Use our database function to check if the user is an admin
-      const { data, error } = await supabase.rpc('is_admin');
-      
-      if (error) {
-        console.error('Error checking admin status:', error);
-        return false;
-      }
-      
-      console.log("is_admin RPC result:", data);
-      return data || false;
-    } catch (error) {
-      console.error('Exception checking admin status:', error);
-      return false;
-    }
-  }
-
   async function signIn(email: string, password: string) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      // After successful sign-in, check if the user is an admin
-      if (!error) {
-        const isUserAdmin = await checkIsAdmin();
-        setIsAdmin(isUserAdmin);
-        console.log("Sign-in admin status:", isUserAdmin);
-        
-        if (email === "admin@example.com" && !isUserAdmin) {
-          toast.info("You're logged in as admin@example.com. You can assign yourself admin privileges in the admin panel.");
-        }
-      }
-      
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -124,15 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     await supabase.auth.signOut();
-    setIsAdmin(false);
   }
 
   const value = {
     session,
     user,
     loading,
-    isAdmin,
-    checkIsAdmin,
     signIn,
     signUp,
     signOut,
