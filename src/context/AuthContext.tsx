@@ -8,6 +8,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  adminStatusChecked: boolean; // New flag to track if admin status was checked
   checkIsAdmin: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
@@ -26,41 +27,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
+  const [adminStatusChecked, setAdminStatusChecked] = useState(false); // Track if we've checked admin status
 
   useEffect(() => {
+    let isMounted = true; // Track if component is mounted
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkIsAdmin().then(isAdmin => setIsAdmin(isAdmin));
+    const initializeAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        
+        if (!isMounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log("Initial session, checking admin status for:", session.user.id);
+          const adminResult = await checkIsAdmin();
+          if (isMounted) {
+            setIsAdmin(adminResult);
+            setAdminStatusChecked(true);
+            console.log("Initial admin check result:", adminResult);
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (isMounted) {
+          setLoading(false);
+          setAdminStatusChecked(true); // Mark as checked even on error to prevent loops
+        }
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Reset admin status check when auth state changes
+      setAdminStatusChecked(false);
+      
       if (session?.user) {
-        const isAdminUser = await checkIsAdmin();
-        setIsAdmin(isAdminUser);
+        const adminResult = await checkIsAdmin();
+        if (isMounted) {
+          console.log("Auth change admin check result:", adminResult);
+          setIsAdmin(adminResult);
+          setAdminStatusChecked(true);
+        }
       } else {
         setIsAdmin(false);
+        setAdminStatusChecked(true);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function checkIsAdmin(): Promise<boolean> {
     try {
       // If already checking, don't start another check
-      if (isCheckingAdmin) return isAdmin;
+      if (isCheckingAdmin) {
+        console.log("Already checking admin status, returning current value:", isAdmin);
+        return isAdmin;
+      }
       
       setIsCheckingAdmin(true);
       console.log("Checking admin status in AuthContext");
+      
+      // Ensure we have a valid session
+      if (!user) {
+        console.log("No user logged in, cannot be admin");
+        setIsCheckingAdmin(false);
+        return false;
+      }
+      
       const { data, error } = await supabase.rpc('is_admin');
       
       setIsCheckingAdmin(false);
@@ -119,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     isAdmin,
+    adminStatusChecked,
     checkIsAdmin,
     signIn,
     signUp,
