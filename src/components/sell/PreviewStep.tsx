@@ -147,7 +147,7 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
           <Button 
             onClick={handleSubmit}
             disabled={uploading} 
-            className="bg-youbuy hover:bg-youbuy-dark"
+            variant="action"
           >
             {uploading ? "Publishing..." : "Post Ad"}
           </Button>

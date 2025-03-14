@@ -67,7 +67,7 @@ export default {
 					DEFAULT: '#25AFEF',
 					foreground: '#ffffff',
 					light: '#e6f6fd',
-					dark: '#1a87ba',
+					dark: '#1589c0',
 					muted: '#e0f3fb',
 				}
 			},

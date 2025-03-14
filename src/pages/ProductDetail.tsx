@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -303,7 +304,8 @@ const ProductDetail = () => {
                   </Button>
                   
                   <Button 
-                    className="w-full bg-youbuy hover:bg-youbuy-dark text-white mt-2 py-6 text-lg font-semibold"
+                    className="w-full py-6 text-lg font-semibold"
+                    variant="action"
                     disabled={
                       product.status === 'sold' || 
                       product.status === 'reserved'

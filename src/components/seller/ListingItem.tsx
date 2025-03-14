@@ -35,7 +35,7 @@ export const ListingItem = ({ product }: ListingItemProps) => {
       <div className="flex gap-2">
         <Button 
           size="sm" 
-          className="bg-youbuy hover:bg-youbuy-dark"
+          variant="action"
           onClick={() => navigate(`/checkout/${product.id}`)}
         >
           <ShoppingBag className="h-4 w-4" /> Buy

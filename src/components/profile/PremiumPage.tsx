@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Check, Star, Building2, Rocket } from "lucide-react";
 import { 
@@ -143,7 +142,7 @@ export const PremiumPage = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full bg-youbuy hover:bg-youbuy-dark" onClick={() => handleSubscribe("premium")}>
+            <Button className="w-full" variant="action" onClick={() => handleSubscribe("premium")}>
               Subscribe Now
             </Button>
           </CardFooter>
@@ -197,7 +196,7 @@ export const PremiumPage = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full bg-youbuy hover:bg-youbuy-dark" onClick={() => handleSubscribe("enterprise")}>
+            <Button className="w-full" variant="action" onClick={() => handleSubscribe("enterprise")}>
               Subscribe Now
             </Button>
           </CardFooter>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ interface MessageButtonProps {
   size?: "sm" | "md";
   fullWidth?: boolean;
   id?: string;
-  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost"; // Fixed variant type
+  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost" | "action"; 
 }
 
 export const MessageButton = ({ product, size = "md", fullWidth = false, id, variant = "outline" }: MessageButtonProps) => {
@@ -176,7 +177,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
             <Button 
               onClick={handleSendMessage}
               disabled={!message.trim() || isSending}
-              className="bg-youbuy hover:bg-youbuy-dark"
+              variant="action"
             >
               {isSending ? "Sending..." : "Send Message"}
             </Button>
