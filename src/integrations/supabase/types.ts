@@ -466,6 +466,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_admin_role: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       calculate_distance: {
         Args: {
           lat1: number
