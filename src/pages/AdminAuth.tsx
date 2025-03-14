@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag, Loader2, ShieldAlert } from "lucide-react";
+import { ShieldAlert, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,20 +15,30 @@ const AdminAuth = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in and is admin
   useEffect(() => {
     const checkAdmin = async () => {
-      if (user) {
+      if (!user) return;
+      
+      setIsCheckingAdmin(true);
+      try {
         const { data, error } = await supabase.rpc('is_admin');
+        
         if (data && !error) {
+          toast({
+            title: "Admin access verified",
+            description: "Redirecting to dashboard"
+          });
           navigate('/admin/dashboard');
         } else {
           // If logged in but not admin, redirect to home
+          await supabase.auth.signOut();
           toast({
             variant: "destructive",
             title: "Access denied",
@@ -36,6 +46,15 @@ const AdminAuth = () => {
           });
           navigate('/');
         }
+      } catch (error) {
+        console.error("Admin check error:", error);
+        toast({
+          variant: "destructive",
+          title: "Verification error",
+          description: "Could not verify admin privileges"
+        });
+      } finally {
+        setIsCheckingAdmin(false);
       }
     };
     
@@ -48,10 +67,7 @@ const AdminAuth = () => {
     setErrorMsg(null);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { error } = await signIn(email, password);
       
       if (error) {
         setErrorMsg(error.message);
@@ -60,38 +76,34 @@ const AdminAuth = () => {
           title: "Login failed",
           description: error.message
         });
-      } else {
-        // Check if user is admin
-        const { data, error: adminError } = await supabase.rpc('is_admin');
-        
-        if (data && !adminError) {
-          toast({
-            title: "Admin login successful",
-            description: "Welcome to the admin dashboard"
-          });
-          navigate('/admin/dashboard');
-        } else {
-          // If not admin, sign out and show error
-          await supabase.auth.signOut();
-          toast({
-            variant: "destructive",
-            title: "Access denied",
-            description: "You don't have admin privileges"
-          });
-          navigate('/admin');
-        }
       }
+      // The useEffect hook will handle the admin check and navigation
     } catch (error) {
       console.error("Admin login error:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      setErrorMsg(errorMessage);
       toast({
         variant: "destructive",
         title: "Login error",
-        description: "An unexpected error occurred"
+        description: errorMessage
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // If checking admin status, show loading state
+  if (isCheckingAdmin) {
+    return (
+      <main className="flex-1 container py-8 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-red-600" />
+          <h2 className="text-xl font-semibold mb-2">Verifying admin access</h2>
+          <p className="text-gray-500">Please wait while we confirm your credentials...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 container py-8 flex items-center justify-center">
