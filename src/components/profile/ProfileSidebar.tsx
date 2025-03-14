@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -13,9 +14,13 @@ import {
   Settings, 
   HelpCircle,
   LogOut,
-  Crown
+  Crown,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 type SidebarItem = {
   icon: React.ElementType;
@@ -36,9 +41,17 @@ const sidebarItems: SidebarItem[] = [
   { icon: HelpCircle, label: "Help", path: "/profile/help" },
 ];
 
+const adminItems: SidebarItem[] = [
+  { icon: HelpCircle, label: "Help Articles", path: "/profile/admin/help" },
+];
+
 export const ProfileSidebar = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [adminOpen, setAdminOpen] = useState(false);
+  
+  // Mock admin check - in a real app, this would check admin status in the database
+  const isAdmin = user?.email === "admin@youbuy.com";
   
   if (!user) return null;
   
@@ -93,6 +106,47 @@ export const ProfileSidebar = () => {
               </li>
             );
           })}
+          
+          {isAdmin && (
+            <li>
+              <Collapsible
+                open={adminOpen}
+                onOpenChange={setAdminOpen}
+                className="w-full"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium hover:bg-youbuy/20 hover:text-youbuy">
+                  <div className="flex items-center gap-3">
+                    <ShieldAlert className="h-5 w-5" />
+                    <span>Admin Panel</span>
+                  </div>
+                  <ChevronRight className={cn("h-4 w-4 transition-transform", adminOpen && "transform rotate-90")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ul className="pl-4">
+                    {adminItems.map((item) => {
+                      const isActive = isPathActive(item.path);
+                      return (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                              isActive 
+                                ? "bg-youbuy text-white font-bold shadow-md" 
+                                : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
+                            )}
+                          >
+                            <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            </li>
+          )}
         </ul>
       </nav>
       

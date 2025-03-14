@@ -3,7 +3,7 @@ import { ProfileHelp } from "@/components/profile/ProfileHelp";
 
 export const HelpPage = () => {
   return (
-    <div className="flex-1">
+    <div className="h-full overflow-auto">
       <ProfileHelp />
     </div>
   );
