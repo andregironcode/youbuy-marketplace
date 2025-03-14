@@ -1,22 +1,190 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Edit, Trash2, Ban, CheckSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+
+type UserWithProfile = {
+  id: string;
+  email: string;
+  created_at: string;
+  profile: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  role: string;
+  status: string;
+};
 
 export const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Mock data for demonstration
-  const users = [
-    { id: 1, name: "John Doe", email: "john@example.com", status: "active", role: "user", joinDate: "2023-09-15" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", status: "active", role: "user", joinDate: "2023-10-22" },
-    { id: 3, name: "Admin User", email: "admin@example.com", status: "active", role: "admin", joinDate: "2023-08-01" },
-    { id: 4, name: "Sam Wilson", email: "sam@example.com", status: "suspended", role: "user", joinDate: "2023-11-30" },
-  ];
-  
+  const [users, setUsers] = useState<UserWithProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithProfile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState("");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch users from auth.users via the Supabase function 
+      const { data: authUsers, error: authError } = await supabase.from('profiles').select('*');
+      
+      if (authError) throw authError;
+
+      // Fetch user roles
+      const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
+      if (rolesError) throw rolesError;
+
+      // Map the data to the format we need
+      const mappedUsers = authUsers.map((profile) => {
+        const role = userRoles?.find(role => role.user_id === profile.id)?.role || 'user';
+        
+        return {
+          id: profile.id,
+          email: '', // Email is not stored in profiles for privacy
+          created_at: profile.created_at,
+          profile: {
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url
+          },
+          role: role,
+          status: 'active' // We'll assume all users are active for now
+        };
+      });
+
+      setUsers(mappedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load users",
+        description: "There was an error loading the user data."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditUser = (user: UserWithProfile) => {
+    setSelectedUser(user);
+    setEditName(user.profile?.full_name || "");
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: editName })
+        .eq('id', selectedUser.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "User updated",
+        description: "User information has been updated successfully."
+      });
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === selectedUser.id 
+          ? {...user, profile: {...user.profile, full_name: editName}} 
+          : user
+      ));
+      
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "There was an error updating the user."
+      });
+    }
+  };
+
+  const handleManageUserRole = (user: UserWithProfile, action: string) => {
+    setSelectedUser(user);
+    setConfirmAction(action);
+    setIsAdminDialogOpen(true);
+  };
+
+  const handleConfirmRoleAction = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      if (confirmAction === 'make-admin') {
+        // Add admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .upsert({ 
+            user_id: selectedUser.id, 
+            role: 'admin' 
+          }, { onConflict: 'user_id,role' });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Admin role granted",
+          description: `${selectedUser.profile?.full_name || 'User'} is now an admin.`
+        });
+        
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === selectedUser.id 
+            ? {...user, role: 'admin'} 
+            : user
+        ));
+      } else if (confirmAction === 'remove-admin') {
+        // Remove admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', selectedUser.id)
+          .eq('role', 'admin');
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Admin role removed",
+          description: `${selectedUser.profile?.full_name || 'User'} is no longer an admin.`
+        });
+        
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === selectedUser.id 
+            ? {...user, role: 'user'} 
+            : user
+        ));
+      }
+      
+      setIsAdminDialogOpen(false);
+    } catch (error) {
+      console.error("Error managing user role:", error);
+      toast({
+        variant: "destructive",
+        title: "Action failed",
+        description: "There was an error managing the user role."
+      });
+    }
+  };
+
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.profile?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -37,7 +205,9 @@ export const AdminUsers = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button>Add New User</Button>
+        <Button onClick={fetchUsers} disabled={isLoading}>
+          {isLoading ? "Loading..." : "Refresh Users"}
+        </Button>
       </div>
       
       <div className="border rounded-md">
@@ -45,7 +215,6 @@ export const AdminUsers = () => {
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
@@ -53,55 +222,121 @@ export const AdminUsers = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium">{user.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span 
-                    className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span 
-                    className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                      user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{user.joinDate}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="icon">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {user.status === 'active' ? (
-                      <Button variant="ghost" size="icon">
-                        <Ban className="h-4 w-4 text-red-500" />
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" size="icon">
-                        <CheckSquare className="h-4 w-4 text-green-500" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </td>
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-4 text-center">Loading users...</td>
               </tr>
-            ))}
+            ) : filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-4 text-center">No users found</td>
+              </tr>
+            ) : (
+              filteredUsers.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      {user.profile?.avatar_url && (
+                        <img 
+                          src={user.profile.avatar_url} 
+                          alt={`${user.profile.full_name || 'User'}'s avatar`}
+                          className="h-8 w-8 rounded-full mr-3"
+                        />
+                      )}
+                      <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span 
+                      className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                        user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span 
+                      className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                        user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {user.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {user.role !== 'admin' ? (
+                        <Button variant="ghost" size="icon" onClick={() => handleManageUserRole(user, 'make-admin')}>
+                          <CheckSquare className="h-4 w-4 text-green-500" />
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="icon" onClick={() => handleManageUserRole(user, 'remove-admin')}>
+                          <Ban className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Make changes to user information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                value={editName} 
+                onChange={(e) => setEditName(e.target.value)} 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Role Dialog */}
+      <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogDescription>
+              {confirmAction === 'make-admin' 
+                ? 'Are you sure you want to grant admin privileges to this user?' 
+                : 'Are you sure you want to remove admin privileges from this user?'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleConfirmRoleAction}
+              variant={confirmAction === 'make-admin' ? 'default' : 'destructive'}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

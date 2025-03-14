@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Users, 
@@ -8,7 +8,8 @@ import {
   BarChart2,
   LogOut,
   Flag, 
-  Box
+  Box,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -31,10 +32,16 @@ const adminSidebarItems: SidebarItem[] = [
 export const AdminSidebar = () => {
   const { signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const isPathActive = (itemPath: string) => {
     return location.pathname === itemPath || 
            (itemPath !== "/admin/dashboard" && location.pathname.startsWith(itemPath));
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/admin');
   };
 
   return (
@@ -76,11 +83,19 @@ export const AdminSidebar = () => {
         </ul>
       </nav>
       
-      <div className="p-3 border-t border-gray-800 mt-auto">
+      <div className="p-3 border-t border-gray-800 mt-auto space-y-2">
         <Button 
           variant="ghost" 
           className="w-full justify-start hover:bg-gray-800 text-gray-300 hover:text-white"
-          onClick={signOut}
+          onClick={() => navigate('/')}
+        >
+          <Home className="h-5 w-5 mr-3" />
+          <span>Back to Site</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start hover:bg-gray-800 text-gray-300 hover:text-white"
+          onClick={handleSignOut}
         >
           <LogOut className="h-5 w-5 mr-3" />
           <span>Sign out</span>
