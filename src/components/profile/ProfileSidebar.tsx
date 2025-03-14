@@ -13,7 +13,8 @@ import {
   Wallet, 
   Settings, 
   HelpCircle,
-  LogOut
+  LogOut,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +31,7 @@ const sidebarItems: SidebarItem[] = [
   { icon: MessageCircle, label: "Messages", path: "/messages" },
   { icon: Heart, label: "Favorites", path: "/favorites" },
   { icon: BarChart2, label: "Stats", path: "/profile/stats" },
+  { icon: Crown, label: "Premium", path: "/profile/premium" },
   { icon: Wallet, label: "Wallet", path: "/profile/wallet" },
   { icon: Settings, label: "Settings", path: "/profile/settings" },
   { icon: HelpCircle, label: "Help", path: "/profile/help" },
