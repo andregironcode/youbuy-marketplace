@@ -48,39 +48,44 @@ export const AdminUsers = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch profiles first
+      // Fetch auth users directly (requires admin privileges)
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+      
+      console.log("Fetched auth users:", authUsers);
+      
+      // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
       if (profilesError) throw profilesError;
-
+      
       // Fetch user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
       
       if (rolesError) throw rolesError;
-
-      console.log("Fetched profiles:", profiles);
-      console.log("Fetched user roles:", userRoles);
-
-      // Map the data to the format we need
-      const mappedUsers = profiles.map((profile) => {
-        const role = userRoles?.find(role => role.user_id === profile.id)?.role || 'user';
+      
+      // Map the data to combine auth users with profiles and roles
+      const mappedUsers = authUsers?.users?.map((authUser) => {
+        const profile = profiles?.find(profile => profile.id === authUser.id);
+        const role = userRoles?.find(role => role.user_id === authUser.id)?.role || 'user';
         
         return {
-          id: profile.id,
-          email: profile.email || '', // Email is typically not stored in profiles
-          created_at: profile.created_at,
+          id: authUser.id,
+          email: authUser.email || '',
+          created_at: authUser.created_at || profile?.created_at || '',
           profile: {
-            full_name: profile.full_name,
-            avatar_url: profile.avatar_url
+            full_name: profile?.full_name || null,
+            avatar_url: profile?.avatar_url || null
           },
           role: role,
-          status: 'active' // We'll assume all users are active for now
+          status: authUser.banned ? 'banned' : (authUser.confirmed_at ? 'active' : 'pending')
         };
-      });
+      }) || [];
 
       setUsers(mappedUsers);
     } catch (error) {
@@ -240,6 +245,7 @@ export const AdminUsers = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Join Date</TableHead>
@@ -249,13 +255,13 @@ export const AdminUsers = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Loading users...
                 </TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No users found
                 </TableCell>
               </TableRow>
@@ -274,6 +280,7 @@ export const AdminUsers = () => {
                       <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
                     </div>
                   </TableCell>
+                  <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <span 
                       className={`inline-flex px-2 py-1 text-xs rounded-full ${
