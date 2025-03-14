@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 type SidebarItem = {
   icon: React.ElementType;
@@ -33,6 +34,7 @@ export const AdminSidebar = () => {
   const { signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const isPathActive = (itemPath: string) => {
     return location.pathname === itemPath || 
@@ -40,8 +42,25 @@ export const AdminSidebar = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/admin');
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been signed out of the admin panel"
+      });
+      navigate('/admin');
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast({
+        variant: "destructive",
+        title: "Sign out failed",
+        description: "There was a problem signing you out"
+      });
+    }
+  };
+
+  const handleNavigateToHome = () => {
+    navigate('/');
   };
 
   return (
@@ -87,7 +106,7 @@ export const AdminSidebar = () => {
         <Button 
           variant="ghost" 
           className="w-full justify-start hover:bg-gray-800 text-gray-300 hover:text-white"
-          onClick={() => navigate('/')}
+          onClick={handleNavigateToHome}
         >
           <Home className="h-5 w-5 mr-3" />
           <span>Back to Site</span>

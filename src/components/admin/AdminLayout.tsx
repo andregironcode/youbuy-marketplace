@@ -15,23 +15,42 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, loading } = useAuth();
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkAttempts, setCheckAttempts] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const checkAdminAccess = async () => {
+      // Don't check if we're still loading auth state
       if (loading) return;
-
+      
+      // If no user is logged in, redirect to admin login
       if (!user) {
+        console.log("No user logged in, redirecting to admin login");
         navigate("/admin");
         return;
       }
 
       try {
-        // Check if user is admin
+        console.log("Checking admin status for user:", user.id);
+        // Check if user is admin using the is_admin RPC function
         const { data, error } = await supabase.rpc('is_admin');
         
-        if (!data || error) {
+        console.log("Admin check response:", { data, error });
+        
+        if (error) {
+          console.error("Admin verification error:", error);
+          toast({
+            variant: "destructive",
+            title: "Verification error",
+            description: "Could not verify admin status: " + error.message
+          });
+          navigate("/admin");
+          return;
+        }
+        
+        if (!data) {
+          console.log("User is not an admin, redirecting");
           toast({
             variant: "destructive",
             title: "Access denied",
@@ -41,34 +60,71 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
           return;
         }
         
+        // User is admin, set state and continue
+        console.log("User verified as admin");
         setIsAdmin(true);
       } catch (error) {
         console.error("Admin verification error:", error);
         toast({
           variant: "destructive",
           title: "Verification error",
-          description: "Could not verify admin status"
+          description: "Could not verify admin status due to an unexpected error"
         });
         navigate("/");
       } finally {
+        // Always end the checking state to prevent infinite loop
         setIsCheckingAdmin(false);
       }
     };
 
-    checkAdminAccess();
-  }, [user, loading, navigate, toast]);
+    // Add a timeout before checking to ensure auth state is properly loaded
+    const timer = setTimeout(() => {
+      if (!loading && checkAttempts < 3) {
+        checkAdminAccess();
+        setCheckAttempts(prev => prev + 1);
+      } else if (checkAttempts >= 3 && isCheckingAdmin) {
+        // Force end checking after 3 attempts to prevent infinite loops
+        console.log("Forcing end of admin check after multiple attempts");
+        setIsCheckingAdmin(false);
+        if (!isAdmin) {
+          navigate("/admin");
+        }
+      }
+    }, 500); // Small delay to ensure auth state is loaded
 
+    return () => clearTimeout(timer);
+  }, [user, loading, navigate, toast, checkAttempts]);
+
+  // Show loading state while checking admin status
   if (loading || isCheckingAdmin) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin mb-4 text-red-600" />
         <p className="text-lg font-medium">Verifying admin access...</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          {checkAttempts > 0 ? `Attempt ${checkAttempts}/3...` : ""}
+        </p>
       </div>
     );
   }
 
-  if (!user || !isAdmin) return null;
+  // If not admin or not logged in, don't render admin content
+  if (!user || !isAdmin) {
+    // This should usually not be visible as we navigate away in useEffect
+    return (
+      <div className="h-screen flex flex-col items-center justify-center">
+        <p className="text-lg font-medium text-red-600">Access denied</p>
+        <Button 
+          className="mt-4" 
+          onClick={() => navigate("/admin")}
+        >
+          Back to Admin Login
+        </Button>
+      </div>
+    );
+  }
 
+  // Render admin content
   return (
     <div className="h-screen flex overflow-hidden">
       <AdminSidebar />
@@ -80,3 +136,6 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     </div>
   );
 };
+
+// Add Button import
+import { Button } from "@/components/ui/button";

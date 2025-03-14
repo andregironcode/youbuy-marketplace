@@ -21,30 +21,47 @@ const AdminAuth = () => {
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already logged in and is admin
+  // Check if already logged in and is admin
   useEffect(() => {
     const checkAdmin = async () => {
-      if (!user) return;
+      if (!user) return; // Not logged in
       
       setIsCheckingAdmin(true);
       try {
+        console.log("Checking if logged in user is admin:", user.id);
         const { data, error } = await supabase.rpc('is_admin');
+        console.log("Admin check response:", { data, error });
         
-        if (data && !error) {
+        if (error) {
+          console.error("Admin check error:", error);
+          toast({
+            variant: "destructive",
+            title: "Verification error",
+            description: error.message
+          });
+          setIsCheckingAdmin(false);
+          return;
+        }
+        
+        if (data) {
+          // User is admin, redirect to dashboard
+          console.log("User is admin, redirecting to dashboard");
           toast({
             title: "Admin access verified",
             description: "Redirecting to dashboard"
           });
           navigate('/admin/dashboard');
         } else {
-          // If logged in but not admin, redirect to home
-          await supabase.auth.signOut();
+          // Logged in but not admin
+          console.log("User is logged in but not an admin");
           toast({
             variant: "destructive",
             title: "Access denied",
             description: "You don't have admin privileges"
           });
-          navigate('/');
+          
+          // Sign out the user if they're not an admin
+          await supabase.auth.signOut();
         }
       } catch (error) {
         console.error("Admin check error:", error);
@@ -58,7 +75,9 @@ const AdminAuth = () => {
       }
     };
     
-    checkAdmin();
+    if (user) {
+      checkAdmin();
+    }
   }, [user, navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -67,17 +86,25 @@ const AdminAuth = () => {
     setErrorMsg(null);
     
     try {
+      console.log("Attempting admin login for:", email);
       const { error } = await signIn(email, password);
       
       if (error) {
+        console.error("Login error:", error);
         setErrorMsg(error.message);
         toast({
           variant: "destructive",
           title: "Login failed",
           description: error.message
         });
+        setIsLoading(false);
+        return;
       }
-      // The useEffect hook will handle the admin check and navigation
+      
+      // If login was successful, the useEffect hook will handle the admin check and navigation
+      console.log("Login successful, checking admin status");
+      // We don't set isLoading to false here as the useEffect will handle the redirect
+      
     } catch (error) {
       console.error("Admin login error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
@@ -87,7 +114,6 @@ const AdminAuth = () => {
         title: "Login error",
         description: errorMessage
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -140,7 +166,7 @@ const AdminAuth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isCheckingAdmin}
                 />
               </div>
               <div className="space-y-2">
@@ -151,13 +177,13 @@ const AdminAuth = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isCheckingAdmin}
                 />
               </div>
               <Button 
                 type="submit" 
                 className="w-full bg-red-600 hover:bg-red-700"
-                disabled={isLoading}
+                disabled={isLoading || isCheckingAdmin}
               >
                 {isLoading ? (
                   <>
@@ -176,6 +202,7 @@ const AdminAuth = () => {
               variant="ghost" 
               onClick={() => navigate('/')}
               className="text-sm"
+              disabled={isLoading || isCheckingAdmin}
             >
               Return to main site
             </Button>
