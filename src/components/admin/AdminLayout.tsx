@@ -6,31 +6,16 @@ import { AdminSidebar } from "./AdminSidebar";
 import { Loader2 } from "lucide-react";
 
 export const AdminLayout = () => {
-  const { isAdmin, loading, checkIsAdmin, user } = useAuth();
+  const { isAdmin, loading, user } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Re-verify admin status when component mounts
-    const verifyAdminStatus = async () => {
-      if (user) {
-        const adminStatus = await checkIsAdmin();
-        console.log("Admin layout verification:", adminStatus);
-        
-        // If at the root admin path, redirect to the dashboard
-        if (adminStatus && window.location.pathname === "/admin") {
-          navigate("/admin/users");
-        }
-      }
-    };
-    
-    verifyAdminStatus();
-    
     // Redirect non-admin users back to home
     if (!loading && !isAdmin) {
       console.log("AdminLayout: Not admin, redirecting to home");
-      navigate("/");
+      navigate("/", { replace: true });
     }
-  }, [isAdmin, navigate, loading, user, checkIsAdmin]);
+  }, [isAdmin, navigate, loading]);
   
   if (loading) {
     return (
@@ -42,9 +27,11 @@ export const AdminLayout = () => {
   }
   
   if (!isAdmin) {
-    return null;
+    console.log("AdminLayout: User is not admin, navigating to home");
+    return <Navigate to="/" replace />;
   }
   
+  console.log("AdminLayout: Rendering admin layout");
   return (
     <div className="flex h-screen bg-gray-100">
       <AdminSidebar />

@@ -2,20 +2,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
-  LayoutDashboard, 
   Users, 
   ShoppingCart, 
   FileText, 
   Settings, 
   LogOut,
-  HelpCircle
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const adminNavItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: ShoppingCart, label: "Products", path: "/admin/products" },
   { icon: FileText, label: "Help Articles", path: "/admin/help-articles" },
@@ -44,7 +41,7 @@ export const AdminSidebar = () => {
       <div className="p-4 border-b">
         <Link to="/admin" className="flex items-center gap-2">
           <div className="bg-youbuy text-white p-2 rounded">
-            <LayoutDashboard className="h-5 w-5" />
+            <Users className="h-5 w-5" />
           </div>
           <span className="font-bold text-lg">Admin Panel</span>
         </Link>

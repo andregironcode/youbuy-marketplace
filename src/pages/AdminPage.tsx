@@ -39,18 +39,21 @@ const AdminPage = () => {
   
   // Redirect non-admin users to home
   if (!isAdmin) {
+    console.log("User is not admin, redirecting to home page");
     return <Navigate to="/" replace />;
   }
   
+  // If user is admin, render the admin routes
+  console.log("Rendering admin routes for admin user");
   return (
     <Routes>
-      <Route element={<AdminLayout />}>
-        <Route index element={<Navigate to="/admin/users" replace />} />
+      <Route path="/" element={<AdminLayout />}>
+        <Route index element={<UsersPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="help-articles" element={<HelpArticlesPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/admin/users" replace />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>
   );
