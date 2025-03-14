@@ -7,6 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type UserWithProfile = {
   id: string;
@@ -29,6 +37,7 @@ export const AdminUsers = () => {
   const [editName, setEditName] = useState("");
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -37,23 +46,32 @@ export const AdminUsers = () => {
 
   const fetchUsers = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      // Fetch users from auth.users via the Supabase function 
-      const { data: authUsers, error: authError } = await supabase.from('profiles').select('*');
+      // Fetch profiles first
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
       
-      if (authError) throw authError;
+      if (profilesError) throw profilesError;
 
       // Fetch user roles
-      const { data: userRoles, error: rolesError } = await supabase.from('user_roles').select('*');
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+      
       if (rolesError) throw rolesError;
 
+      console.log("Fetched profiles:", profiles);
+      console.log("Fetched user roles:", userRoles);
+
       // Map the data to the format we need
-      const mappedUsers = authUsers.map((profile) => {
+      const mappedUsers = profiles.map((profile) => {
         const role = userRoles?.find(role => role.user_id === profile.id)?.role || 'user';
         
         return {
           id: profile.id,
-          email: '', // Email is not stored in profiles for privacy
+          email: profile.email || '', // Email is typically not stored in profiles
           created_at: profile.created_at,
           profile: {
             full_name: profile.full_name,
@@ -67,6 +85,7 @@ export const AdminUsers = () => {
       setUsers(mappedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setError("Failed to load users. Please try again later.");
       toast({
         variant: "destructive",
         title: "Failed to load users",
@@ -210,30 +229,40 @@ export const AdminUsers = () => {
         </Button>
       </div>
       
+      {error && (
+        <div className="p-4 border border-red-300 bg-red-50 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
+      
       <div className="border rounded-md">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Join Date</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center">Loading users...</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  Loading users...
+                </TableCell>
+              </TableRow>
             ) : filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center">No users found</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No users found
+                </TableCell>
+              </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <TableRow key={user.id} className="hover:bg-gray-50">
+                  <TableCell>
                     <div className="flex items-center">
                       {user.profile?.avatar_url && (
                         <img 
@@ -244,8 +273,8 @@ export const AdminUsers = () => {
                       )}
                       <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell>
                     <span 
                       className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
@@ -253,8 +282,8 @@ export const AdminUsers = () => {
                     >
                       {user.role}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell>
                     <span 
                       className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -262,11 +291,11 @@ export const AdminUsers = () => {
                     >
                       {user.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell>
                     {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
                         <Edit className="h-4 w-4" />
@@ -281,12 +310,12 @@ export const AdminUsers = () => {
                         </Button>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Edit User Dialog */}
