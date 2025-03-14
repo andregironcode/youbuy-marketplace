@@ -31,6 +31,10 @@ export const AdminSidebar = () => {
   };
   
   const isPathActive = (itemPath: string) => {
+    // Also consider index route (e.g., /admin) to match with the first item (/admin/users)
+    if (itemPath === "/admin/users" && location.pathname === "/admin") {
+      return true;
+    }
     return location.pathname === itemPath || 
            (itemPath !== "/admin" && location.pathname.startsWith(itemPath));
   };

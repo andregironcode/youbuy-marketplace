@@ -37,7 +37,7 @@ function App() {
             <NotificationProvider />
             <Router>
               <Routes>
-                {/* Admin routes */}
+                {/* Admin routes - completely separate from regular app routes */}
                 <Route path="/admin/*" element={<AdminPage />} />
                 
                 {/* Regular app routes with navbar */}

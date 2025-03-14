@@ -1,12 +1,12 @@
 
 import { useEffect } from "react";
-import { useNavigate, Outlet, Navigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AdminSidebar } from "./AdminSidebar";
 import { Loader2 } from "lucide-react";
 
-export const AdminLayout = () => {
-  const { isAdmin, loading, user } = useAuth();
+export const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -31,12 +31,12 @@ export const AdminLayout = () => {
     return <Navigate to="/" replace />;
   }
   
-  console.log("AdminLayout: Rendering admin layout");
+  console.log("AdminLayout: Rendering admin layout with children");
   return (
     <div className="flex h-screen bg-gray-100">
       <AdminSidebar />
       <main className="flex-1 overflow-auto p-6">
-        <Outlet />
+        {children}
       </main>
     </div>
   );
