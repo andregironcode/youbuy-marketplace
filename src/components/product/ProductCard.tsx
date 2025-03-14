@@ -1,8 +1,8 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye } from "lucide-react";
+import { Heart, Eye, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { MessageButton } from "./MessageButton";
@@ -18,6 +18,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
   const productIsFavorite = isFavorite(product.id);
   const [likes, setLikes] = useState(product.likeCount || 0);
+  const navigate = useNavigate();
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,6 +39,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         .update({ like_count: Math.max(0, likes - 1) })
         .eq('id', product.id);
     }
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(`/checkout/${product.id}`);
   };
 
   return (
@@ -79,6 +85,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <span className="mx-1">•</span>
           <span>{product.timeAgo}</span>
         </div>
+        <div className="flex items-center justify-between mt-3">
+          <Button
+            onClick={handleBuyNow}
+            className="bg-youbuy hover:bg-youbuy-dark text-white flex-1 mr-2"
+            size="sm"
+          >
+            <ShoppingBag className="h-4 w-4 mr-1" /> Buy Now
+          </Button>
+          <MessageButton product={product} size="sm" variant="outline" />
+        </div>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">
             <div className="flex items-center">
@@ -90,7 +106,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <span>{product.viewCount || 0}</span>
             </div>
           </div>
-          <MessageButton product={product} size="sm" />
         </div>
       </CardContent>
     </Card>
