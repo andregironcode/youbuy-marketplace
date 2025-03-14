@@ -20,6 +20,7 @@ import {
   ThumbsDown,
   Clock
 } from "lucide-react";
+import { Eye } from "@/components/ui/eye";
 import { Input } from "@/components/ui/input";
 import { 
   Accordion,
