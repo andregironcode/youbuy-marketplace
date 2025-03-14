@@ -14,7 +14,8 @@ import {
   Settings, 
   HelpCircle,
   LogOut,
-  Crown
+  Crown,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +39,7 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 export const ProfileSidebar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
   
   if (!user) return null;
@@ -94,6 +95,18 @@ export const ProfileSidebar = () => {
               </li>
             );
           })}
+          
+          {isAdmin && (
+            <li>
+              <Link
+                to="/admin/dashboard"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 hover:font-semibold mt-2"
+              >
+                <ShieldAlert className="h-5 w-5" />
+                <span>Admin Panel</span>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
       
