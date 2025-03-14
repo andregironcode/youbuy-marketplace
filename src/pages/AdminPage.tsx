@@ -37,15 +37,10 @@ const AdminPage = () => {
     
     setAssigningAdmin(true);
     try {
-      // Insert admin role for current user using the special RLS policy for admin@example.com
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert({ 
-          user_id: user.id, 
-          role: 'admin'
-        }, { 
-          onConflict: 'user_id,role'
-        });
+      // Use a direct RPC call to assign admin role, bypassing RLS
+      const { data, error } = await supabase.rpc('assign_admin_role', {
+        target_user_id: user.id
+      });
       
       if (error) {
         console.error("Error assigning admin role:", error);
