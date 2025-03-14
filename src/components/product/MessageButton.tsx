@@ -15,7 +15,7 @@ interface MessageButtonProps {
   size?: "sm" | "md";
   fullWidth?: boolean;
   id?: string;
-  variant?: string; // Added variant prop
+  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost"; // Fixed variant type
 }
 
 export const MessageButton = ({ product, size = "md", fullWidth = false, id, variant = "outline" }: MessageButtonProps) => {
@@ -141,7 +141,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
     <>
       <Button
         id={id}
-        variant={variant} // Use the variant prop
+        variant={variant}
         className={`${buttonClass} ${fullWidth ? 'w-full' : ''}`}
         onClick={handleClick}
       >
