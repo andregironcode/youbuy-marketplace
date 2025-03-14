@@ -68,8 +68,7 @@ export const ProfileSidebar = () => {
   };
 
   return (
-    <aside className="w-60 bg-sidebar border-r flex flex-col h-screen">
-      {/* Fixed height user profile section */}
+    <aside className="w-60 bg-sidebar border-r h-screen flex flex-col">
       <div className="p-4 border-b shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -87,84 +86,84 @@ export const ProfileSidebar = () => {
         </div>
       </div>
       
-      {/* Scrollable navigation area */}
-      <ScrollArea className="flex-1">
-        <nav className="py-2">
-          <ul className="space-y-0.5">
-            {sidebarItems.map((item) => {
-              const isActive = isPathActive(item.path);
-              return (
-                <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
-                      isActive 
-                        ? "bg-youbuy text-white font-bold shadow-md" 
-                        : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
-                    )}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ScrollArea className="flex-1">
+          <nav className="py-2">
+            <ul className="space-y-0.5">
+              {sidebarItems.map((item) => {
+                const isActive = isPathActive(item.path);
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
+                        isActive 
+                          ? "bg-youbuy text-white font-bold shadow-md" 
+                          : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
+                      )}
+                    >
+                      <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+              
+              {isAdmin && (
+                <li>
+                  <Collapsible
+                    open={adminOpen}
+                    onOpenChange={setAdminOpen}
+                    className="w-full"
                   >
-                    <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
-                    <span>{item.label}</span>
-                  </Link>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium hover:bg-youbuy/20 hover:text-youbuy">
+                      <div className="flex items-center gap-3">
+                        <ShieldAlert className="h-5 w-5" />
+                        <span>Admin Panel</span>
+                      </div>
+                      <ChevronRight className={cn("h-4 w-4 transition-transform", adminOpen && "transform rotate-90")} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <ul className="pl-4">
+                        {adminItems.map((item) => {
+                          const isActive = isPathActive(item.path);
+                          return (
+                            <li key={item.path}>
+                              <Link
+                                to={item.path}
+                                className={cn(
+                                  "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
+                                  isActive 
+                                    ? "bg-youbuy text-white font-bold shadow-md" 
+                                    : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
+                                )}
+                              >
+                                <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
+                                <span>{item.label}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </li>
-              );
-            })}
-            
-            {isAdmin && (
-              <li>
-                <Collapsible
-                  open={adminOpen}
-                  onOpenChange={setAdminOpen}
-                  className="w-full"
-                >
-                  <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium hover:bg-youbuy/20 hover:text-youbuy">
-                    <div className="flex items-center gap-3">
-                      <ShieldAlert className="h-5 w-5" />
-                      <span>Admin Panel</span>
-                    </div>
-                    <ChevronRight className={cn("h-4 w-4 transition-transform", adminOpen && "transform rotate-90")} />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ul className="pl-4">
-                      {adminItems.map((item) => {
-                        const isActive = isPathActive(item.path);
-                        return (
-                          <li key={item.path}>
-                            <Link
-                              to={item.path}
-                              className={cn(
-                                "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
-                                isActive 
-                                  ? "bg-youbuy text-white font-bold shadow-md" 
-                                  : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
-                              )}
-                            >
-                              <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
-                              <span>{item.label}</span>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CollapsibleContent>
-                </Collapsible>
-              </li>
-            )}
-          </ul>
-        </nav>
-      </ScrollArea>
-      
-      {/* Fixed sign-out button at bottom */}
-      <div className="p-3 border-t shrink-0">
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start hover:bg-red-100 hover:text-red-600 hover:font-semibold text-red-500 transition-all"
-          onClick={signOut}
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          <span>Sign out</span>
-        </Button>
+              )}
+            </ul>
+          </nav>
+        </ScrollArea>
+        
+        <div className="p-3 border-t mt-auto">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start hover:bg-red-100 hover:text-red-600 hover:font-semibold text-red-500 transition-all"
+            onClick={signOut}
+          >
+            <LogOut className="h-5 w-5 mr-3" />
+            <span>Sign out</span>
+          </Button>
+        </div>
       </div>
     </aside>
   );
