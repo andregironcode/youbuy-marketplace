@@ -6,15 +6,26 @@ import { AdminSidebar } from "./AdminSidebar";
 import { Loader2 } from "lucide-react";
 
 export const AdminLayout = () => {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, loading, checkIsAdmin, user } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
+    // Re-verify admin status when component mounts
+    const verifyAdminStatus = async () => {
+      if (user) {
+        const adminStatus = await checkIsAdmin();
+        console.log("Admin layout verification:", adminStatus);
+      }
+    };
+    
+    verifyAdminStatus();
+    
     // Redirect non-admin users back to home
     if (!loading && !isAdmin) {
+      console.log("AdminLayout: Not admin, redirecting to home");
       navigate("/");
     }
-  }, [isAdmin, navigate, loading]);
+  }, [isAdmin, navigate, loading, user, checkIsAdmin]);
   
   if (loading) {
     return (

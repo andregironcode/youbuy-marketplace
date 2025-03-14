@@ -8,17 +8,23 @@ import { HelpArticlesPage } from "@/components/admin/HelpArticlesPage";
 import { SettingsPage } from "@/components/admin/SettingsPage";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const AdminPage = () => {
   const { user, isAdmin, loading, checkIsAdmin } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const [assigningAdmin, setAssigningAdmin] = useState(false);
   
   useEffect(() => {
     // Double-check admin status when component mounts
     const verifyAdmin = async () => {
       if (user) {
-        await checkIsAdmin();
+        const isUserAdmin = await checkIsAdmin();
+        console.log("Admin verification result:", isUserAdmin);
       }
       setIsChecking(false);
     };
@@ -26,12 +32,77 @@ const AdminPage = () => {
     verifyAdmin();
   }, [user, checkIsAdmin]);
   
+  const assignAdminRole = async () => {
+    if (!user) return;
+    
+    setAssigningAdmin(true);
+    try {
+      // Insert admin role for current user
+      const { error } = await supabase
+        .from('user_roles')
+        .upsert({ 
+          user_id: user.id, 
+          role: 'admin'
+        }, { 
+          onConflict: 'user_id'
+        });
+      
+      if (error) {
+        console.error("Error assigning admin role:", error);
+        toast.error("Failed to assign admin role: " + error.message);
+      } else {
+        toast.success("Admin role assigned successfully!");
+        await checkIsAdmin(); // Refresh admin status
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+    } catch (err) {
+      console.error("Exception assigning admin role:", err);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setAssigningAdmin(false);
+    }
+  };
+  
   // Show loading state while checking auth and admin status
   if (loading || isChecking) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="animate-spin h-8 w-8 text-youbuy" />
         <span className="ml-2">Loading admin panel...</span>
+      </div>
+    );
+  }
+  
+  // Show admin assignment option for admin@example.com users who aren't admins yet
+  if (!isAdmin && user?.email === "admin@example.com") {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="w-[450px]">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <ShieldAlert className="mr-2 h-6 w-6 text-yellow-500" />
+              Admin Access Required
+            </CardTitle>
+            <CardDescription>
+              You're logged in as {user.email} but you don't have admin privileges yet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              Click the button below to assign admin role to your account:
+            </p>
+            <Button 
+              onClick={assignAdminRole} 
+              disabled={assigningAdmin}
+              className="w-full"
+            >
+              {assigningAdmin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {assigningAdmin ? 'Assigning Admin Role...' : 'Assign Admin Role'}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

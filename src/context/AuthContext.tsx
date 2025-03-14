@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 type AuthContextType = {
   session: Session | null;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         checkIsAdmin().then(isAdmin => {
           setIsAdmin(isAdmin);
+          console.log("Initial admin check:", isAdmin);
           setLoading(false);
         });
       } else {
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         checkIsAdmin().then(isAdmin => {
           setIsAdmin(isAdmin);
+          console.log("Auth change admin check:", isAdmin);
         });
       } else {
         setIsAdmin(false);
@@ -64,15 +67,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function checkIsAdmin(): Promise<boolean> {
     if (!user) return false;
     
-    // Use our database function to check if the user is an admin
-    const { data, error } = await supabase.rpc('is_admin');
-    
-    if (error) {
-      console.error('Error checking admin status:', error);
+    try {
+      // Use our database function to check if the user is an admin
+      const { data, error } = await supabase.rpc('is_admin');
+      
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+      
+      console.log("is_admin RPC result:", data);
+      return data || false;
+    } catch (error) {
+      console.error('Exception checking admin status:', error);
       return false;
     }
-    
-    return data || false;
   }
 
   async function signIn(email: string, password: string) {
@@ -83,6 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!error) {
         const isUserAdmin = await checkIsAdmin();
         setIsAdmin(isUserAdmin);
+        console.log("Sign-in admin status:", isUserAdmin);
+        
+        if (email === "admin@example.com" && !isUserAdmin) {
+          toast.error("You are logged in as admin@example.com but don't have admin role assigned. Please contact support.");
+        }
       }
       
       return { error };
