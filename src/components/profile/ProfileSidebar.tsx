@@ -47,11 +47,9 @@ const adminItems: SidebarItem[] = [
 ];
 
 export const ProfileSidebar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [adminOpen, setAdminOpen] = useState(false);
-  
-  const isAdmin = user?.email === "admin@example.com";
   
   if (!user) return null;
   

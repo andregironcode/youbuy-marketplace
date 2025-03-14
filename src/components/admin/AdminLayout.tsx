@@ -3,20 +3,27 @@ import { useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AdminSidebar } from "./AdminSidebar";
+import { Loader2 } from "lucide-react";
 
 export const AdminLayout = () => {
-  const { user } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
-  
-  // Check if the current user is an admin
-  const isAdmin = user?.email === "admin@example.com";
   
   useEffect(() => {
     // Redirect non-admin users back to home
-    if (!isAdmin) {
+    if (!loading && !isAdmin) {
       navigate("/");
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, loading]);
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="animate-spin h-8 w-8 text-youbuy" />
+        <span className="ml-2">Verifying admin access...</span>
+      </div>
+    );
+  }
   
   if (!isAdmin) {
     return null;

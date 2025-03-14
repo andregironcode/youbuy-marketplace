@@ -19,10 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 export const ProfileRoutes = () => {
   const { showCategories, setShowCategories } = useCategoryToggle();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  // Fixed admin check to match the same email as in the sidebar
-  const isAdmin = user?.email === "admin@example.com";
+  const { isAdmin } = useAuth();
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     if (categoryId === "all") {
@@ -59,7 +56,7 @@ export const ProfileRoutes = () => {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
         
-        {/* Admin Routes - Fix: changed from admin/help to admin-help */}
+        {/* Admin Routes - Only show for admin users */}
         {isAdmin && (
           <>
             <Route path="admin-help" element={<AdminHelpPage />} />
