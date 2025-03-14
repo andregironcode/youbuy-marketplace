@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Sign-in admin status:", isUserAdmin);
         
         if (email === "admin@example.com" && !isUserAdmin) {
-          toast.error("You are logged in as admin@example.com but don't have admin role assigned. Please contact support.");
+          toast.info("You're logged in as admin@example.com. You can assign yourself admin privileges in the admin panel.");
         }
       }
       

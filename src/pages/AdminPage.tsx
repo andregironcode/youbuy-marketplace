@@ -37,14 +37,14 @@ const AdminPage = () => {
     
     setAssigningAdmin(true);
     try {
-      // Insert admin role for current user
+      // Insert admin role for current user using the special RLS policy for admin@example.com
       const { error } = await supabase
         .from('user_roles')
         .upsert({ 
           user_id: user.id, 
           role: 'admin'
         }, { 
-          onConflict: 'user_id'
+          onConflict: 'user_id,role'
         });
       
       if (error) {
@@ -52,10 +52,18 @@ const AdminPage = () => {
         toast.error("Failed to assign admin role: " + error.message);
       } else {
         toast.success("Admin role assigned successfully!");
-        await checkIsAdmin(); // Refresh admin status
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh admin status
+        const isUserAdmin = await checkIsAdmin();
+        console.log("Updated admin status:", isUserAdmin);
+        
+        if (isUserAdmin) {
+          toast.info("Admin access granted. The page will reload in a moment.");
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          toast.warning("Role was assigned but admin status is not active yet. Please try refreshing the page.");
+        }
       }
     } catch (err) {
       console.error("Exception assigning admin role:", err);
