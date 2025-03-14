@@ -18,16 +18,16 @@ const AdminPage = () => {
   }
   
   return (
-    <AdminLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/help-articles" element={<HelpArticlesPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+    <Routes>
+      <Route element={<AdminLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="help-articles" element={<HelpArticlesPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </AdminLayout>
+      </Route>
+    </Routes>
   );
 };
 
