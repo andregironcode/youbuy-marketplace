@@ -22,13 +22,11 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex flex-col md:flex-row">
-        <ProfileSidebar />
-        <main className="flex-1 overflow-auto">
-          <ProfileRoutes />
-        </main>
-      </div>
+    <div className="h-screen flex overflow-hidden">
+      <ProfileSidebar />
+      <main className="flex-1 overflow-hidden">
+        <ProfileRoutes />
+      </main>
     </div>
   );
 };

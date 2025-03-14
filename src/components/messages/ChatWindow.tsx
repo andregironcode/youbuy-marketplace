@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -152,12 +151,12 @@ export const ChatWindow = ({
   };
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {renderChatHeader()}
       {renderProductInfo()}
       {renderMessages()}
 
-      <div className="p-3 border-t">
+      <div className="p-3 border-t mt-auto">
         <div className="flex space-x-2">
           <Textarea
             value={newMessage}
@@ -196,6 +195,6 @@ export const ChatWindow = ({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };

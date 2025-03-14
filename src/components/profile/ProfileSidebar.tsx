@@ -57,7 +57,7 @@ export const ProfileSidebar = () => {
   };
 
   return (
-    <aside className="w-60 bg-sidebar border-r h-[calc(100vh-64px)] flex flex-col">
+    <aside className="w-60 bg-sidebar border-r h-screen flex flex-col overflow-hidden">
       <div className="p-4 border-b">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -75,7 +75,7 @@ export const ProfileSidebar = () => {
         </div>
       </div>
       
-      <nav className="flex-1">
+      <nav className="flex-1 overflow-y-auto">
         <ul className="space-y-0">
           {sidebarItems.map((item) => {
             const isActive = isPathActive(item.path);
