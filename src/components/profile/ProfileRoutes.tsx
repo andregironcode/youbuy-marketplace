@@ -21,8 +21,8 @@ export const ProfileRoutes = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Mock admin check - in a real app, this would check admin status in the database
-  const isAdmin = user?.email === "admin@youbuy.com";
+  // Fixed admin check to match the same email as in the sidebar
+  const isAdmin = user?.email === "admin@example.com";
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
     if (categoryId === "all") {
