@@ -6,13 +6,14 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin: authContextIsAdmin } = useAuth();
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkAttempts, setCheckAttempts] = useState(0);
@@ -28,6 +29,14 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       if (!user) {
         console.log("No user logged in, redirecting to admin login");
         navigate("/admin");
+        return;
+      }
+
+      // If authContext already knows the user is admin, use that information
+      if (authContextIsAdmin) {
+        console.log("User verified as admin via AuthContext");
+        setIsAdmin(true);
+        setIsCheckingAdmin(false);
         return;
       }
 
@@ -77,23 +86,30 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       }
     };
 
-    // Add a timeout before checking to ensure auth state is properly loaded
-    const timer = setTimeout(() => {
-      if (!loading && checkAttempts < 3) {
-        checkAdminAccess();
-        setCheckAttempts(prev => prev + 1);
-      } else if (checkAttempts >= 3 && isCheckingAdmin) {
-        // Force end checking after 3 attempts to prevent infinite loops
-        console.log("Forcing end of admin check after multiple attempts");
-        setIsCheckingAdmin(false);
-        if (!isAdmin) {
-          navigate("/admin");
+    // Reset the timer on each re-render to avoid overlapping calls
+    let timer: ReturnType<typeof setTimeout>;
+    
+    // Only run the check if we haven't exceeded attempts and are still checking
+    if (isCheckingAdmin && checkAttempts < 3) {
+      timer = setTimeout(() => {
+        if (!loading) {
+          checkAdminAccess();
+          setCheckAttempts(prev => prev + 1);
         }
+      }, 500); // Small delay to ensure auth state is loaded
+    } else if (checkAttempts >= 3 && isCheckingAdmin) {
+      // Force end checking after 3 attempts to prevent infinite loops
+      console.log("Forcing end of admin check after multiple attempts");
+      setIsCheckingAdmin(false);
+      if (!isAdmin) {
+        navigate("/admin");
       }
-    }, 500); // Small delay to ensure auth state is loaded
+    }
 
-    return () => clearTimeout(timer);
-  }, [user, loading, navigate, toast, checkAttempts]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [user, loading, navigate, toast, checkAttempts, authContextIsAdmin, isCheckingAdmin]);
 
   // Show loading state while checking admin status
   if (loading || isCheckingAdmin) {
@@ -136,6 +152,3 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     </div>
   );
 };
-
-// Add Button import
-import { Button } from "@/components/ui/button";

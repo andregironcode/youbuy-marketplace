@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state changed:", _event, session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -54,14 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function checkIsAdmin(): Promise<boolean> {
     try {
+      // If already checking, don't start another check
+      if (isCheckingAdmin) return isAdmin;
+      
+      setIsCheckingAdmin(true);
+      console.log("Checking admin status in AuthContext");
       const { data, error } = await supabase.rpc('is_admin');
+      
+      setIsCheckingAdmin(false);
+      
       if (error) {
         console.error("Error checking admin status:", error);
         return false;
       }
+      
+      console.log("Admin check result:", data);
       return !!data;
     } catch (error) {
       console.error("Error in checkIsAdmin:", error);
+      setIsCheckingAdmin(false);
       return false;
     }
   }
