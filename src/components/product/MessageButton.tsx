@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -133,19 +132,15 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
     }
   };
 
-  const buttonClass = size === "sm" 
-    ? "h-8 text-xs px-2 py-1" 
-    : "h-10 text-sm px-4 py-2";
-
   return (
     <>
       <Button
         id={id}
         variant={variant}
-        className={`${buttonClass} ${fullWidth ? 'w-full' : ''}`}
+        className={`${fullWidth ? 'w-full' : ''}`}
         onClick={handleClick}
       >
-        <MessageCircle className={size === "sm" ? "h-3 w-3 mr-1" : "h-4 w-4 mr-2"} />
+        <MessageCircle className={size === "sm" ? "h-4 w-4" : "h-5 w-5"} />
         Message
       </Button>
       

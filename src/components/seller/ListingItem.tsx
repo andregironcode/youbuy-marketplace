@@ -3,6 +3,7 @@ import { ProductType } from "@/types/product";
 import { Button } from "../ui/button";
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
+import { MessageButton } from "../product/MessageButton";
 
 interface ListingItemProps {
   product: ProductType;
@@ -37,8 +38,13 @@ export const ListingItem = ({ product }: ListingItemProps) => {
           className="bg-youbuy hover:bg-youbuy-dark"
           onClick={() => navigate(`/checkout/${product.id}`)}
         >
-          <ShoppingBag className="h-4 w-4 mr-1" /> Buy
+          <ShoppingBag className="h-4 w-4" /> Buy
         </Button>
+        <MessageButton 
+          product={product} 
+          size="sm" 
+          variant="outline" 
+        />
         <Button 
           size="sm" 
           variant="outline"

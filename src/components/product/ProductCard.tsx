@@ -85,13 +85,13 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <span className="mx-1">•</span>
           <span>{product.timeAgo}</span>
         </div>
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center gap-2 mt-3">
           <Button
             onClick={handleBuyNow}
-            className="bg-youbuy hover:bg-youbuy-dark text-white flex-1 mr-2"
+            className="bg-youbuy hover:bg-youbuy-dark text-white flex-1"
             size="sm"
           >
-            <ShoppingBag className="h-4 w-4 mr-1" /> Buy Now
+            <ShoppingBag className="h-4 w-4" /> Buy Now
           </Button>
           <MessageButton product={product} size="sm" variant="outline" />
         </div>
