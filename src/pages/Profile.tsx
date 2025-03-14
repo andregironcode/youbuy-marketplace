@@ -24,7 +24,7 @@ const Profile = () => {
   return (
     <div className="h-screen flex overflow-hidden">
       <ProfileSidebar />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 h-screen overflow-hidden">
         <ProfileRoutes />
       </main>
     </div>

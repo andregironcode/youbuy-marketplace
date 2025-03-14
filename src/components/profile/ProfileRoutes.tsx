@@ -12,6 +12,7 @@ import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 import { useCategoryToggle } from "@/hooks/useCategoryToggle";
 import { useNavigate } from "react-router-dom";
 import { PremiumPage } from "./pages/PremiumPage";
+import { WalletPage } from "./pages/WalletPage";
 
 export const ProfileRoutes = () => {
   const { showCategories, setShowCategories } = useCategoryToggle();
@@ -48,7 +49,7 @@ export const ProfileRoutes = () => {
         <Route path="favorites" element={<FavoritesRedirect />} />
         <Route path="stats" element={<StatsOverview />} />
         <Route path="premium" element={<PremiumPage />} />
-        <Route path="wallet" element={<PlaceholderPage title="Wallet" />} />
+        <Route path="wallet" element={<WalletPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
       </Routes>

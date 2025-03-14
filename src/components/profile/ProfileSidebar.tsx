@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -43,7 +42,6 @@ export const ProfileSidebar = () => {
   
   if (!user) return null;
   
-  // Extract first letter of name or email for avatar fallback
   const getInitials = () => {
     if (user.user_metadata?.full_name) {
       return user.user_metadata.full_name.charAt(0).toUpperCase();
@@ -51,7 +49,6 @@ export const ProfileSidebar = () => {
     return user.email?.charAt(0).toUpperCase() || "U";
   };
   
-  // Check if the current path starts with the item path
   const isPathActive = (itemPath: string) => {
     return location.pathname.startsWith(itemPath);
   };
@@ -99,7 +96,6 @@ export const ProfileSidebar = () => {
         </ul>
       </nav>
       
-      {/* Sign out button at the bottom */}
       <div className="p-3 border-t mt-auto">
         <Button 
           variant="ghost" 
