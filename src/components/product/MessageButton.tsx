@@ -15,9 +15,10 @@ interface MessageButtonProps {
   size?: "sm" | "md";
   fullWidth?: boolean;
   id?: string;
+  variant?: string; // Added variant prop
 }
 
-export const MessageButton = ({ product, size = "md", fullWidth = false, id }: MessageButtonProps) => {
+export const MessageButton = ({ product, size = "md", fullWidth = false, id, variant = "outline" }: MessageButtonProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id }: M
     <>
       <Button
         id={id}
-        variant="outline"
+        variant={variant} // Use the variant prop
         className={`${buttonClass} ${fullWidth ? 'w-full' : ''}`}
         onClick={handleClick}
       >
