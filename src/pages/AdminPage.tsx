@@ -37,7 +37,7 @@ const AdminPage = () => {
     
     setAssigningAdmin(true);
     try {
-      // Use a direct RPC call to assign admin role, bypassing RLS
+      // Call the assign_admin_role RPC function
       const { data, error } = await supabase.rpc('assign_admin_role', {
         target_user_id: user.id
       });
@@ -45,20 +45,17 @@ const AdminPage = () => {
       if (error) {
         console.error("Error assigning admin role:", error);
         toast.error("Failed to assign admin role: " + error.message);
-      } else {
+      } else if (data) {
         toast.success("Admin role assigned successfully!");
         // Refresh admin status
-        const isUserAdmin = await checkIsAdmin();
-        console.log("Updated admin status:", isUserAdmin);
+        await checkIsAdmin();
         
-        if (isUserAdmin) {
-          toast.info("Admin access granted. The page will reload in a moment.");
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-        } else {
-          toast.warning("Role was assigned but admin status is not active yet. Please try refreshing the page.");
-        }
+        toast.info("Admin access granted. The page will reload in a moment.");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        toast.warning("Unable to assign admin role. You might not have permission.");
       }
     } catch (err) {
       console.error("Exception assigning admin role:", err);
