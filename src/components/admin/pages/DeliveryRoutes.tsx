@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -139,34 +138,30 @@ export const DeliveryRoutes = () => {
       if (error) throw error;
       
       // Fetch buyer and seller profiles separately to avoid RLS issues
-      const buyerIds = data?.map(order => order.buyer_id) || [];
-      const sellerIds = data?.map(order => order.seller_id) || [];
+      const buyerIds = (data || []).map(order => order.buyer_id).filter(Boolean);
+      const sellerIds = (data || []).map(order => order.seller_id).filter(Boolean);
       
-      const { data: buyerProfiles, error: buyerError } = await supabase
+      const { data: buyerProfiles } = await supabase
         .from('profiles')
         .select('id, full_name')
-        .in('id', buyerIds);
+        .in('id', buyerIds.length > 0 ? buyerIds : ['00000000-0000-0000-0000-000000000000']);
       
-      if (buyerError) throw buyerError;
-      
-      const { data: sellerProfiles, error: sellerError } = await supabase
+      const { data: sellerProfiles } = await supabase
         .from('profiles')
         .select('id, full_name')
-        .in('id', sellerIds);
-      
-      if (sellerError) throw sellerError;
+        .in('id', sellerIds.length > 0 ? sellerIds : ['00000000-0000-0000-0000-000000000000']);
       
       // Create lookup maps for buyer and seller names
       const buyerMap = Object.fromEntries(
-        (buyerProfiles || []).map(profile => [profile.id, profile.full_name || 'Unknown Buyer'])
+        (buyerProfiles || []).map((profile: any) => [profile.id, profile.full_name || 'Unknown Buyer'])
       );
       
       const sellerMap = Object.fromEntries(
-        (sellerProfiles || []).map(profile => [profile.id, profile.full_name || 'Unknown Seller'])
+        (sellerProfiles || []).map((profile: any) => [profile.id, profile.full_name || 'Unknown Seller'])
       );
       
       // Transform and enrich the order data
-      const enrichedOrders = (data || []).map(order => ({
+      const enrichedOrders = (data || []).map((order: any) => ({
         id: order.id,
         product_title: order.products?.title || 'Unknown Product',
         created_at: order.created_at,

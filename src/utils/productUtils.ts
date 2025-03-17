@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SellFormData } from "@/types/sellForm";
+import { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * Publishes a new product to the marketplace
@@ -37,7 +38,7 @@ export const publishProduct = async (formData: SellFormData, userId: string, upl
     
     const { error, data } = await supabase
       .from('products')
-      .insert([productData])
+      .insert([productData as any])
       .select()
       .single();
       
@@ -63,7 +64,7 @@ export const updatePromotionLevel = async (title: string, sellerId: string, prom
   try {
     const { error } = await supabase
       .from('products')
-      .update({ promotion_level: promotionLevel })
+      .update({ promotion_level: promotionLevel } as any)
       .eq('title', title)
       .eq('seller_id', sellerId);
       
@@ -87,7 +88,7 @@ export const fetchProductById = async (productId: string) => {
     const { data, error } = await supabase
       .from('products')
       .select('*, profiles:seller_id(*)')
-      .eq('id', productId)
+      .eq('id', productId as any)
       .maybeSingle();
       
     if (error) {

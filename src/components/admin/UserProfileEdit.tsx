@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -66,8 +65,8 @@ export const UserProfileEdit = ({
           bio,
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
-        })
-        .eq("id", userId);
+        } as any)
+        .eq("id", userId as any);
 
       if (error) throw error;
 
@@ -100,8 +99,8 @@ export const UserProfileEdit = ({
         .update({
           avatar_url: null,
           updated_at: new Date().toISOString()
-        })
-        .eq("id", userId);
+        } as any)
+        .eq("id", userId as any);
 
       if (error) throw error;
 
@@ -124,7 +123,6 @@ export const UserProfileEdit = ({
     }
   };
 
-  // Calculate initials for avatar fallback
   const getInitials = () => {
     const name = fullName || "";
     if (name) {

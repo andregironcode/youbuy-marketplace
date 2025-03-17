@@ -30,21 +30,6 @@ export const supabase = createClient<Database>(
       params: {
         eventsPerSecond: 10,
       },
-    },
-    // Adding network error handling with automatic retries
-    fetch: (url, options) => {
-      const fetchWithRetry = async (attempts = 3, delay = 500) => {
-        try {
-          return await fetch(url, options);
-        } catch (error) {
-          if (attempts <= 1) throw error;
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchWithRetry(attempts - 1, delay * 1.5);
-        }
-      };
-      
-      return fetchWithRetry();
     }
   }
 );
