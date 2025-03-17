@@ -103,11 +103,27 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     setLoading(false);
   };
 
-  const handleMapError = (error: Error) => {
-    console.error("Map error:", error);
-    setMapError("Failed to load map. Please try again.");
-    setLoading(false);
-  };
+  // Handle map error - now attached to the MapContainer instead of TileLayer
+  useEffect(() => {
+    const handleTileError = () => {
+      console.error("Map tile loading error");
+      setMapError("Failed to load map tiles. Please try again.");
+      setLoading(false);
+    };
+
+    // We'll add a global error listener to detect tile loading errors
+    window.addEventListener('error', (e) => {
+      // Only handle tile loading errors from images
+      if (e.target instanceof HTMLImageElement && 
+          e.target.src.includes('tile.openstreetmap.org')) {
+        handleTileError();
+      }
+    }, true);
+
+    return () => {
+      window.removeEventListener('error', () => {});
+    };
+  }, []);
 
   const handleReloadMap = () => {
     setLoading(true);
@@ -146,7 +162,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            onError={handleMapError}
           />
           
           <MapUpdater center={center} zoom={zoom} />
