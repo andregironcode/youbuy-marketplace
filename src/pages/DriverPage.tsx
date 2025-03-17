@@ -28,7 +28,7 @@ const DriverPage = () => {
             .from('user_roles')
             .select('role')
             .eq('user_id', session.session.user.id)
-            .in('role', ['admin', 'user'])
+            .in('role', ['admin', 'user', 'driver'])
             .maybeSingle();
             
           if (userRoles) {

@@ -36,6 +36,39 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_routes: {
+        Row: {
+          created_at: string
+          date: string
+          delivery_route: Json | null
+          id: string
+          pickup_route: Json | null
+          status: string | null
+          time_slot: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          delivery_route?: Json | null
+          id?: string
+          pickup_route?: Json | null
+          status?: string | null
+          time_slot: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          delivery_route?: Json | null
+          id?: string
+          pickup_route?: Json | null
+          status?: string | null
+          time_slot?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       delivery_stages: {
         Row: {
           code: string
@@ -690,11 +723,42 @@ export type Database = {
         }
         Returns: string
       }
+      get_delivery_route_by_date_time: {
+        Args: {
+          p_date: string
+          p_time_slot: string
+        }
+        Returns: {
+          created_at: string
+          date: string
+          delivery_route: Json | null
+          id: string
+          pickup_route: Json | null
+          status: string | null
+          time_slot: string
+          updated_at: string | null
+        }[]
+      }
       get_next_delivery_stage: {
         Args: {
           p_current_stage: string
         }
         Returns: string
+      }
+      get_recent_delivery_routes: {
+        Args: {
+          limit_count?: number
+        }
+        Returns: {
+          created_at: string
+          date: string
+          delivery_route: Json | null
+          id: string
+          pickup_route: Json | null
+          status: string | null
+          time_slot: string
+          updated_at: string | null
+        }[]
       }
       is_admin: {
         Args: {
@@ -723,7 +787,7 @@ export type Database = {
         | "cancelled"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
-      user_role: "user" | "admin"
+      user_role: "user" | "admin" | "driver"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -316,7 +316,7 @@ export const DriverRoutes = () => {
                           <div>
                             <p className="font-medium">Status</p>
                             <Badge 
-                              variant={stop.completed ? "default" : "outline"}
+                              variant={stop.completed ? "success" : "outline"}
                               className="mt-1"
                             >
                               {stop.completed ? 'Completed' : 'Pending'}
