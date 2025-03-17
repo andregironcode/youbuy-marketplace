@@ -57,6 +57,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapInitialized = useRef(false);
 
   // Default center if no coordinates provided - Dubai as an example location
   const center = {
@@ -80,14 +82,17 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     setMapError(null);
     setMapKey(Date.now()); // Force re-render of map
     
-    // Destroy existing map if it exists
+    // Destroy existing map instance
     if (mapInstance.current) {
       mapInstance.current.remove();
       mapInstance.current = null;
     }
     
-    // Reinitialize map
-    initializeMap();
+    // Reset marker reference
+    markerRef.current = null;
+    
+    // Reset initialization flag
+    mapInitialized.current = false;
   };
 
   const handleMapClick = async (event: mapboxgl.MapMouseEvent) => {
@@ -104,6 +109,23 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       const address = await reverseGeocode(lat, lng);
       console.log("Reverse geocoded address:", address);
       onLocationSelect(lat, lng, address);
+      
+      // Update marker position
+      if (markerRef.current && !approximate) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else if (mapInstance.current && approximate) {
+        // Update approximate circle
+        if (mapInstance.current.getSource('approximate-location')) {
+          (mapInstance.current.getSource('approximate-location') as mapboxgl.GeoJSONSource).setData({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [lng, lat]
+            },
+            properties: {}
+          });
+        }
+      }
     } catch (error) {
       console.error('Error in reverse geocoding:', error);
       onLocationSelect(lat, lng, "Unknown location");
@@ -126,8 +148,9 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     }
   };
 
-  const initializeMap = () => {
-    if (!mapRef.current || mapInstance.current) return;
+  // Initialize map
+  useEffect(() => {
+    if (!mapRef.current || mapInitialized.current) return;
     
     try {
       console.log("Initializing map with token:", MAPBOX_ACCESS_TOKEN);
@@ -138,7 +161,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       // Create map instance
       const map = new mapboxgl.Map({
         container: mapRef.current,
-        style: 'mapbox://styles/mapbox/streets-v11', // Changed to streets-v11 which is more reliable
+        style: 'mapbox://styles/mapbox/streets-v11',
         center: [center.longitude, center.latitude],
         zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
         interactive: interactive,
@@ -147,6 +170,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       
       // Store map instance
       mapInstance.current = map;
+      mapInitialized.current = true;
       
       // Set up event handlers
       map.on('load', handleMapLoad);
@@ -207,7 +231,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           });
         } else {
           // For exact location, use a marker
-          new mapboxgl.Marker({ color: '#ff385c' })
+          markerRef.current = new mapboxgl.Marker({ color: '#ff385c' })
             .setLngLat([longitude, latitude])
             .addTo(map);
         }
@@ -219,20 +243,54 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       setMapError("Failed to initialize map. Please check your connection and try again.");
       setLoading(false);
     }
-  };
-
-  // Initialize once the component has mounted
-  useEffect(() => {
-    initializeMap();
     
-    // Clean up
+    // Clean up function
     return () => {
+      console.log("Cleaning up map");
       if (mapInstance.current) {
+        if (interactive && onLocationSelect) {
+          mapInstance.current.off('click', handleMapClick);
+        }
+        mapInstance.current.off('load', handleMapLoad);
+        mapInstance.current.off('error', handleMapError);
         mapInstance.current.remove();
         mapInstance.current = null;
       }
+      mapInitialized.current = false;
     };
-  }, [mapKey, center.longitude, center.latitude, zoom, interactive, latitude, longitude, onLocationSelect]);
+  }, [mapKey]); // Only re-run when mapKey changes
+  
+  // Update map when coordinates change
+  useEffect(() => {
+    if (!mapInstance.current || !mapInitialized.current) return;
+    
+    // Update map center if coordinates changed
+    if (latitude !== undefined && longitude !== undefined) {
+      mapInstance.current.flyTo({
+        center: [longitude, latitude],
+        zoom: zoom,
+        essential: true
+      });
+      
+      // Update marker position
+      if (markerRef.current && !approximate) {
+        markerRef.current.setLngLat([longitude, latitude]);
+      } else if (approximate && mapInstance.current.getSource('approximate-location')) {
+        try {
+          (mapInstance.current.getSource('approximate-location') as mapboxgl.GeoJSONSource).setData({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude]
+            },
+            properties: {}
+          });
+        } catch (error) {
+          console.error("Error updating approximate location source:", error);
+        }
+      }
+    }
+  }, [latitude, longitude, zoom, approximate]);
 
   // Create a marker element for showing the location
   const renderMarker = () => {
@@ -273,7 +331,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         </div>
       )}
       
-      <div className="w-full h-full rounded-md overflow-hidden" key={mapKey}>
+      <div className="w-full h-full rounded-md overflow-hidden">
         <div className="relative w-full h-full">
           <div 
             ref={mapRef} 
