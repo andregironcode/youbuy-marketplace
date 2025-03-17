@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -84,36 +83,67 @@ export const AdminSupport = () => {
   const fetchTickets = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: ticketsData, error: ticketsError } = await supabase
         .from("support_tickets")
-        .select(`
-          *,
-          profile:profiles!support_tickets_user_id_fkey(full_name, avatar_url),
-          replies_count:ticket_replies(count)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching tickets:", error);
+      if (ticketsError) {
+        console.error("Error fetching tickets:", ticketsError);
         toast({
           title: "Error fetching tickets",
-          description: error.message,
+          description: ticketsError.message,
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
-      // Transform the data to match our SupportTicket type
-      const transformedData = data.map((ticket: any) => ({
-        ...ticket,
-        replies_count: ticket.replies_count[0]?.count || 0,
-        profile: ticket.profile || { full_name: "Unknown User", avatar_url: "" }
-      })) as SupportTicket[];
+      const ticketsWithProfiles = await Promise.all(
+        ticketsData.map(async (ticket) => {
+          const { data: profileData, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", ticket.user_id)
+            .single();
+
+          if (profileError) {
+            console.error("Error fetching profile for ticket:", profileError);
+            return {
+              ...ticket,
+              profile: { full_name: "Unknown User", avatar_url: "" },
+              replies_count: 0,
+            };
+          }
+
+          const { count, error: countError } = await supabase
+            .from("ticket_replies")
+            .select("*", { count: "exact", head: true })
+            .eq("ticket_id", ticket.id);
+
+          if (countError) {
+            console.error("Error counting replies:", countError);
+          }
+
+          return {
+            ...ticket,
+            profile: profileData || { full_name: "Unknown User", avatar_url: "" },
+            replies_count: count || 0,
+          };
+        })
+      );
       
-      setTickets(transformedData);
-      setFilteredTickets(transformedData);
+      console.log("Tickets with profiles:", ticketsWithProfiles);
+      
+      setTickets(ticketsWithProfiles);
+      setFilteredTickets(ticketsWithProfiles);
     } catch (error) {
       console.error("Error in fetchTickets:", error);
+      toast({
+        title: "Error fetching tickets",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -121,41 +151,61 @@ export const AdminSupport = () => {
 
   const fetchTicketReplies = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: repliesData, error: repliesError } = await supabase
         .from("ticket_replies")
-        .select(`
-          *,
-          profile:profiles!ticket_replies_user_id_fkey(full_name, avatar_url)
-        `)
+        .select("*")
         .eq("ticket_id", ticketId)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching replies:", error);
+      if (repliesError) {
+        console.error("Error fetching replies:", repliesError);
         toast({
           title: "Error fetching replies",
-          description: error.message,
+          description: repliesError.message,
           variant: "destructive",
         });
         return;
       }
 
-      // Transform the data to match our TicketReply type
-      const transformedData = data.map((reply: any) => ({
-        ...reply,
-        profile: reply.profile || { full_name: "Unknown User", avatar_url: "" }
-      })) as TicketReply[];
+      const repliesWithProfiles = await Promise.all(
+        repliesData.map(async (reply) => {
+          const { data: profileData, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", reply.user_id)
+            .single();
 
-      setReplies(transformedData);
+          if (profileError) {
+            console.error("Error fetching profile for reply:", profileError);
+            return {
+              ...reply,
+              profile: { full_name: reply.is_admin ? "Admin" : "Unknown User", avatar_url: "" },
+            };
+          }
+
+          return {
+            ...reply,
+            profile: profileData || { full_name: reply.is_admin ? "Admin" : "Unknown User", avatar_url: "" },
+          };
+        })
+      );
+
+      console.log("Replies with profiles:", repliesWithProfiles);
+      
+      setReplies(repliesWithProfiles);
     } catch (error) {
       console.error("Error in fetchTicketReplies:", error);
+      toast({
+        title: "Error fetching replies",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedTicket) return;
 
-    // Validate status is one of the allowed values
     const validStatus = ["open", "in_progress", "resolved", "closed"].includes(newStatus);
     if (!validStatus) {
       toast({
@@ -182,10 +232,8 @@ export const AdminSupport = () => {
         return;
       }
 
-      // Update local state
       setSelectedTicket({ ...selectedTicket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" });
       
-      // Update in the tickets list
       const updatedTickets = tickets.map((ticket) =>
         ticket.id === selectedTicket.id
           ? { ...ticket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" }
@@ -211,7 +259,6 @@ export const AdminSupport = () => {
   const handlePriorityChange = async (newPriority: string) => {
     if (!selectedTicket) return;
 
-    // Validate priority is one of the allowed values
     const validPriority = ["low", "medium", "high", "urgent"].includes(newPriority);
     if (!validPriority) {
       toast({
@@ -238,10 +285,8 @@ export const AdminSupport = () => {
         return;
       }
 
-      // Update local state
       setSelectedTicket({ ...selectedTicket, priority: newPriority as "low" | "medium" | "high" | "urgent" });
       
-      // Update in the tickets list
       const updatedTickets = tickets.map((ticket) =>
         ticket.id === selectedTicket.id
           ? { ...ticket, priority: newPriority as "low" | "medium" | "high" | "urgent" }
@@ -278,37 +323,38 @@ export const AdminSupport = () => {
         is_admin: true,
       };
 
-      const { data, error } = await supabase
+      const { data: replyData, error: replyError } = await supabase
         .from("ticket_replies")
         .insert(newReplyData)
-        .select(`
-          *,
-          profile:profiles!ticket_replies_user_id_fkey(full_name, avatar_url)
-        `)
+        .select()
         .single();
 
-      if (error) {
-        console.error("Error sending reply:", error);
+      if (replyError) {
+        console.error("Error sending reply:", replyError);
         toast({
           title: "Error sending reply",
-          description: error.message,
+          description: replyError.message,
           variant: "destructive",
         });
         return;
       }
 
-      // If the ticket was previously "open", set it to "in_progress"
       if (selectedTicket.status === "open") {
         await handleStatusChange("in_progress");
       }
 
-      // Add the new reply to the list
-      const transformedReply = {
-        ...data,
-        profile: data.profile || { full_name: "Admin", avatar_url: "" }
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", replyData.user_id)
+        .single();
+
+      const newReplyWithProfile = {
+        ...replyData,
+        profile: profileData || { full_name: "Admin", avatar_url: "" }
       } as TicketReply;
       
-      setReplies([...replies, transformedReply]);
+      setReplies([...replies, newReplyWithProfile]);
       setNewReply("");
 
       toast({
@@ -317,6 +363,11 @@ export const AdminSupport = () => {
       });
     } catch (error) {
       console.error("Error in handleSendReply:", error);
+      toast({
+        title: "Error sending reply",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -331,17 +382,14 @@ export const AdminSupport = () => {
     status: string,
     priority: string
   ) => {
-    // Apply search filter
     const matchesSearch =
       query === "" ||
       ticket.title.toLowerCase().includes(query.toLowerCase()) ||
       ticket.description.toLowerCase().includes(query.toLowerCase()) ||
       ticket.profile.full_name.toLowerCase().includes(query.toLowerCase());
 
-    // Apply status filter
     const matchesStatus = status === "all" || ticket.status === status;
 
-    // Apply priority filter
     const matchesPriority = priority === "all" || ticket.priority === priority;
 
     return matchesSearch && matchesStatus && matchesPriority;

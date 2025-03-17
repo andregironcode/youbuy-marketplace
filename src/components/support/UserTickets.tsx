@@ -72,6 +72,7 @@ export const UserTickets = () => {
       const { data, error } = await supabase
         .from("support_tickets")
         .select("*")
+        .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -95,29 +96,36 @@ export const UserTickets = () => {
 
   const fetchTicketReplies = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get all replies for the ticket
+      const { data: repliesData, error: repliesError } = await supabase
         .from("ticket_replies")
-        .select(`
-          *,
-          profile:profiles(full_name, avatar_url)
-        `)
+        .select("*")
         .eq("ticket_id", ticketId)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching replies:", error);
-        throw error;
+      if (repliesError) {
+        console.error("Error fetching replies:", repliesError);
+        throw repliesError;
       }
 
-      console.log("Fetched replies:", data);
+      // Then fetch profile information for each reply
+      const repliesWithProfiles = await Promise.all(
+        repliesData.map(async (reply) => {
+          const { data: profileData, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", reply.user_id)
+            .single();
 
-      // Transform the data to match our TicketReply type
-      const transformedData = data.map((reply: any) => ({
-        ...reply,
-        profile: reply.profile || { full_name: "Unknown User", avatar_url: "" }
-      })) as TicketReply[];
+          return {
+            ...reply,
+            profile: profileData || { full_name: "Unknown User", avatar_url: "" }
+          };
+        })
+      );
 
-      setReplies(transformedData);
+      console.log("Fetched replies with profiles:", repliesWithProfiles);
+      setReplies(repliesWithProfiles);
     } catch (error: any) {
       console.error("Error fetching replies:", error);
       toast({
@@ -139,14 +147,29 @@ export const UserTickets = () => {
         is_admin: false,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("ticket_replies")
-        .insert(newReplyData);
+        .insert(newReplyData)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Refresh the replies
-      fetchTicketReplies(selectedTicket.id);
+      // Get profile information for the current user
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      // Add the new reply with profile info
+      const newReplyWithProfile = {
+        ...data,
+        profile: profileData || { full_name: "You", avatar_url: "" }
+      };
+
+      // Update the replies list
+      setReplies([...replies, newReplyWithProfile]);
       setNewReply("");
 
       toast({
