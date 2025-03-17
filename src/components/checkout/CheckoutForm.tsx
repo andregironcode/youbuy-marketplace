@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,14 +25,13 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@/components/ui/radio-group";
-import { Home, Building } from "lucide-react";
+import { Home, Building, MapPin } from "lucide-react";
+import { LocationMap } from "@/components/map/LocationMap";
+import { geocodeAddress, reverseGeocode } from "@/utils/locationUtils";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
     message: "Full name must be at least 2 characters.",
-  }),
-  address: z.string().min(5, {
-    message: "Address must be at least 5 characters.",
   }),
   locationType: z.enum(["house", "apartment"], {
     required_error: "Please select a location type.",
@@ -42,12 +41,6 @@ const formSchema = z.object({
   apartmentNumber: z.string().optional(),
   floor: z.string().optional(),
   additionalInfo: z.string().optional(),
-  city: z.string().min(2, {
-    message: "City is required.",
-  }),
-  postalCode: z.string().min(3, {
-    message: "Postal code is required.",
-  }),
   phone: z.string().min(8, {
     message: "Valid phone number is required.",
   }),
@@ -55,6 +48,12 @@ const formSchema = z.object({
     required_error: "Please select a delivery time preference.",
   }),
   instructions: z.string().optional(),
+  // Add these for map coordinates and address
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  formattedAddress: z.string().min(5, {
+    message: "Please select a delivery location on the map.",
+  }),
 }).refine(data => {
   // If house type is selected, house number should be provided
   if (data.locationType === "house" && !data.houseNumber) {
@@ -64,9 +63,13 @@ const formSchema = z.object({
   if (data.locationType === "apartment" && (!data.buildingName || !data.apartmentNumber)) {
     return false;
   }
+  // Coordinates should be provided
+  if (!data.latitude || !data.longitude) {
+    return false;
+  }
   return true;
 }, {
-  message: "Please fill in the required fields for your location type",
+  message: "Please fill in the required fields for your location type and select a delivery location",
   path: ["locationType"],
 });
 
@@ -78,26 +81,39 @@ interface CheckoutFormProps {
 }
 
 export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(
+    initialValues?.latitude && initialValues?.longitude 
+      ? { lat: initialValues.latitude, lng: initialValues.longitude } 
+      : null
+  );
+
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: initialValues?.fullName || "",
-      address: initialValues?.address || "",
       locationType: initialValues?.locationType || "house",
       houseNumber: initialValues?.houseNumber || "",
       buildingName: initialValues?.buildingName || "",
       apartmentNumber: initialValues?.apartmentNumber || "",
       floor: initialValues?.floor || "",
       additionalInfo: initialValues?.additionalInfo || "",
-      city: initialValues?.city || "",
-      postalCode: initialValues?.postalCode || "",
       phone: initialValues?.phone || "",
       deliveryTime: initialValues?.deliveryTime || "afternoon",
       instructions: initialValues?.instructions || "",
+      latitude: initialValues?.latitude,
+      longitude: initialValues?.longitude,
+      formattedAddress: initialValues?.formattedAddress || "",
     },
   });
 
   const watchLocationType = form.watch("locationType");
+
+  const handleLocationSelect = async (lat: number, lng: number, address: string) => {
+    setMapCoordinates({ lat, lng });
+    form.setValue("latitude", lat);
+    form.setValue("longitude", lng);
+    form.setValue("formattedAddress", address);
+  };
 
   return (
     <Form {...form}>
@@ -116,6 +132,59 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="For delivery coordination" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="formattedAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Delivery Location
+                  </FormLabel>
+                  <div className="space-y-2">
+                    <LocationMap
+                      latitude={mapCoordinates?.lat}
+                      longitude={mapCoordinates?.lng}
+                      height="300px"
+                      zoom={14}
+                      interactive={true}
+                      onLocationSelect={handleLocationSelect}
+                      showMarker={true}
+                      className="rounded-md border border-gray-200"
+                    />
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Select a location on the map" 
+                        readOnly 
+                        icon={<MapPin className="h-4 w-4" />}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Click on the map to set your delivery location
+                    </p>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
@@ -154,20 +223,6 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
             <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Street Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Street name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
                 name="houseNumber"
                 render={({ field }) => (
                   <FormItem>
@@ -196,20 +251,6 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Street Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Street name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
               <FormField
                 control={form.control}
                 name="buildingName"
@@ -269,50 +310,6 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
               />
             </div>
           )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="postalCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Postal Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Postal code" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="For delivery coordination" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}
