@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,22 +41,22 @@ import {
 import { format } from "date-fns";
 import { TrackingUpdate } from "@/components/sales/TrackingUpdate";
 
-// Define types for better type safety
-interface Profile {
+// Define more specific interfaces for better type safety
+interface ProfileData {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
   username: string | null;
 }
 
-interface Product {
+interface ProductData {
   id: string;
   title: string;
   image_urls?: string[] | null;
 }
 
-// Interface for order with joined data
-interface OrderWithDetails {
+// Raw order data from Supabase
+interface OrderData {
   id: string;
   buyer_id: string;
   seller_id: string;
@@ -65,11 +66,22 @@ interface OrderWithDetails {
   created_at: string;
   updated_at: string;
   current_stage: string | null;
-  // Fix the type definitions here to handle both array and object scenarios
-  buyer: Profile | Profile[] | null;
-  seller: Profile | Profile[] | null;
-  product: Product | Product[] | null;
-  // Derived properties after processing
+  buyer: ProfileData[] | ProfileData | null;
+  seller: ProfileData[] | ProfileData | null;
+  product: ProductData[] | ProductData | null;
+}
+
+// Processed order with derived properties
+interface ProcessedOrder {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  product_id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  current_stage: string | null;
   buyer_name: string;
   seller_name: string;
   product_title: string;
@@ -91,7 +103,7 @@ interface OrderDetails {
 }
 
 export const AdminOrders = () => {
-  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
+  const [orders, setOrders] = useState<ProcessedOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -105,6 +117,7 @@ export const AdminOrders = () => {
     fetchOrders();
   }, []);
   
+  // Helper functions for UI
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -152,6 +165,46 @@ export const AdminOrders = () => {
     }
   };
   
+  // Helper function to extract profile information safely
+  const extractProfileName = (
+    profileData: ProfileData | ProfileData[] | null
+  ): string => {
+    if (!profileData) return "Unknown";
+    
+    // Handle array case
+    if (Array.isArray(profileData)) {
+      if (profileData.length === 0) return "Unknown";
+      const profile = profileData[0];
+      return profile.full_name || profile.username || "Unknown";
+    }
+    
+    // Handle object case
+    return profileData.full_name || profileData.username || "Unknown";
+  };
+  
+  // Helper function to extract product information safely
+  const extractProductInfo = (
+    productData: ProductData | ProductData[] | null
+  ): { title: string; image: string | null } => {
+    if (!productData) return { title: "Unknown Product", image: null };
+    
+    // Handle array case
+    if (Array.isArray(productData)) {
+      if (productData.length === 0) return { title: "Unknown Product", image: null };
+      const product = productData[0];
+      return { 
+        title: product.title || "Unknown Product", 
+        image: product.image_urls?.[0] || null 
+      };
+    }
+    
+    // Handle object case
+    return { 
+      title: productData.title || "Unknown Product", 
+      image: productData.image_urls?.[0] || null 
+    };
+  };
+  
   const fetchOrders = async () => {
     setIsLoading(true);
     setError(null);
@@ -183,67 +236,19 @@ export const AdminOrders = () => {
         return;
       }
 
-      // Process the data with proper type handling
-      const processedOrders: OrderWithDetails[] = data.map((order: any) => {
-        // Extract buyer name with proper type checking
-        let buyerName = 'Unknown Buyer';
-        if (order.buyer) {
-          // Improved type checking and type guards
-          const buyerData = order.buyer;
-          if (Array.isArray(buyerData)) {
-            if (buyerData.length > 0 && buyerData[0]) {
-              const buyer = buyerData[0] as Profile;
-              buyerName = buyer.full_name || buyer.username || 'Unknown Buyer';
-            }
-          } else {
-            // Handle as object
-            const buyer = buyerData as Profile;
-            buyerName = buyer.full_name || buyer.username || 'Unknown Buyer';
-          }
-        }
+      // Process the data with proper typing
+      const processedOrders: ProcessedOrder[] = data.map((order: OrderData) => {
+        // Extract buyer name
+        const buyerName = extractProfileName(order.buyer);
         
-        // Extract seller name with proper type checking
-        let sellerName = 'Unknown Seller';
-        if (order.seller) {
-          // Improved type checking and type guards
-          const sellerData = order.seller;
-          if (Array.isArray(sellerData)) {
-            if (sellerData.length > 0 && sellerData[0]) {
-              const seller = sellerData[0] as Profile;
-              sellerName = seller.full_name || seller.username || 'Unknown Seller';
-            }
-          } else {
-            // Handle as object
-            const seller = sellerData as Profile;
-            sellerName = seller.full_name || seller.username || 'Unknown Seller';
-          }
-        }
+        // Extract seller name
+        const sellerName = extractProfileName(order.seller);
         
-        // Extract product info with proper type checking
-        let productTitle = 'Unknown Product';
-        let productImage = null;
-        if (order.product) {
-          // Improved type checking and type guards
-          const productData = order.product;
-          if (Array.isArray(productData)) {
-            if (productData.length > 0 && productData[0]) {
-              const product = productData[0] as Product;
-              productTitle = product.title || 'Unknown Product';
-              productImage = product.image_urls?.[0] || null;
-            }
-          } else {
-            // Handle as object
-            const product = productData as Product;
-            productTitle = product.title || 'Unknown Product';
-            productImage = product.image_urls?.[0] || null;
-          }
-        }
+        // Extract product info
+        const { title: productTitle, image: productImage } = extractProductInfo(order.product);
         
         return {
           ...order,
-          buyer: order.buyer,
-          seller: order.seller,
-          product: order.product,
           buyer_name: buyerName,
           seller_name: sellerName,
           product_title: productTitle,
@@ -308,39 +313,28 @@ export const AdminOrders = () => {
         let productImages: string[] = [];
         let productId = fallbackData.product_id;
         
-        // Process buyer data safely
+        // Process buyer data
         if (fallbackData.buyer) {
-          if (Array.isArray(fallbackData.buyer)) {
-            if (fallbackData.buyer.length > 0 && fallbackData.buyer[0]) {
-              buyerName = fallbackData.buyer[0].full_name || fallbackData.buyer[0].username || 'Unknown';
-            }
-          } else {
-            buyerName = fallbackData.buyer.full_name || fallbackData.buyer.username || 'Unknown';
-          }
+          buyerName = extractProfileName(fallbackData.buyer);
         }
         
-        // Process seller data safely
+        // Process seller data
         if (fallbackData.seller) {
-          if (Array.isArray(fallbackData.seller)) {
-            if (fallbackData.seller.length > 0 && fallbackData.seller[0]) {
-              sellerName = fallbackData.seller[0].full_name || fallbackData.seller[0].username || 'Unknown';
-            }
-          } else {
-            sellerName = fallbackData.seller.full_name || fallbackData.seller.username || 'Unknown';
-          }
+          sellerName = extractProfileName(fallbackData.seller);
         }
         
-        // Process product data safely
+        // Process product data
         if (fallbackData.product) {
-          if (Array.isArray(fallbackData.product)) {
-            if (fallbackData.product.length > 0 && fallbackData.product[0]) {
-              productTitle = fallbackData.product[0].title || 'Unknown Product';
-              productImages = fallbackData.product[0].image_urls || [];
-              productId = fallbackData.product[0].id;
-            }
-          } else {
-            productTitle = fallbackData.product.title || 'Unknown Product';
-            productImages = fallbackData.product.image_urls || [];
+          const productInfo = extractProductInfo(fallbackData.product);
+          productTitle = productInfo.title;
+          if (productInfo.image) {
+            productImages = [productInfo.image];
+          }
+          
+          // If product is an array and has an ID
+          if (Array.isArray(fallbackData.product) && fallbackData.product.length > 0) {
+            productId = fallbackData.product[0].id;
+          } else if (!Array.isArray(fallbackData.product)) {
             productId = fallbackData.product.id;
           }
         }
