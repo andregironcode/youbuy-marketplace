@@ -23,6 +23,7 @@ import Favorites from "@/pages/Favorites";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import CheckoutPage from "@/pages/Checkout";
+import CategoriesPage from "@/pages/CategoriesPage";
 import "./App.css";
 
 // Create a client
@@ -61,6 +62,7 @@ function App() {
                               path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
                               element={<CategoryPage />}
                             />
+                            <Route path="/categories" element={<CategoriesPage />} />
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/seller/:id" element={<SellerProfile />} />
                             <Route path="/sell" element={<Sell />} />
