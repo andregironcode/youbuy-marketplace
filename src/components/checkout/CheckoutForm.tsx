@@ -29,6 +29,7 @@ import { Home, Building, MapPin } from "lucide-react";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress, reverseGeocode } from "@/utils/locationUtils";
 import { isValidTimeSlot } from "@/types/database.d";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -92,6 +93,7 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
     label: string,
     day: 'today' | 'tomorrow'
   }>>([]);
+  const isMobile = useIsMobile();
 
   // Determine available delivery time slots based on current time
   useEffect(() => {
@@ -217,7 +219,7 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
                     <LocationMap
                       latitude={mapCoordinates?.lat}
                       longitude={mapCoordinates?.lng}
-                      height="300px"
+                      height={isMobile ? "200px" : "300px"}
                       zoom={14}
                       interactive={true}
                       onLocationSelect={handleLocationSelect}
@@ -252,7 +254,7 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex space-x-4"
+                    className="flex flex-wrap space-x-2 sm:space-x-4"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="house" id="checkout-house" />
@@ -321,7 +323,7 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="floor"
