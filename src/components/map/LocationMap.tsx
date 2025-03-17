@@ -5,8 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Set Mapbox token
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZS1tYXAiLCJhIjoiY2x2enlxcGJjMDEybDJqb3Q2NDlmY3ZicyJ9.LZ0u_KqmmsdWlnFE_GzV7A';
+// Set Mapbox token to a valid public token
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
 interface LocationMapProps {
   latitude?: number;
@@ -44,109 +44,113 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     const initializeMap = async () => {
       setLoading(true);
       
-      // Create map instance with default center if no coordinates provided
-      // Explicitly type as [number, number] to match LngLatLike requirements
-      const initialCenter: [number, number] = [longitude || -74.5, latitude || 40];
+      // Default center if no coordinates provided
+      const initialCenter: [number, number] = [longitude || 0, latitude || 0];
       
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: initialCenter,
-        zoom: latitude && longitude ? zoom : 2,
-        interactive: interactive,
-      });
+      try {
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: initialCenter,
+          zoom: latitude && longitude ? zoom : 2,
+          interactive: interactive,
+        });
 
-      // Add navigation controls if interactive
-      if (interactive) {
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      }
+        // Add navigation controls if interactive
+        if (interactive) {
+          map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        }
 
-      // Wait for map to load
-      map.current.on('load', () => {
-        setLoading(false);
-        setMapInitialized(true);
-        
-        if (latitude && longitude) {
-          // Center map on provided coordinates
-          map.current?.setCenter([longitude, latitude]);
-          map.current?.setZoom(zoom);
+        // Wait for map to load
+        map.current.on('load', () => {
+          setLoading(false);
+          setMapInitialized(true);
           
-          // Add marker if coordinates are provided
-          if (showMarker) {
-            if (!approximate) {
-              // Regular marker for exact location
-              if (marker.current) {
-                marker.current.setLngLat([longitude, latitude]);
+          if (latitude && longitude) {
+            // Center map on provided coordinates
+            map.current?.setCenter([longitude, latitude]);
+            map.current?.setZoom(zoom);
+            
+            // Add marker if coordinates are provided
+            if (showMarker) {
+              if (!approximate) {
+                // Regular marker for exact location
+                if (marker.current) {
+                  marker.current.setLngLat([longitude, latitude]);
+                } else {
+                  marker.current = new mapboxgl.Marker({ color: '#ff385c' })
+                    .setLngLat([longitude, latitude])
+                    .addTo(map.current!);
+                }
               } else {
-                marker.current = new mapboxgl.Marker({ color: '#ff385c' })
-                  .setLngLat([longitude, latitude])
-                  .addTo(map.current!);
-              }
-            } else {
-              // Add a circle for approximate location
-              if (map.current?.getSource('radius-source')) {
-                (map.current.getSource('radius-source') as mapboxgl.GeoJSONSource).setData({
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [longitude, latitude],
-                  },
-                  properties: {},
-                });
-              } else {
-                map.current?.addSource('radius-source', {
-                  type: 'geojson',
-                  data: {
+                // Add a circle for approximate location
+                if (map.current?.getSource('radius-source')) {
+                  (map.current.getSource('radius-source') as mapboxgl.GeoJSONSource).setData({
                     type: 'Feature',
                     geometry: {
                       type: 'Point',
                       coordinates: [longitude, latitude],
                     },
                     properties: {},
-                  },
-                });
+                  });
+                } else {
+                  map.current?.addSource('radius-source', {
+                    type: 'geojson',
+                    data: {
+                      type: 'Feature',
+                      geometry: {
+                        type: 'Point',
+                        coordinates: [longitude, latitude],
+                      },
+                      properties: {},
+                    },
+                  });
 
-                map.current?.addLayer({
-                  id: 'radius-circle',
-                  type: 'circle',
-                  source: 'radius-source',
-                  paint: {
-                    'circle-radius': 100, // Size of the circle in pixels
-                    'circle-color': '#ff385c',
-                    'circle-opacity': 0.3,
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ff385c',
-                  },
-                });
+                  map.current?.addLayer({
+                    id: 'radius-circle',
+                    type: 'circle',
+                    source: 'radius-source',
+                    paint: {
+                      'circle-radius': 100, // Size of the circle in pixels
+                      'circle-color': '#ff385c',
+                      'circle-opacity': 0.3,
+                      'circle-stroke-width': 2,
+                      'circle-stroke-color': '#ff385c',
+                    },
+                  });
+                }
               }
             }
           }
-        }
-      });
-
-      // Set up click handler if interactive and onLocationSelect provided
-      if (interactive && onLocationSelect) {
-        map.current.on('click', async (e) => {
-          const { lng, lat } = e.lngLat;
-          
-          // Update marker position
-          if (marker.current) {
-            marker.current.setLngLat([lng, lat]);
-          } else {
-            marker.current = new mapboxgl.Marker({ color: '#ff385c' })
-              .setLngLat([lng, lat])
-              .addTo(map.current!);
-          }
-          
-          try {
-            // Get address from coordinates
-            const address = await reverseGeocode(lat, lng);
-            onLocationSelect(lat, lng, address);
-          } catch (error) {
-            console.error('Error in reverse geocoding:', error);
-            onLocationSelect(lat, lng, "Unknown location");
-          }
         });
+
+        // Set up click handler if interactive and onLocationSelect provided
+        if (interactive && onLocationSelect) {
+          map.current.on('click', async (e) => {
+            const { lng, lat } = e.lngLat;
+            
+            // Update marker position
+            if (marker.current) {
+              marker.current.setLngLat([lng, lat]);
+            } else {
+              marker.current = new mapboxgl.Marker({ color: '#ff385c' })
+                .setLngLat([lng, lat])
+                .addTo(map.current!);
+            }
+            
+            try {
+              // Get address from coordinates
+              const address = await reverseGeocode(lat, lng);
+              onLocationSelect(lat, lng, address);
+            } catch (error) {
+              console.error('Error in reverse geocoding:', error);
+              onLocationSelect(lat, lng, "Unknown location");
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        setLoading(false);
       }
     };
 

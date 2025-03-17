@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight, MapPin } from "lucide-react";
 import { SellStep } from "@/types/sellForm";
 import { LocationMap } from "@/components/map/LocationMap";
-import { geocodeAddress, getCurrentPosition } from "@/utils/locationUtils";
+import { geocodeAddress, getCurrentPosition, reverseGeocode } from "@/utils/locationUtils";
 import { useToast } from "@/hooks/use-toast";
 
 interface LocationStepProps {
@@ -38,6 +38,25 @@ export const LocationStep: React.FC<LocationStepProps> = ({
 
   const isLocationValid = location.length >= 3 && coordinates !== null;
 
+  // If location already exists but no coordinates, try to geocode it
+  useEffect(() => {
+    const setCoordinatesFromLocation = async () => {
+      if (location && location.length >= 3 && !coordinates) {
+        try {
+          setLoadingLocation(true);
+          const coords = await geocodeAddress(location);
+          setCoordinates({ latitude: coords.lat, longitude: coords.lng });
+        } catch (error) {
+          console.error("Error geocoding existing location:", error);
+        } finally {
+          setLoadingLocation(false);
+        }
+      }
+    };
+
+    setCoordinatesFromLocation();
+  }, [location, coordinates, setCoordinates]);
+
   // Get user's current location
   const handleGetCurrentLocation = async () => {
     setLoadingLocation(true);
@@ -49,16 +68,9 @@ export const LocationStep: React.FC<LocationStepProps> = ({
       setCoordinates({ latitude, longitude });
       
       // Reverse geocode to get address
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=pk.eyJ1IjoibG92YWJsZS1tYXAiLCJhIjoiY2x2enlxcGJjMDEybDJqb3Q2NDlmY3ZicyJ9.LZ0u_KqmmsdWlnFE_GzV7A`
-      );
-      
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const addressValue = data.features[0].place_name;
-        setSearchValue(addressValue);
-        setLocation(addressValue);
-      }
+      const address = await reverseGeocode(latitude, longitude);
+      setSearchValue(address);
+      setLocation(address);
       
       toast({
         title: "Location set",

@@ -25,6 +25,9 @@ export const calculateDistance = (
   return distance;
 };
 
+// Use a valid public token for Mapbox
+const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA";
+
 /**
  * Get the current position of the user
  * @returns Promise that resolves to the user's coordinates or rejects with an error
@@ -47,7 +50,7 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
 export const geocodeAddress = async (address: string): Promise<{lat: number, lng: number}> => {
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=pk.eyJ1IjoibG92YWJsZS1tYXAiLCJhIjoiY2x2enlxcGJjMDEybDJqb3Q2NDlmY3ZicyJ9.LZ0u_KqmmsdWlnFE_GzV7A`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}`
     );
     
     if (!response.ok) {
@@ -77,7 +80,7 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=pk.eyJ1IjoibG92YWJsZS1tYXAiLCJhIjoiY2x2enlxcGJjMDEybDJqb3Q2NDlmY3ZicyJ9.LZ0u_KqmmsdWlnFE_GzV7A`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
     );
     
     if (!response.ok) {
@@ -106,7 +109,7 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
 export const getFuzzyLocation = async (lat: number, lng: number): Promise<string> => {
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=neighborhood,locality,place&access_token=pk.eyJ1IjoibG92YWJsZS1tYXAiLCJhIjoiY2x2enlxcGJjMDEybDJqb3Q2NDlmY3ZicyJ9.LZ0u_KqmmsdWlnFE_GzV7A`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=neighborhood,locality,place&access_token=${MAPBOX_TOKEN}`
     );
     
     if (!response.ok) {
