@@ -5,6 +5,7 @@ import { categoryNav } from "@/data/categories";
 import { Filter, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CategoryDropdown } from "./CategoryDropdown";
 
 interface CategoryNavProps {
   selectedCategory: string;
@@ -41,6 +42,8 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
           >
             All Categories
           </Button>
+          
+          {!isMobile && <CategoryDropdown />}
           
           {mainCategories.map((category) => (
             <Button

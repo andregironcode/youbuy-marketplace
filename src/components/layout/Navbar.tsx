@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn } from "lucide-react";
@@ -11,6 +10,7 @@ import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { SearchBar } from "@/components/search/SearchBar";
 import { useLocation } from "react-router-dom";
+import { CategoryDropdown } from "@/components/category/CategoryDropdown";
 
 export const Navbar = () => {
   const isMobile = useIsMobile();
@@ -25,12 +25,7 @@ export const Navbar = () => {
   };
 
   const toggleCategories = () => {
-    // Dispatch a custom event that all pages can listen for
-    const event = new CustomEvent('toggleCategories');
-    window.dispatchEvent(event);
-    
-    // Log to verify the event is being dispatched
-    console.log('Categories toggle event dispatched from Navbar');
+    window.location.href = "/categories";
   };
 
   const getInitials = () => {
@@ -49,7 +44,6 @@ export const Navbar = () => {
 
     const fetchUnreadCounts = async () => {
       try {
-        // Fetch unread messages
         const { count: messageCount, error: messageError } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
@@ -59,7 +53,6 @@ export const Navbar = () => {
         if (messageError) throw messageError;
         setUnreadCount(messageCount || 0);
         
-        // Fetch unread notifications
         const { count: notifCount, error: notifError } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
@@ -75,7 +68,6 @@ export const Navbar = () => {
 
     fetchUnreadCounts();
 
-    // Subscribe to new messages
     const messagesChannel = supabase
       .channel('public:messages')
       .on('postgres_changes', { 
@@ -96,7 +88,6 @@ export const Navbar = () => {
       })
       .subscribe();
       
-    // Subscribe to new notifications
     const notificationsChannel = supabase
       .channel('public:notifications')
       .on('postgres_changes', { 
@@ -133,15 +124,21 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="mr-1 md:mr-2 whitespace-nowrap"
-          onClick={toggleCategories}
-        >
-          <Menu className="h-4 w-4 mr-1" />
-          <span className="text-xs md:text-sm">Categories</span>
-        </Button>
+        {isMobile ? (
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="mr-1 md:mr-2 whitespace-nowrap"
+            onClick={toggleCategories}
+          >
+            <Menu className="h-4 w-4 mr-1" />
+            <span className="text-xs md:text-sm">Categories</span>
+          </Button>
+        ) : (
+          <div className="mr-1 md:mr-2">
+            <CategoryDropdown />
+          </div>
+        )}
 
         <div className="flex-1 mx-1 md:mx-2 max-w-[50%]">
           <SearchBar />

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
 import { categories } from "@/data/categories";
 import { ProductType } from "@/types/product";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { convertToProductType } from "@/types/product";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
+import { Button } from "@/components/ui/button";
 
 const CategoryPage = () => {
   const { categoryId, subcategoryId, subSubcategoryId } = useParams();
@@ -16,7 +17,6 @@ const CategoryPage = () => {
   const [showCategories, setShowCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
 
-  // Listen for the toggleCategories event from Navbar
   useEffect(() => {
     const handleToggleCategories = () => {
       console.log("Toggle categories event received in CategoryPage");
@@ -31,7 +31,6 @@ const CategoryPage = () => {
   }, []);
 
   useEffect(() => {
-    // Update selected category when URL params change
     if (categoryId) {
       setSelectedCategory(categoryId);
     }
@@ -54,7 +53,6 @@ const CategoryPage = () => {
           `)
           .order('created_at', { ascending: false });
           
-        // Add filters based on category parameters
         if (categoryId && categoryId !== "all") {
           query = query.eq('category', categoryId);
           
@@ -111,7 +109,6 @@ const CategoryPage = () => {
   };
 
   const handleCategorySelect = (categoryId: string, subcategoryId?: string, subSubcategoryId?: string) => {
-    // Use the navigate function instead of directly modifying window.location
     if (categoryId === "all") {
       navigate("/");
     } else if (subcategoryId) {
@@ -127,6 +124,18 @@ const CategoryPage = () => {
     setShowCategories(false);
   };
 
+  const currentCategory = categories.find(c => c.id === categoryId);
+  let currentSubcategory;
+  let currentSubSubcategory;
+  
+  if (currentCategory && subcategoryId) {
+    currentSubcategory = currentCategory.subCategories.find(sc => sc.id === subcategoryId);
+    
+    if (currentSubcategory && subSubcategoryId && currentSubcategory.subSubCategories) {
+      currentSubSubcategory = currentSubcategory.subSubCategories.find(ssc => ssc.id === subSubcategoryId);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <CategoryBrowser 
@@ -136,12 +145,31 @@ const CategoryPage = () => {
       />
       
       <main className="flex-1 container py-8">
-        <div className="mb-8">
+        <div className="mb-4">
+          <Link to="/categories" className="inline-flex items-center text-sm text-muted-foreground hover:text-youbuy mb-2">
+            <ArrowLeft className="mr-1 h-3 w-3" /> Back to all categories
+          </Link>
           <h1 className="text-3xl font-bold">{getCategoryName()}</h1>
           <p className="text-muted-foreground">
             {products.length} {products.length === 1 ? 'item' : 'items'} available
           </p>
         </div>
+        
+        {currentCategory && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {currentCategory.subCategories.slice(0, 6).map((subcat) => (
+              <Button
+                key={subcat.id}
+                variant={subcategoryId === subcat.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => navigate(`/category/${categoryId}/${subcat.id}`)}
+                className={subcategoryId === subcat.id ? "bg-youbuy hover:bg-youbuy-dark" : ""}
+              >
+                {subcat.name}
+              </Button>
+            ))}
+          </div>
+        )}
         
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
