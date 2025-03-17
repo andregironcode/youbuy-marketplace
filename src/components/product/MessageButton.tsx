@@ -15,7 +15,7 @@ interface MessageButtonProps {
   size?: "sm" | "md";
   fullWidth?: boolean;
   id?: string;
-  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost" | "action"; 
+  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost" | "success"; 
 }
 
 export const MessageButton = ({ product, size = "md", fullWidth = false, id, variant = "outline" }: MessageButtonProps) => {
@@ -177,7 +177,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
             <Button 
               onClick={handleSendMessage}
               disabled={!message.trim() || isSending}
-              variant="action"
+              variant="success"
             >
               {isSending ? "Sending..." : "Send Message"}
             </Button>

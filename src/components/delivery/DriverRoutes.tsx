@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -94,13 +93,18 @@ export const DriverRoutes = () => {
         return;
       }
       
-      const route = routes[0] as DeliveryRoute;
+      // Cast to DeliveryRoute with appropriate type checking
+      const route = routes[0] as unknown as DeliveryRoute;
       console.log("Fetched optimized routes:", route);
+      
+      // Ensure pickup_route and delivery_route are arrays
+      const pickupRoutes = Array.isArray(route.pickup_route) ? route.pickup_route : [];
+      const deliveryRoutes = Array.isArray(route.delivery_route) ? route.delivery_route : [];
       
       // Extract the appropriate route based on the selected type
       const routeData = routeType === 'pickups' 
-        ? route.pickup_route 
-        : route.delivery_route;
+        ? pickupRoutes 
+        : deliveryRoutes;
         
       // Get completed orders to mark them in the route
       const { data: completedOrders } = await supabase

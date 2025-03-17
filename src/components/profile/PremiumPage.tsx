@@ -142,7 +142,7 @@ export const PremiumPage = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" variant="action" onClick={() => handleSubscribe("premium")}>
+            <Button className="w-full" variant="success" onClick={() => handleSubscribe("premium")}>
               Subscribe Now
             </Button>
           </CardFooter>
@@ -196,7 +196,7 @@ export const PremiumPage = () => {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" variant="action" onClick={() => handleSubscribe("enterprise")}>
+            <Button className="w-full" variant="success" onClick={() => handleSubscribe("enterprise")}>
               Subscribe Now
             </Button>
           </CardFooter>

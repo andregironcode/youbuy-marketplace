@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +58,16 @@ export const RouteOptimization = () => {
       });
 
       if (error) throw error;
-      setRecentRoutes(data || []);
+      
+      // Transform the data to match our local type
+      const transformedData = (data || []).map((route: any) => ({
+        ...route,
+        pickup_route: Array.isArray(route.pickup_route) ? route.pickup_route : [],
+        delivery_route: Array.isArray(route.delivery_route) ? route.delivery_route : [],
+        time_slot: route.time_slot as 'morning' | 'afternoon'
+      }));
+      
+      setRecentRoutes(transformedData);
     } catch (error) {
       console.error("Error fetching recent routes:", error);
       toast({
@@ -129,8 +139,8 @@ export const RouteOptimization = () => {
   };
 
   const getRouteStatusBadge = (route: DeliveryRoute) => {
-    const pickupCount = route.pickup_route?.length || 0;
-    const deliveryCount = route.delivery_route?.length || 0;
+    const pickupCount = Array.isArray(route.pickup_route) ? route.pickup_route.length : 0;
+    const deliveryCount = Array.isArray(route.delivery_route) ? route.delivery_route.length : 0;
     
     if (pickupCount === 0 && deliveryCount === 0) {
       return <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Empty</span>;

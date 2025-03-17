@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -53,19 +52,15 @@ export const DriverPanel = () => {
   const fetchRoutes = async () => {
     setIsLoading(true);
     try {
-      // Format the date to YYYY-MM-DD for database query
       const formattedDate = format(currentDate, 'yyyy-MM-dd');
       
-      // Set time boundaries based on the selected time slot
       const startTime = timeSlot === 'morning' ? '19:00:00' : '13:00:00';
       const endTime = timeSlot === 'morning' ? '13:00:00' : '19:00:00';
       
-      // Since we're checking orders from the previous evening (7pm) if morning slot
       const previousDay = new Date(currentDate);
       previousDay.setDate(previousDay.getDate() - (timeSlot === 'morning' ? 1 : 0));
       const formattedPreviousDay = format(previousDay, 'yyyy-MM-dd');
       
-      // Query to get orders within the time range
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -93,12 +88,10 @@ export const DriverPanel = () => {
       
       if (error) throw error;
       
-      // Transform to driver route format
       const driverRoutes: DriverRoute[] = [];
       
       (data || []).forEach((order: any) => {
         if (routeType === 'pickups') {
-          // Add pickup route
           driverRoutes.push({
             id: `pickup-${order.id}`,
             type: 'pickup',
@@ -112,7 +105,6 @@ export const DriverPanel = () => {
             time: null,
           });
         } else {
-          // Add delivery route
           const deliveryDetails = typeof order.delivery_details === 'string'
             ? JSON.parse(order.delivery_details)
             : order.delivery_details;
@@ -132,13 +124,11 @@ export const DriverPanel = () => {
         }
       });
       
-      // Sort by preferred time if available, otherwise group geographically
       const sortedRoutes = driverRoutes.sort((a, b) => {
         if (a.time && b.time) {
           return a.time.localeCompare(b.time);
         }
         
-        // Simple geographical sort - group by latitude
         return a.latitude - b.latitude;
       });
       
@@ -160,7 +150,6 @@ export const DriverPanel = () => {
   }, [timeSlot, routeType]);
 
   const handleStatusUpdate = () => {
-    // Reset selected order and refresh routes
     setSelectedOrder(null);
     fetchRoutes();
     

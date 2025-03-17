@@ -1,4 +1,3 @@
-
 import { ProductType } from "@/types/product";
 import { Button } from "../ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -15,12 +14,10 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Determine if this product belongs to the current user
   const isOwnProduct = user?.id === product.seller?.id;
 
   return (
     <div className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-      {/* Make the image clickable */}
       <Link to={`/product/${product.id}`} className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
         <img 
           src={product.image} 
@@ -32,7 +29,6 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-price font-bold">€{product.price.toFixed(2)}</p>
-            {/* Make the title clickable */}
             <Link to={`/product/${product.id}`} className="font-medium text-sm hover:text-youbuy transition-colors">
               {product.title}
             </Link>
@@ -47,7 +43,7 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
           <>
             <Button 
               size="sm" 
-              variant="action"
+              variant="success"
               onClick={() => navigate(`/checkout/${product.id}`)}
             >
               <ShoppingBag className="h-4 w-4" /> Buy

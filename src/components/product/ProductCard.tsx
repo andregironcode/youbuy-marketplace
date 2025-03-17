@@ -88,7 +88,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="flex items-center gap-2 mt-3">
           <Button
             onClick={handleBuyNow}
-            variant="action"
+            variant="success"
             size="sm"
             className="flex-1"
           >
