@@ -13,7 +13,6 @@ import {
   MessageSquare,
   HeadphonesIcon
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Define the profile type
 interface UserProfile {
@@ -90,8 +89,9 @@ export const ProfileSidebar = () => {
   ];
   
   return (
-    <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-200">
+    <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col">
+      {/* Fixed header section */}
+      <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
         <div className="flex items-center gap-3">
           {extendedUser?.profile?.avatar_url ? (
             <img
@@ -115,6 +115,7 @@ export const ProfileSidebar = () => {
         </div>
       </div>
 
+      {/* Scrollable navigation section */}
       <nav className="flex-1 py-4 overflow-y-auto no-scrollbar">
         <ul className="space-y-1 px-2">
           {items.map((item) => (
