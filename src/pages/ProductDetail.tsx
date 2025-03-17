@@ -155,14 +155,27 @@ export default function ProductDetail() {
     error 
   } = useQuery({
     queryKey: ['product', productId],
-    queryFn: () => getProductById(productId as string),
-    enabled: !!productId
+    queryFn: () => {
+      if (!productId) return Promise.reject(new Error('Product ID is undefined'));
+      return getProductById(productId);
+    },
+    enabled: !!productId,
+    retry: 2
   });
+
+  useEffect(() => {
+    // Update current image when product changes
+    if (product?.images && product.images.length > 0) {
+      setCurrentImage(product.images[0]);
+    }
+  }, [product]);
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Loading product details...</p>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-lg">Loading product details...</p>
+        </div>
       </div>
     );
   }
@@ -170,7 +183,14 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Error: Could not load product details.</p>
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <p className="text-xl font-semibold text-red-500 mb-2">Error: Could not load product details</p>
+          <p className="text-muted-foreground mb-4">The product you're looking for might not exist or there was an issue loading it.</p>
+          <Button onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
+        </div>
       </div>
     );
   }
@@ -208,7 +228,7 @@ export default function ProductDetail() {
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
             <img
-              src={currentImage || product.images[0]}
+              src={currentImage || product.images?.[0] || product.image}
               alt={product.title}
               className="h-full w-full object-contain"
             />
@@ -220,11 +240,11 @@ export default function ProductDetail() {
           </div>
           
           <div className="grid grid-cols-5 gap-2">
-            {product.images.map((image, index) => (
+            {product.images && product.images.map((image, index) => (
               <div
                 key={index}
                 className={`aspect-square rounded-md border cursor-pointer overflow-hidden ${
-                  currentImage === image ? 'ring-2 ring-youbuy' : ''
+                  currentImage === image ? 'ring-2 ring-pink-600' : ''
                 }`}
                 onClick={() => setCurrentImage(image)}
               >
@@ -242,9 +262,9 @@ export default function ProductDetail() {
               variant="outline" 
               size="sm"
               onClick={handleToggleFavorite}
-              className={isFavorite ? "text-youbuy" : ""}
+              className={isFavorite ? "text-pink-600" : ""}
             >
-              <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-youbuy" : ""}`} />
+              <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-pink-600" : ""}`} />
               {isFavorite ? "Saved" : "Save"}
             </Button>
             
@@ -290,7 +310,7 @@ export default function ProductDetail() {
                 </div>
                 <Link 
                   to={`/seller/${product.seller.id}`}
-                  className="text-right text-youbuy hover:underline"
+                  className="text-right text-pink-600 hover:underline"
                 >
                   {product.seller.name}
                 </Link>
@@ -353,7 +373,7 @@ export default function ProductDetail() {
                             key={i}
                             className={`h-4 w-4 ${
                               i < Math.floor(product.seller.rating)
-                                ? "fill-youbuy text-youbuy"
+                                ? "fill-pink-600 text-pink-600"
                                 : "text-muted"
                             }`}
                           />
@@ -370,7 +390,7 @@ export default function ProductDetail() {
                       value={
                         ((product.seller.rating || 0) / 5) * 100
                       } 
-                      className="h-1"
+                      className="h-1 bg-gray-200"
                     />
                   </div>
                 )}
@@ -398,7 +418,7 @@ export default function ProductDetail() {
                 
                 <Link 
                   to={`/seller/${product.seller.id}`}
-                  className="text-sm text-youbuy hover:underline w-full text-center"
+                  className="text-sm text-pink-600 hover:underline w-full text-center"
                 >
                   View Seller Profile
                 </Link>

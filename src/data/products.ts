@@ -186,7 +186,41 @@ export const products: ProductType[] = [
   }
 ];
 
-// Add the missing getProductById function
-export const getProductById = (id: string): ProductType | undefined => {
-  return products.find(product => product.id === id);
+// Implement a robust getProductById function that handles both local data and Supabase
+export const getProductById = async (id: string): Promise<ProductType | undefined> => {
+  try {
+    // First check if we have the product locally
+    const localProduct = products.find(product => product.id === id);
+    if (localProduct) {
+      return localProduct;
+    }
+    
+    // If not found locally, try to fetch from Supabase
+    if (id) {
+      // Import supabase client only if needed
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, profiles:seller_id(*)')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching product from Supabase:', error);
+        return undefined;
+      }
+      
+      if (data) {
+        // Convert Supabase data to ProductType
+        const { convertToProductType } = await import("@/types/product");
+        return convertToProductType(data, true);
+      }
+    }
+    
+    return undefined;
+  } catch (error) {
+    console.error('Error in getProductById:', error);
+    return undefined;
+  }
 };
