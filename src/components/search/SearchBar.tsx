@@ -8,9 +8,14 @@ import { SearchResults } from "./SearchResults";
 interface SearchBarProps {
   className?: string;
   placeholder?: string;
+  size?: "default" | "lg";
 }
 
-export const SearchBar = ({ className, placeholder = "Search products..." }: SearchBarProps) => {
+export const SearchBar = ({ 
+  className, 
+  placeholder = "Search products...",
+  size = "default" 
+}: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -49,11 +54,11 @@ export const SearchBar = ({ className, placeholder = "Search products..." }: Sea
   return (
     <div className={`relative ${className}`} ref={searchRef}>
       <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className={`absolute left-2.5 ${size === 'lg' ? 'top-3.5 h-5 w-5' : 'top-2.5 h-4 w-4'} text-muted-foreground`} />
         <Input
           type="search"
           placeholder={placeholder}
-          className="w-full pl-8 bg-muted text-sm h-9 pr-8"
+          className={`w-full pl-8 bg-white shadow-sm border-gray-200 text-sm ${size === 'lg' ? 'h-12 text-base pr-10' : 'h-10 pr-8'}`}
           value={query}
           onChange={handleChange}
           onFocus={handleFocus}
@@ -62,10 +67,10 @@ export const SearchBar = ({ className, placeholder = "Search products..." }: Sea
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+            className={`absolute right-0 top-0 ${size === 'lg' ? 'h-12 w-12' : 'h-10 w-10'} text-muted-foreground hover:text-foreground`}
             onClick={handleClear}
           >
-            <X className="h-4 w-4" />
+            <X className={`${size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'}`} />
           </Button>
         )}
       </div>

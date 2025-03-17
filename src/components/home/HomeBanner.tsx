@@ -17,15 +17,16 @@ export const HomeBanner = () => {
               Join the marketplace where thousands of people buy and sell unique items every day
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
-              <div className="flex-1 max-w-xl">
+            <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 max-w-xl mx-auto sm:mx-0">
+              <div className="flex-1 w-full">
                 <SearchBar 
                   className="w-full" 
                   placeholder="What are you looking for?" 
+                  size="lg"
                 />
               </div>
-              <Link to="/sell">
-                <Button size="lg" className="w-full sm:w-auto">
+              <Link to="/sell" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full h-12">
                   Start Selling
                 </Button>
               </Link>
