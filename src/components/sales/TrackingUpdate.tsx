@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -51,8 +50,7 @@ export const TrackingUpdate = ({
     },
   });
 
-  // Fetch available delivery stages
-  useState(() => {
+  useEffect(() => {
     const fetchStages = async () => {
       const { data, error } = await supabase
         .from("delivery_stages")
@@ -78,7 +76,7 @@ export const TrackingUpdate = ({
     };
 
     fetchStages();
-  });
+  }, [currentStatus, form]);
 
   const handleLocationSelect = (lat: number, lng: number) => {
     setMapCoordinates({ lat, lng });

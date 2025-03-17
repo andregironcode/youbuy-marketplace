@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -53,7 +52,7 @@ export const PurchaseHistory = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<"orders" | "tracking">("orders");
 
-  const { data: orders, isLoading, error } = useQuery({
+  const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ["orders", user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -131,6 +130,15 @@ export const PurchaseHistory = () => {
     enabled: !!user,
   });
 
+  useEffect(() => {
+    if (selectedOrder && orders) {
+      const updatedOrder = orders.find(order => order.id === selectedOrder.id);
+      if (updatedOrder) {
+        setSelectedOrder(updatedOrder);
+      }
+    }
+  }, [orders, selectedOrder]);
+
   const getStatusBadgeColor = (status: OrderStatus) => {
     switch (status) {
       case "pending":
@@ -204,7 +212,10 @@ export const PurchaseHistory = () => {
           <div className="flex justify-between items-center mb-4">
             <Button 
               variant="outline" 
-              onClick={() => setSelectedOrder(null)}
+              onClick={() => {
+                setSelectedOrder(null);
+                refetch();
+              }}
             >
               Back to all orders
             </Button>
@@ -222,7 +233,6 @@ export const PurchaseHistory = () => {
           
           <TabsContent value="orders" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Order details */}
               <div className="md:col-span-2">
                 <Card>
                   <CardContent className="p-6">
@@ -279,7 +289,6 @@ export const PurchaseHistory = () => {
                 </Card>
               </div>
               
-              {/* Product info */}
               {selectedOrder.product && (
                 <div>
                   <Card>
@@ -376,6 +385,7 @@ export const PurchaseHistory = () => {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => {
+                      console.log("Track order clicked for:", order.id);
                       setSelectedOrder(order);
                       setActiveTab("tracking");
                     }}

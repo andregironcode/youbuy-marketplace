@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { 
@@ -57,6 +56,7 @@ export const OrderTracker = ({
 
   useEffect(() => {
     const fetchOrderTracking = async () => {
+      console.log("Fetching tracking info for order:", orderId, "with status:", currentStatus);
       setIsLoading(true);
       try {
         // Get all delivery stages
@@ -65,7 +65,12 @@ export const OrderTracker = ({
           .select("*")
           .order("display_order");
           
-        if (stagesError) throw stagesError;
+        if (stagesError) {
+          console.error("Error fetching stages:", stagesError);
+          throw stagesError;
+        }
+        
+        console.log("Got stages data:", stagesData);
         
         // Get order status history
         const { data: historyData, error: historyError } = await supabase
@@ -74,7 +79,12 @@ export const OrderTracker = ({
           .eq("order_id", orderId)
           .order("created_at", { ascending: false });
           
-        if (historyError) throw historyError;
+        if (historyError) {
+          console.error("Error fetching history:", historyError);
+          throw historyError;
+        }
+        
+        console.log("Got history data:", historyData);
         
         // Get latest status with location if available
         const latestWithLocation = historyData?.find(entry => 
@@ -86,16 +96,19 @@ export const OrderTracker = ({
             lat: latestWithLocation.location_lat,
             lng: latestWithLocation.location_lng
           });
+          console.log("Set map coordinates from history:", mapCoordinates);
         } else if (orderAddress?.latitude && orderAddress?.longitude) {
           // Fall back to delivery address
           setMapCoordinates({
             lat: orderAddress.latitude,
             lng: orderAddress.longitude
           });
+          console.log("Set map coordinates from address:", mapCoordinates);
         }
         
         // Find current stage
         const current = stagesData?.find(stage => stage.code === currentStatus);
+        console.log("Current stage found:", current);
         
         if (current && stagesData) {
           setCurrentStage(current);
@@ -106,7 +119,6 @@ export const OrderTracker = ({
           ).length;
           
           const currentIndex = stagesData.findIndex(s => s.code === current.code);
-          const cancelledIndex = stagesData.findIndex(s => s.code === 'cancelled');
           
           if (current.code === 'cancelled') {
             setProgress(0);
@@ -116,6 +128,8 @@ export const OrderTracker = ({
             const progressValue = Math.round((currentIndex / (totalStages - 1)) * 100);
             setProgress(progressValue);
           }
+          
+          console.log("Set progress to:", progress);
         }
         
         setStages(stagesData || []);
@@ -135,9 +149,8 @@ export const OrderTracker = ({
     if (orderId) {
       fetchOrderTracking();
     }
-  }, [orderId, currentStatus, toast, orderAddress]);
+  }, [orderId, currentStatus]);
   
-  // Helper function to get icon for stage
   const getStageIcon = (code: string) => {
     switch (code) {
       case 'pending':
@@ -161,7 +174,6 @@ export const OrderTracker = ({
     }
   };
   
-  // Helper to determine if a stage is active, completed or inactive
   const getStageStatus = (stageCode: string) => {
     if (!currentStage) return 'inactive';
     
@@ -177,7 +189,6 @@ export const OrderTracker = ({
     return 'inactive';
   };
   
-  // Helper to get status badge color
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -213,7 +224,6 @@ export const OrderTracker = ({
   
   return (
     <div className="space-y-6">
-      {/* Progress bar and status */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -233,7 +243,6 @@ export const OrderTracker = ({
         </div>
       </div>
       
-      {/* Estimated delivery */}
       {estimatedDelivery && currentStage?.code !== 'cancelled' && (
         <div className="bg-gray-50 p-3 rounded-md flex items-center gap-3">
           <Clock className="h-5 w-5 text-gray-500" />
@@ -246,7 +255,6 @@ export const OrderTracker = ({
         </div>
       )}
       
-      {/* Map with current location */}
       {mapCoordinates && (
         <div className="rounded-md border overflow-hidden">
           <div className="p-3 bg-gray-50 border-b">
@@ -266,7 +274,6 @@ export const OrderTracker = ({
         </div>
       )}
       
-      {/* Status timeline */}
       <div className="space-y-4">
         <h4 className="font-medium">Order Timeline</h4>
         <div className="space-y-4">
@@ -301,7 +308,6 @@ export const OrderTracker = ({
           )}
         </div>
         
-        {/* Initial order placement */}
         <div className="flex items-start gap-3">
           <div className="mt-1 p-1 rounded-full bg-gray-100">
             <Package className="h-5 w-5 text-gray-600" />
