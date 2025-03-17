@@ -20,13 +20,19 @@ const DriverPage = () => {
       }
 
       try {
-        const { data, error } = await supabase.rpc('is_driver');
+        // Check if the user has the driver role in the user_roles table
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'driver')
+          .maybeSingle();
         
         if (error) {
           console.error('Error checking driver status:', error);
           setIsDriver(false);
         } else {
-          setIsDriver(!!data);
+          setIsDriver(!!data); // User is a driver if we found a matching record
         }
       } catch (err) {
         console.error('Error in driver check:', err);
