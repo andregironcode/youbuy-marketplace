@@ -5,83 +5,97 @@
 
 @layer base {
   :root {
-    --background: 40 30% 96%; /* light off-white with slight beige tint */
-    --foreground: 222.2 84% 4.9%;
+    /* === BACKGROUND COLORS === */
+    --background: 40 30% 96%;         /* Main background color (light beige) */
+    --foreground: 222.2 84% 4.9%;     /* Main text color (dark) */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* === COMPONENT COLORS === */
+    --card: 0 0% 100%;                /* Card background (white) */
+    --card-foreground: 222.2 84% 4.9%; /* Card text color (dark) */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;             /* Popover/dropdown background (white) */
+    --popover-foreground: 222.2 84% 4.9%; /* Popover text color (dark) */
 
-    --primary: 173 80% 40%; /* Teal */
-    --primary-foreground: 0 0% 100%;
+    /* === BRAND COLORS === */
+    --primary: 173 80% 40%;           /* Primary brand color (Teal) */
+    --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* === UI COLORS === */
+    --secondary: 210 40% 96.1%;       /* Secondary UI color (light blue-gray) */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* Text on secondary (dark) */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96.1%;           /* Muted UI elements (light blue-gray) */
+    --muted-foreground: 215.4 16.3% 46.9%; /* Muted text color (medium gray) */
 
-    --accent: 173 80% 40%; /* Teal */
-    --accent-foreground: 0 0% 100%;
+    --accent: 173 80% 40%;            /* Accent UI color (Teal) */
+    --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* === FEEDBACK COLORS === */
+    --destructive: 0 84.2% 60.2%;     /* Destructive actions (red) */
+    --destructive-foreground: 210 40% 98%; /* Text on destructive (white) */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 173 80% 40%; /* Teal */
+    /* === BORDER & FOCUS COLORS === */
+    --border: 214.3 31.8% 91.4%;      /* Border color (light gray) */
+    --input: 214.3 31.8% 91.4%;       /* Input border color (light gray) */
+    --ring: 173 80% 40%;              /* Focus ring color (Teal) */
 
-    --radius: 0.5rem;
+    --radius: 0.5rem;                 /* Border radius for components */
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* === SIDEBAR COLORS === */
+    --sidebar-background: 0 0% 98%;   /* Sidebar background (off-white) */
+    --sidebar-foreground: 240 5.3% 26.1%; /* Sidebar text (dark gray) */
+    --sidebar-primary: 240 5.9% 10%;  /* Sidebar primary (darker) */
+    --sidebar-primary-foreground: 0 0% 98%; /* Text on sidebar primary */
+    --sidebar-accent: 240 4.8% 95.9%; /* Sidebar accent (light gray) */
+    --sidebar-accent-foreground: 240 5.9% 10%; /* Text on sidebar accent */
+    --sidebar-border: 220 13% 91%;    /* Sidebar borders */
+    --sidebar-ring: 217.2 91.2% 59.8%; /* Sidebar focus rings */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* === DARK MODE BACKGROUND COLORS === */
+    --background: 222.2 84% 4.9%;     /* Main background (dark) */
+    --foreground: 210 40% 98%;        /* Main text color (light) */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* === DARK MODE COMPONENT COLORS === */
+    --card: 222.2 84% 4.9%;           /* Card background (dark) */
+    --card-foreground: 210 40% 98%;   /* Card text color (light) */
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;        /* Popover background (dark) */
+    --popover-foreground: 210 40% 98%; /* Popover text color (light) */
 
-    --primary: 173 80% 40%; /* Teal */
-    --primary-foreground: 0 0% 100%;
+    /* === DARK MODE BRAND COLORS === */
+    --primary: 173 80% 40%;           /* Primary brand color (Teal) */
+    --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* === DARK MODE UI COLORS === */
+    --secondary: 217.2 32.6% 17.5%;   /* Secondary UI color (dark gray-blue) */
+    --secondary-foreground: 210 40% 98%; /* Text on secondary (light) */
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217.2 32.6% 17.5%;       /* Muted UI elements (dark gray-blue) */
+    --muted-foreground: 215 20.2% 65.1%; /* Muted text color (light gray) */
 
-    --accent: 173 80% 40%; /* Teal */
-    --accent-foreground: 0 0% 100%;
+    --accent: 173 80% 40%;            /* Accent UI color (Teal) */
+    --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* === DARK MODE FEEDBACK COLORS === */
+    --destructive: 0 62.8% 30.6%;     /* Destructive actions (darker red) */
+    --destructive-foreground: 210 40% 98%; /* Text on destructive (light) */
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 173 80% 40%; /* Teal */
+    /* === DARK MODE BORDER & FOCUS COLORS === */
+    --border: 217.2 32.6% 17.5%;      /* Border color (dark gray) */
+    --input: 217.2 32.6% 17.5%;       /* Input border color (dark gray) */
+    --ring: 173 80% 40%;              /* Focus ring color (Teal) */
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* === DARK MODE SIDEBAR COLORS === */
+    --sidebar-background: 240 5.9% 10%; /* Sidebar background (very dark) */
+    --sidebar-foreground: 240 4.8% 95.9%; /* Sidebar text (very light) */
+    --sidebar-primary: 224.3 76.3% 48%; /* Sidebar primary (blue) */
+    --sidebar-primary-foreground: 0 0% 100%; /* Text on sidebar primary */
+    --sidebar-accent: 240 3.7% 15.9%; /* Sidebar accent (dark gray) */
+    --sidebar-accent-foreground: 240 4.8% 95.9%; /* Text on sidebar accent */
+    --sidebar-border: 240 3.7% 15.9%; /* Sidebar borders */
+    --sidebar-ring: 217.2 91.2% 59.8%; /* Sidebar focus rings */
   }
 }
 

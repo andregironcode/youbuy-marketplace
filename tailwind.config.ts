@@ -20,6 +20,7 @@ export default {
 		},
 		extend: {
 			colors: {
+				// Base theme colors (mapped from CSS variables)
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -53,6 +54,8 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				
+				// Sidebar theme
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -63,21 +66,24 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				
+				// Custom application-specific colors
+				// Use these for consistent branding across the app
 				youbuy: {
-					DEFAULT: '#0BA896', /* Teal */
-					foreground: '#ffffff',
-					light: '#E6F7F5',
-					dark: '#08867A',
-					muted: '#E0F5F3',
+					DEFAULT: '#0BA896',           /* Teal - Main brand color */
+					foreground: '#ffffff',        /* White text on teal */
+					light: '#E6F7F5',             /* Light teal for backgrounds */
+					dark: '#08867A',              /* Dark teal for hover states */
+					muted: '#E0F5F3',             /* Muted teal for subtle UI */
 				},
 				cta: {
-					DEFAULT: '#D946EF', /* Magenta */
-					hover: '#C026D3',
-					foreground: '#ffffff',
+					DEFAULT: '#D946EF',           /* Magenta - Call to action */
+					hover: '#C026D3',             /* Darker magenta for hover */
+					foreground: '#ffffff',        /* White text on magenta */
 				},
 				price: {
-					DEFAULT: '#0BA896', /* Teal */
-					foreground: '#ffffff',
+					DEFAULT: '#0BA896',           /* Teal - Price highlight color */
+					foreground: '#ffffff',        /* White text on price */
 				}
 			},
 			borderRadius: {
