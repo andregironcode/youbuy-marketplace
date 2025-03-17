@@ -1,103 +1,31 @@
 
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useState, useRef } from 'react';
+import { Map, Source, Layer, Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
-// Fix Leaflet icon issue
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+// Mapbox access token - in a real app, this should be in an environment variable
+const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
-// Component to update map center and zoom when props change
-const MapUpdater = ({ center, zoom }: { center: [number, number], zoom: number }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  
-  return null;
+// Circle layer for approximate location
+const circleLayer = {
+  id: 'circle-layer',
+  type: 'circle',
+  paint: {
+    'circle-radius': 70,
+    'circle-color': '#ff385c',
+    'circle-opacity': 0.2,
+    'circle-stroke-width': 2,
+    'circle-stroke-color': '#ff385c'
+  }
 };
 
-// Custom zoom controls
-const ZoomControls = () => {
-  const map = useMap();
-  
-  const handleZoomIn = () => {
-    map.zoomIn();
-  };
-  
-  const handleZoomOut = () => {
-    map.zoomOut();
-  };
-  
-  return (
-    <div className="absolute left-2 bottom-2 z-10 flex flex-col gap-1">
-      <Button 
-        onClick={handleZoomIn} 
-        variant="outline" 
-        size="icon" 
-        className="bg-white shadow-md"
-      >
-        <ZoomIn className="h-4 w-4" />
-      </Button>
-      <Button 
-        onClick={handleZoomOut} 
-        variant="outline" 
-        size="icon" 
-        className="bg-white shadow-md"
-      >
-        <ZoomOut className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-};
-
-// Component to handle map clicks
-const MapClickHandler = ({ 
-  onLocationSelect 
-}: { 
-  onLocationSelect: (lat: number, lng: number, address: string) => void 
-}) => {
-  const map = useMap();
-
-  useEffect(() => {
-    const handleClick = async (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      console.log("Map clicked at:", lat, lng);
-      
-      try {
-        // Get address from coordinates
-        const address = await reverseGeocode(lat, lng);
-        console.log("Reverse geocoded address:", address);
-        onLocationSelect(lat, lng, address);
-      } catch (error) {
-        console.error('Error in reverse geocoding:', error);
-        onLocationSelect(lat, lng, "Unknown location");
-      }
-    };
-
-    map.on('click', handleClick);
-    
-    return () => {
-      map.off('click', handleClick);
-    };
-  }, [map, onLocationSelect]);
-  
-  return null;
+const markerStyle = {
+  cursor: 'pointer',
+  fill: '#ff385c'
 };
 
 interface LocationMapProps {
@@ -126,43 +54,58 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapKey, setMapKey] = useState(Date.now()); // For map reloading
+  const mapRef = useRef<any>(null);
 
   // Default center if no coordinates provided - Dubai as an example location
-  const center: [number, number] = longitude !== undefined && latitude !== undefined 
-    ? [latitude, longitude] 
-    : [25.2048, 55.2708];
+  const center = {
+    longitude: longitude !== undefined ? longitude : 55.2708,
+    latitude: latitude !== undefined ? latitude : 25.2048
+  };
 
   const handleMapLoad = () => {
     console.log("Map loaded successfully");
     setLoading(false);
   };
 
-  // Handle map error - now attached to the MapContainer instead of TileLayer
-  useEffect(() => {
-    const handleTileError = () => {
-      console.error("Map tile loading error");
-      setMapError("Failed to load map tiles. Please try again.");
-      setLoading(false);
-    };
-
-    // We'll add a global error listener to detect tile loading errors
-    window.addEventListener('error', (e) => {
-      // Only handle tile loading errors from images
-      if (e.target instanceof HTMLImageElement && 
-          e.target.src.includes('tile.openstreetmap.org')) {
-        handleTileError();
-      }
-    }, true);
-
-    return () => {
-      window.removeEventListener('error', () => {});
-    };
-  }, []);
+  const handleMapError = (error: any) => {
+    console.error("Map loading error:", error);
+    setMapError("Failed to load map. Please check your connection and try again.");
+    setLoading(false);
+  };
 
   const handleReloadMap = () => {
     setLoading(true);
     setMapError(null);
     setMapKey(Date.now()); // Force re-render of map
+  };
+
+  const handleMapClick = async (event: any) => {
+    if (!interactive || !onLocationSelect) return;
+    
+    const { lngLat } = event;
+    const lng = lngLat.lng;
+    const lat = lngLat.lat;
+    
+    console.log("Map clicked at:", lat, lng);
+    
+    try {
+      // Get address from coordinates
+      const address = await reverseGeocode(lat, lng);
+      console.log("Reverse geocoded address:", address);
+      onLocationSelect(lat, lng, address);
+    } catch (error) {
+      console.error('Error in reverse geocoding:', error);
+      onLocationSelect(lat, lng, "Unknown location");
+    }
+  };
+
+  const geojsonData = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [longitude || 0, latitude || 0]
+    },
+    properties: {}
   };
 
   return (
@@ -180,49 +123,44 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       )}
       
       <div className="w-full h-full rounded-md overflow-hidden" key={mapKey}>
-        <MapContainer
-          center={center}
-          zoom={latitude !== undefined && longitude !== undefined ? zoom : 6}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false} // We'll add custom zoom controls
-          dragging={interactive}
-          touchZoom={interactive}
-          doubleClickZoom={interactive}
-          scrollWheelZoom={interactive}
+        <Map
+          ref={mapRef}
+          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+          initialViewState={{
+            longitude: center.longitude,
+            latitude: center.latitude,
+            zoom: latitude !== undefined && longitude !== undefined ? zoom : 6
+          }}
+          style={{ width: '100%', height: '100%' }}
+          mapStyle="mapbox://styles/mapbox/streets-v12"
+          onClick={handleMapClick}
+          onLoad={handleMapLoad}
+          onError={handleMapError}
+          interactive={interactive}
           attributionControl={true}
-          whenReady={handleMapLoad}
-          className="z-0"
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          {/* Navigation controls (zoom, etc.) */}
+          {interactive && <NavigationControl position="bottom-left" />}
           
-          <MapUpdater center={center} zoom={zoom} />
+          {/* Geolocation control */}
+          {interactive && <GeolocateControl position="bottom-right" />}
           
-          {interactive && onLocationSelect && (
-            <MapClickHandler onLocationSelect={onLocationSelect} />
-          )}
-          
+          {/* Show marker or circle */}
           {showMarker && latitude !== undefined && longitude !== undefined && (
             approximate ? (
-              <Circle 
-                center={[latitude, longitude]} 
-                radius={500} 
-                pathOptions={{ 
-                  fillColor: '#ff385c', 
-                  fillOpacity: 0.2,
-                  color: '#ff385c',
-                  weight: 2
-                }} 
-              />
+              <Source id="circle-source" type="geojson" data={geojsonData}>
+                <Layer {...circleLayer} />
+              </Source>
             ) : (
-              <Marker position={[latitude, longitude]} />
+              <Marker
+                longitude={longitude}
+                latitude={latitude}
+                anchor="bottom"
+                style={markerStyle}
+              />
             )
           )}
-          
-          {interactive && <ZoomControls />}
-        </MapContainer>
+        </Map>
       </div>
       
       {interactive && (
