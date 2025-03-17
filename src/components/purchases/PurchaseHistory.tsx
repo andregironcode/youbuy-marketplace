@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -223,15 +224,16 @@ export const PurchaseHistory = () => {
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as "orders" | "tracking")}
+              className="w-[400px]"
             >
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="orders">Order Details</TabsTrigger>
                 <TabsTrigger value="tracking">Track Order</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           
-          <TabsContent value="orders" className="mt-0">
+          {activeTab === "orders" && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <Card>
@@ -323,9 +325,9 @@ export const PurchaseHistory = () => {
                 </div>
               )}
             </div>
-          </TabsContent>
+          )}
           
-          <TabsContent value="tracking" className="mt-0">
+          {activeTab === "tracking" && (
             <Card>
               <CardContent className="p-6">
                 <OrderTracker 
@@ -337,7 +339,7 @@ export const PurchaseHistory = () => {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
         </div>
       ) : (
         <Table>

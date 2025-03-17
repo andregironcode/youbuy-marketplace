@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -63,6 +64,7 @@ export const TrackingUpdate = ({
       }
 
       if (data) {
+        console.log("Fetched delivery stages:", data);
         setStages(data);
         
         // Find next logical status
@@ -87,6 +89,13 @@ export const TrackingUpdate = ({
     setIsSubmitting(true);
     
     try {
+      console.log("Updating order status with values:", {
+        orderId,
+        status: values.status,
+        notes: values.notes,
+        location: mapCoordinates
+      });
+      
       const { error } = await supabase.rpc('update_order_status', {
         p_order_id: orderId,
         p_status: values.status,

@@ -83,6 +83,8 @@ export const AdminOrders = () => {
       
       if (error) throw error;
 
+      console.log("Fetched orders data:", data);
+
       // Map the data to include names
       const ordersWithNames = data.map((order: any) => ({
         ...order,
@@ -118,6 +120,7 @@ export const AdminOrders = () => {
       
       if (orderError) throw orderError;
       
+      console.log("Fetched order details:", orderData);
       setOrderDetails(orderData);
       setIsDetailDialogOpen(true);
     } catch (error) {

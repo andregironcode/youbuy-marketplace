@@ -149,7 +149,7 @@ export const OrderTracker = ({
     if (orderId) {
       fetchOrderTracking();
     }
-  }, [orderId, currentStatus]);
+  }, [orderId, currentStatus, orderAddress, toast]);
   
   const getStageIcon = (code: string) => {
     switch (code) {
@@ -279,7 +279,7 @@ export const OrderTracker = ({
         <div className="space-y-4">
           {statusHistory.length > 0 ? (
             <div className="space-y-3">
-              {statusHistory.map((status, index) => {
+              {statusHistory.map((status) => {
                 const stageName = stages.find(s => s.code === status.status)?.name || status.status;
                 return (
                   <div key={status.id} className="flex items-start gap-3">
