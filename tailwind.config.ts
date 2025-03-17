@@ -22,9 +22,9 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         youbuy: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#FF9900",
           foreground: "hsl(var(--primary-foreground))",
-          dark: "#005959",
+          dark: "#F08300",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -36,11 +36,11 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        price: "#bb0000",
-        cta: "#bb0000",
+        price: "#D3122A",
+        cta: "#00A8E1",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#FF9900",
+          foreground: "#FFFFFF",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -55,8 +55,8 @@ const config: Config = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#00A8E1",
+          foreground: "#FFFFFF",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

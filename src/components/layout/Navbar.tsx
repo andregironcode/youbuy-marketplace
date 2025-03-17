@@ -140,7 +140,7 @@ export const Navbar = () => {
           </div>
         )}
 
-        <div className="flex-1 mx-1 md:mx-2 max-w-[50%]">
+        <div className="flex-1 mx-1 md:mx-2">
           <SearchBar />
         </div>
 

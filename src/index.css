@@ -6,96 +6,96 @@
 @layer base {
   :root {
     /* === BACKGROUND COLORS === */
-    --background: 40 30% 96%;         /* Main background color (light beige) */
-    --foreground: 222.2 84% 4.9%;     /* Main text color (dark) */
+    --background: 40 33% 98%;         /* Main background color (light cream) */
+    --foreground: 210 12% 16%;        /* Main text color (dark gray-blue) */
 
     /* === COMPONENT COLORS === */
     --card: 0 0% 100%;                /* Card background (white) */
-    --card-foreground: 222.2 84% 4.9%; /* Card text color (dark) */
+    --card-foreground: 210 12% 16%;   /* Card text color (dark gray-blue) */
 
     --popover: 0 0% 100%;             /* Popover/dropdown background (white) */
-    --popover-foreground: 222.2 84% 4.9%; /* Popover text color (dark) */
+    --popover-foreground: 210 12% 16%; /* Popover text color (dark gray-blue) */
 
     /* === BRAND COLORS === */
-    --primary: 173 80% 40%;           /* Primary brand color (Teal) */
+    --primary: 38 100% 50%;           /* Primary brand color (Amazon Orange) */
     --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
     /* === UI COLORS === */
-    --secondary: 210 40% 96.1%;       /* Secondary UI color (light blue-gray) */
-    --secondary-foreground: 222.2 47.4% 11.2%; /* Text on secondary (dark) */
+    --secondary: 200 100% 37%;        /* Secondary UI color (Amazon Blue) */
+    --secondary-foreground: 0 0% 100%; /* Text on secondary (white) */
 
-    --muted: 210 40% 96.1%;           /* Muted UI elements (light blue-gray) */
-    --muted-foreground: 215.4 16.3% 46.9%; /* Muted text color (medium gray) */
+    --muted: 210 20% 96%;             /* Muted UI elements (light blue-gray) */
+    --muted-foreground: 215 16% 47%;  /* Muted text color (medium gray) */
 
-    --accent: 173 80% 40%;            /* Accent UI color (Teal) */
+    --accent: 200 100% 44%;           /* Accent UI color (Bright Amazon Blue) */
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === FEEDBACK COLORS === */
-    --destructive: 0 84.2% 60.2%;     /* Destructive actions (red) */
-    --destructive-foreground: 210 40% 98%; /* Text on destructive (white) */
+    --destructive: 350 89% 45%;       /* Destructive actions (red) */
+    --destructive-foreground: 0 0% 100%; /* Text on destructive (white) */
 
     /* === BORDER & FOCUS COLORS === */
-    --border: 214.3 31.8% 91.4%;      /* Border color (light gray) */
-    --input: 214.3 31.8% 91.4%;       /* Input border color (light gray) */
-    --ring: 173 80% 40%;              /* Focus ring color (Teal) */
+    --border: 214 32% 91%;            /* Border color (light gray) */
+    --input: 214 32% 91%;             /* Input border color (light gray) */
+    --ring: 38 100% 50%;              /* Focus ring color (Amazon Orange) */
 
     --radius: 0.5rem;                 /* Border radius for components */
 
     /* === SIDEBAR COLORS === */
     --sidebar-background: 0 0% 98%;   /* Sidebar background (off-white) */
-    --sidebar-foreground: 240 5.3% 26.1%; /* Sidebar text (dark gray) */
-    --sidebar-primary: 240 5.9% 10%;  /* Sidebar primary (darker) */
-    --sidebar-primary-foreground: 0 0% 98%; /* Text on sidebar primary */
-    --sidebar-accent: 240 4.8% 95.9%; /* Sidebar accent (light gray) */
-    --sidebar-accent-foreground: 240 5.9% 10%; /* Text on sidebar accent */
+    --sidebar-foreground: 240 5% 26%; /* Sidebar text (dark gray) */
+    --sidebar-primary: 38 100% 50%;   /* Sidebar primary (Amazon Orange) */
+    --sidebar-primary-foreground: 0 0% 100%; /* Text on sidebar primary */
+    --sidebar-accent: 240 5% 96%;     /* Sidebar accent (light gray) */
+    --sidebar-accent-foreground: 240 6% 10%; /* Text on sidebar accent */
     --sidebar-border: 220 13% 91%;    /* Sidebar borders */
-    --sidebar-ring: 217.2 91.2% 59.8%; /* Sidebar focus rings */
+    --sidebar-ring: 200 100% 44%;     /* Sidebar focus rings (Amazon Blue) */
   }
 
   .dark {
     /* === DARK MODE BACKGROUND COLORS === */
-    --background: 222.2 84% 4.9%;     /* Main background (dark) */
+    --background: 222 14% 18%;        /* Main background (dark) */
     --foreground: 210 40% 98%;        /* Main text color (light) */
 
     /* === DARK MODE COMPONENT COLORS === */
-    --card: 222.2 84% 4.9%;           /* Card background (dark) */
+    --card: 222 14% 18%;              /* Card background (dark) */
     --card-foreground: 210 40% 98%;   /* Card text color (light) */
 
-    --popover: 222.2 84% 4.9%;        /* Popover background (dark) */
+    --popover: 222 14% 18%;           /* Popover background (dark) */
     --popover-foreground: 210 40% 98%; /* Popover text color (light) */
 
     /* === DARK MODE BRAND COLORS === */
-    --primary: 173 80% 40%;           /* Primary brand color (Teal) */
+    --primary: 38 100% 50%;           /* Primary brand color (Amazon Orange) */
     --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
     /* === DARK MODE UI COLORS === */
-    --secondary: 217.2 32.6% 17.5%;   /* Secondary UI color (dark gray-blue) */
-    --secondary-foreground: 210 40% 98%; /* Text on secondary (light) */
+    --secondary: 200 100% 37%;        /* Secondary UI color (Amazon Blue) */
+    --secondary-foreground: 0 0% 100%; /* Text on secondary (white) */
 
-    --muted: 217.2 32.6% 17.5%;       /* Muted UI elements (dark gray-blue) */
-    --muted-foreground: 215 20.2% 65.1%; /* Muted text color (light gray) */
+    --muted: 217 33% 17%;             /* Muted UI elements (dark gray-blue) */
+    --muted-foreground: 215 20% 65%;  /* Muted text color (light gray) */
 
-    --accent: 173 80% 40%;            /* Accent UI color (Teal) */
+    --accent: 200 100% 37%;           /* Accent UI color (Amazon Blue) */
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === DARK MODE FEEDBACK COLORS === */
-    --destructive: 0 62.8% 30.6%;     /* Destructive actions (darker red) */
+    --destructive: 0 63% 31%;         /* Destructive actions (darker red) */
     --destructive-foreground: 210 40% 98%; /* Text on destructive (light) */
 
     /* === DARK MODE BORDER & FOCUS COLORS === */
-    --border: 217.2 32.6% 17.5%;      /* Border color (dark gray) */
-    --input: 217.2 32.6% 17.5%;       /* Input border color (dark gray) */
-    --ring: 173 80% 40%;              /* Focus ring color (Teal) */
+    --border: 217 33% 17%;            /* Border color (dark gray) */
+    --input: 217 33% 17%;             /* Input border color (dark gray) */
+    --ring: 38 100% 50%;              /* Focus ring color (Amazon Orange) */
     
     /* === DARK MODE SIDEBAR COLORS === */
-    --sidebar-background: 240 5.9% 10%; /* Sidebar background (very dark) */
-    --sidebar-foreground: 240 4.8% 95.9%; /* Sidebar text (very light) */
-    --sidebar-primary: 224.3 76.3% 48%; /* Sidebar primary (blue) */
+    --sidebar-background: 240 6% 10%;  /* Sidebar background (very dark) */
+    --sidebar-foreground: 240 5% 96%;  /* Sidebar text (very light) */
+    --sidebar-primary: 38 100% 50%;    /* Sidebar primary (Amazon Orange) */
     --sidebar-primary-foreground: 0 0% 100%; /* Text on sidebar primary */
-    --sidebar-accent: 240 3.7% 15.9%; /* Sidebar accent (dark gray) */
-    --sidebar-accent-foreground: 240 4.8% 95.9%; /* Text on sidebar accent */
-    --sidebar-border: 240 3.7% 15.9%; /* Sidebar borders */
-    --sidebar-ring: 217.2 91.2% 59.8%; /* Sidebar focus rings */
+    --sidebar-accent: 240 4% 16%;     /* Sidebar accent (dark gray) */
+    --sidebar-accent-foreground: 240 5% 96%; /* Text on sidebar accent */
+    --sidebar-border: 240 4% 16%;     /* Sidebar borders */
+    --sidebar-ring: 200 100% 44%;     /* Sidebar focus rings (Amazon Blue) */
   }
 }
 

@@ -72,7 +72,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
   }
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-[70vh] overflow-y-auto z-50">
+    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-[70vh] overflow-y-auto z-50" style={{ maxWidth: "500px", width: "100%" }}>
       {loading ? (
         <div className="p-4 text-center">
           <Loader2 className="h-5 w-5 animate-spin mx-auto" />
@@ -92,7 +92,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
                       onClick={() => handleCategoryClick(category)}
                     >
                       <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      <span>Browse <span className="font-semibold">{category}</span></span>
+                      <span className="truncate">Browse <span className="font-semibold">{category}</span></span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -100,7 +100,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
                       onClick={() => handleSearchInCategory(category)}
                     >
                       <SearchIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      <span>Search "{query}" in <span className="font-semibold">{category}</span></span>
+                      <span className="truncate">Search "{query}" in <span className="font-semibold">{category}</span></span>
                     </Button>
                   </div>
                 ))}
@@ -128,7 +128,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{product.title}</p>
-                      <p className="text-sm font-semibold text-youbuy">AED {product.price.toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-price">AED {product.price.toFixed(2)}</p>
                     </div>
                   </Link>
                 ))}
@@ -149,7 +149,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
               className="w-full justify-center text-sm"
             >
               <SearchIcon className="h-4 w-4 mr-2" />
-              Search for "{query}"
+              <span className="truncate">Search for "{query}"</span>
             </Button>
           </div>
         </div>
