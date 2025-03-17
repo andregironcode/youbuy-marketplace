@@ -31,7 +31,7 @@
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === FEEDBACK COLORS === */
-    --destructive: 350 89% 45%;       /* Destructive actions (red) */
+    --destructive: 220 10% 56%;       /* Replaced red with neutral gray */
     --destructive-foreground: 0 0% 100%; /* Text on destructive (white) */
 
     /* === BORDER & FOCUS COLORS === */
@@ -79,7 +79,7 @@
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === DARK MODE FEEDBACK COLORS === */
-    --destructive: 0 63% 31%;         /* Destructive actions (darker red) */
+    --destructive: 220 10% 46%;       /* Replaced red with darker neutral gray */
     --destructive-foreground: 210 40% 98%; /* Text on destructive (light) */
 
     /* === DARK MODE BORDER & FOCUS COLORS === */

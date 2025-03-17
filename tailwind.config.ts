@@ -36,7 +36,7 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        price: "#D3122A",
+        price: "#33A0FF", // Changed from red to a nice blue
         cta: "#00A8E1",
         primary: {
           DEFAULT: "#FF9900",
@@ -47,7 +47,7 @@ const config: Config = {
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
+          DEFAULT: "#8E9196", // Changed from red to neutral gray
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {

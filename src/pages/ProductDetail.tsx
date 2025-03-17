@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -262,7 +261,7 @@ const ProductDetail = () => {
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">{product.seller.name}</h3>
                       {product.seller.rating && product.seller.rating > 4.5 && (
-                        <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           Verified
                         </Badge>
@@ -287,7 +286,7 @@ const ProductDetail = () => {
                   
                   <Button
                     variant="default"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => {
                       if (!user) {
                         toast({

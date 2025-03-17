@@ -216,7 +216,7 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       </div>
       
       <div className="flex items-baseline">
-        <span className="text-3xl font-bold text-youbuy">
+        <span className="text-3xl font-bold text-price">
           AED {price.toFixed(2)}
         </span>
         {product.variations && Object.keys(selectedVariations).length > 0 && (
