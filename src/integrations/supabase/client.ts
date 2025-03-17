@@ -16,6 +16,29 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      headers: {
+        'x-application-name': 'wallapop-marketplace',
+      },
+    },
+    db: {
+      schema: 'public',
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
     },
   }
 );
+
+/**
+ * Resets the Supabase client connection
+ * Useful when connection issues occur
+ */
+export const resetSupabaseConnection = () => {
+  console.log('Resetting Supabase connection...');
+  return supabase.auth.refreshSession();
+};

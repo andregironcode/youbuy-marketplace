@@ -20,14 +20,23 @@ export const SalesPage = () => {
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from("seller_accounts")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from("seller_accounts")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching seller account:", error);
+          throw error;
+        }
         
-      if (error) throw error;
-      return data;
+        return data;
+      } catch (error) {
+        console.error("Error in seller account query:", error);
+        throw error;
+      }
     },
     enabled: !!user,
   });
