@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +65,7 @@ export const AdminUsers = () => {
     try {
       const { data: profilesWithBan, error: profilesError } = await supabase
         .from('profiles')
-        .select('*, banned:banned');
+        .select('*, banned');
       
       if (profilesError) throw profilesError;
       
@@ -196,6 +197,95 @@ export const AdminUsers = () => {
         title: "Action failed",
         description: error instanceof Error ? error.message : "There was an error managing the user role."
       });
+    }
+  };
+
+  // Add missing handler functions
+  const handleBanUser = (user: UserWithProfile) => {
+    setSelectedUser(user);
+    setConfirmAction(user.is_banned ? 'unban-user' : 'ban-user');
+    setIsBanDialogOpen(true);
+  };
+
+  const handleConfirmBanAction = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      // Update the banned status in the profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .update({ banned: confirmAction === 'ban-user' })
+        .eq('id', selectedUser.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: confirmAction === 'ban-user' ? "User banned" : "User unbanned",
+        description: `${selectedUser.profile?.full_name || 'User'} has been ${confirmAction === 'ban-user' ? 'banned' : 'unbanned'}.`
+      });
+      
+      // Update the local state
+      setUsers(users.map(user => 
+        user.id === selectedUser.id 
+          ? {
+              ...user,
+              status: confirmAction === 'ban-user' ? 'banned' : 'active',
+              is_banned: confirmAction === 'ban-user'
+            } 
+          : user
+      ));
+      
+      setIsBanDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating ban status:", error);
+      toast({
+        variant: "destructive",
+        title: "Action failed",
+        description: "There was an error updating the user's ban status."
+      });
+    }
+  };
+
+  const handleViewMessages = async (user: UserWithProfile) => {
+    setSelectedUser(user);
+    setIsLoadingMessages(true);
+    setIsMessageDialogOpen(true);
+    
+    try {
+      // Fetch messages where the user is either the sender or receiver
+      const { data: sentMessages, error: sentError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('sender_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      const { data: receivedMessages, error: receivedError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (sentError) throw sentError;
+      if (receivedError) throw receivedError;
+      
+      // Process messages
+      const allMessages = [
+        ...(sentMessages || []).map(msg => ({ ...msg, type: 'sent' })),
+        ...(receivedMessages || []).map(msg => ({ ...msg, type: 'received' }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setUserMessages(allMessages);
+    } catch (error) {
+      console.error("Error fetching user messages:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load messages",
+        description: "There was an error loading the user's messages."
+      });
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 

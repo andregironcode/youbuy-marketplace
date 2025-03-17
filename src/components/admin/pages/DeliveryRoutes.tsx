@@ -63,6 +63,34 @@ type RouteStop = {
   time: string | null;
 };
 
+// Helper function to safely extract string from JSON
+const getJsonString = (json: any, key: string, defaultValue: string = 'Unknown Location'): string => {
+  if (!json) return defaultValue;
+  if (typeof json === 'string') {
+    try {
+      const parsed = JSON.parse(json);
+      return parsed[key] || defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+  return json[key] || defaultValue;
+};
+
+// Helper function to safely extract number from JSON
+const getJsonNumber = (json: any, key: string, defaultValue: number = 0): number => {
+  if (!json) return defaultValue;
+  if (typeof json === 'string') {
+    try {
+      const parsed = JSON.parse(json);
+      return parsed[key] || defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+  return json[key] || defaultValue;
+};
+
 export const DeliveryRoutes = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [timeSlot, setTimeSlot] = useState<'morning' | 'afternoon'>('morning');
@@ -101,18 +129,41 @@ export const DeliveryRoutes = () => {
             longitude
           ),
           delivery_details,
-          buyer_profiles:buyer_id (
-            full_name
-          ),
-          seller_profiles:seller_id (
-            full_name
-          )
+          buyer_id,
+          seller_id
         `)
         .gte('created_at', `${formattedPreviousDay} ${startTime}`)
         .lte('created_at', `${formattedDate} ${endTime}`)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
+      
+      // Fetch buyer and seller profiles separately to avoid RLS issues
+      const buyerIds = data?.map(order => order.buyer_id) || [];
+      const sellerIds = data?.map(order => order.seller_id) || [];
+      
+      const { data: buyerProfiles, error: buyerError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', buyerIds);
+      
+      if (buyerError) throw buyerError;
+      
+      const { data: sellerProfiles, error: sellerError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', sellerIds);
+      
+      if (sellerError) throw sellerError;
+      
+      // Create lookup maps for buyer and seller names
+      const buyerMap = Object.fromEntries(
+        (buyerProfiles || []).map(profile => [profile.id, profile.full_name || 'Unknown Buyer'])
+      );
+      
+      const sellerMap = Object.fromEntries(
+        (sellerProfiles || []).map(profile => [profile.id, profile.full_name || 'Unknown Seller'])
+      );
       
       // Transform and enrich the order data
       const enrichedOrders = (data || []).map(order => ({
@@ -125,14 +176,14 @@ export const DeliveryRoutes = () => {
           longitude: order.products?.longitude || 0,
         },
         delivery_location: {
-          address: order.delivery_details?.address || 'Unknown Location',
-          latitude: order.delivery_details?.latitude || 0,
-          longitude: order.delivery_details?.longitude || 0,
+          address: getJsonString(order.delivery_details, 'address'),
+          latitude: getJsonNumber(order.delivery_details, 'latitude'),
+          longitude: getJsonNumber(order.delivery_details, 'longitude'),
         },
-        buyer_name: order.buyer_profiles?.full_name || 'Unknown Buyer',
-        seller_name: order.seller_profiles?.full_name || 'Unknown Seller',
+        buyer_name: buyerMap[order.buyer_id] || 'Unknown Buyer',
+        seller_name: sellerMap[order.seller_id] || 'Unknown Seller',
         status: order.status,
-        preferred_time: order.delivery_details?.preferred_time || null,
+        preferred_time: getJsonString(order.delivery_details, 'preferred_time', null),
       }));
       
       setOrders(enrichedOrders);

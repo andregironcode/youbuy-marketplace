@@ -31,6 +31,21 @@ export const supabase = createClient<Database>(
         eventsPerSecond: 10,
       },
     },
+    // Adding network error handling with automatic retries
+    fetch: (url, options) => {
+      const fetchWithRetry = async (attempts = 3, delay = 500) => {
+        try {
+          return await fetch(url, options);
+        } catch (error) {
+          if (attempts <= 1) throw error;
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(attempts - 1, delay * 1.5);
+        }
+      };
+      
+      return fetchWithRetry();
+    }
   }
 );
 
@@ -38,7 +53,32 @@ export const supabase = createClient<Database>(
  * Resets the Supabase client connection
  * Useful when connection issues occur
  */
-export const resetSupabaseConnection = () => {
+export const resetSupabaseConnection = async () => {
   console.log('Resetting Supabase connection...');
-  return supabase.auth.refreshSession();
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error('Error refreshing Supabase session:', error);
+      throw error;
+    }
+    console.log('Supabase connection reset successful');
+    return data;
+  } catch (error) {
+    console.error('Failed to reset Supabase connection:', error);
+    throw error;
+  }
+};
+
+/**
+ * Checks if the current user has admin privileges
+ */
+export const isUserAdmin = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('is_admin');
+    if (error) throw error;
+    return !!data;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
 };
