@@ -9,6 +9,15 @@ export type SellStep =
   | "preview" 
   | "promote";
 
+export interface LocationDetails {
+  type: "house" | "apartment";
+  houseNumber?: string;
+  buildingName?: string;
+  apartmentNumber?: string;
+  floor?: string;
+  additionalInfo?: string;
+}
+
 export interface SellFormData {
   id?: string;
   title: string;
@@ -49,4 +58,5 @@ export interface SellFormData {
     height?: string;
   };
   showBulkListing?: boolean;
+  locationDetails?: LocationDetails;
 }

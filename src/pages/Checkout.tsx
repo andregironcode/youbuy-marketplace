@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +10,7 @@ import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/CheckoutForm";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle } from "lucide-react";
+import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -29,6 +28,7 @@ const CheckoutPage = () => {
   const [deliveryDetails, setDeliveryDetails] = useState<CheckoutFormValues>({
     fullName: "",
     address: "",
+    locationType: "house",
     city: "",
     postalCode: "",
     phone: "",
@@ -307,8 +307,44 @@ const CheckoutPage = () => {
                   <div className="space-y-4">
                     <div className="p-4 bg-gray-50 rounded-md">
                       <h3 className="font-medium mb-2">Delivery Details</h3>
+                      <div className="flex items-center gap-2 mt-2 mb-3">
+                        {deliveryDetails.locationType === 'house' ? (
+                          <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                            <Home className="h-3 w-3 mr-1" />
+                            House
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                            <Building className="h-3 w-3 mr-1" />
+                            Apartment
+                          </div>
+                        )}
+                      </div>
+                      
                       <p><strong>Name:</strong> {deliveryDetails.fullName}</p>
-                      <p><strong>Address:</strong> {deliveryDetails.address}</p>
+                      
+                      {deliveryDetails.locationType === 'house' ? (
+                        <div>
+                          <p><strong>Address:</strong> {deliveryDetails.address}</p>
+                          {deliveryDetails.houseNumber && (
+                            <p><strong>House Number:</strong> {deliveryDetails.houseNumber}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p><strong>Address:</strong> {deliveryDetails.address}</p>
+                          {deliveryDetails.buildingName && (
+                            <p><strong>Building:</strong> {deliveryDetails.buildingName}</p>
+                          )}
+                          {deliveryDetails.floor && (
+                            <p><strong>Floor:</strong> {deliveryDetails.floor}</p>
+                          )}
+                          {deliveryDetails.apartmentNumber && (
+                            <p><strong>Apartment:</strong> #{deliveryDetails.apartmentNumber}</p>
+                          )}
+                        </div>
+                      )}
+                      
                       <p><strong>City:</strong> {deliveryDetails.city}</p>
                       <p><strong>Postal Code:</strong> {deliveryDetails.postalCode}</p>
                       <p><strong>Phone:</strong> {deliveryDetails.phone}</p>
@@ -317,6 +353,9 @@ const CheckoutPage = () => {
                         deliveryDetails.deliveryTime === 'afternoon' ? 'Afternoon (12pm - 5pm)' : 
                         'Evening (5pm - 9pm)'
                       }</p>
+                      {deliveryDetails.additionalInfo && (
+                        <p><strong>Additional Info:</strong> {deliveryDetails.additionalInfo}</p>
+                      )}
                       {deliveryDetails.instructions && (
                         <p><strong>Instructions:</strong> {deliveryDetails.instructions}</p>
                       )}
@@ -348,8 +387,25 @@ const CheckoutPage = () => {
                     </p>
                     <div className="p-4 bg-gray-50 rounded-md text-left">
                       <h3 className="font-medium mb-2">Delivery Information</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        {deliveryDetails.locationType === 'house' ? (
+                          <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                            <Home className="h-3 w-3 mr-1" />
+                            House
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                            <Building className="h-3 w-3 mr-1" />
+                            Apartment
+                          </div>
+                        )}
+                      </div>
                       <p><strong>Name:</strong> {deliveryDetails.fullName}</p>
-                      <p><strong>Address:</strong> {deliveryDetails.address}</p>
+                      {deliveryDetails.locationType === 'house' ? (
+                        <p><strong>Address:</strong> {deliveryDetails.address} {deliveryDetails.houseNumber && `#${deliveryDetails.houseNumber}`}, {deliveryDetails.city}</p>
+                      ) : (
+                        <p><strong>Address:</strong> {deliveryDetails.buildingName && `${deliveryDetails.buildingName}, `}{deliveryDetails.address}{deliveryDetails.apartmentNumber && `, Apt #${deliveryDetails.apartmentNumber}`}{deliveryDetails.floor && `, Floor ${deliveryDetails.floor}`}, {deliveryDetails.city}</p>
+                      )}
                       <p><strong>Delivery Time:</strong> {
                         deliveryDetails.deliveryTime === 'morning' ? 'Morning (9am - 12pm)' :
                         deliveryDetails.deliveryTime === 'afternoon' ? 'Afternoon (12pm - 5pm)' : 

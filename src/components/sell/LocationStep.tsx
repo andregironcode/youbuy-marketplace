@@ -11,12 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, MapPin, AlertCircle, Info } from "lucide-react";
+import { ArrowRight, MapPin, AlertCircle, Info, Home, Building } from "lucide-react";
 import { SellStep } from "@/types/sellForm";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "@/utils/locationUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface LocationStepProps {
   location: string;
@@ -24,6 +25,17 @@ interface LocationStepProps {
   coordinates: { latitude?: number; longitude?: number } | null;
   setCoordinates: (coords: { latitude: number; longitude: number } | null) => void;
   setCurrentStep: (step: SellStep) => void;
+}
+
+type LocationType = "house" | "apartment";
+
+interface LocationDetails {
+  type: LocationType;
+  houseNumber?: string;
+  buildingName?: string;
+  apartmentNumber?: string;
+  floor?: string;
+  additionalInfo?: string;
 }
 
 export const LocationStep: React.FC<LocationStepProps> = ({
@@ -38,6 +50,11 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   const [locationError, setLocationError] = useState<string | null>(null);
   const [mapVisible, setMapVisible] = useState(true);
   const { toast } = useToast();
+  
+  // New state for location details
+  const [locationDetails, setLocationDetails] = useState<LocationDetails>({
+    type: "house",
+  });
 
   const isLocationValid = location.length >= 3 && coordinates !== null && 
     coordinates.latitude !== undefined && coordinates.longitude !== undefined;
@@ -162,6 +179,62 @@ export const LocationStep: React.FC<LocationStepProps> = ({
     });
   };
 
+  // Handle location type change
+  const handleLocationTypeChange = (value: string) => {
+    setLocationDetails({
+      ...locationDetails,
+      type: value as LocationType
+    });
+  };
+
+  // Handle location details change
+  const handleLocationDetailsChange = (field: keyof LocationDetails, value: string) => {
+    setLocationDetails({
+      ...locationDetails,
+      [field]: value
+    });
+  };
+
+  // Format full address with location details
+  const formatFullAddress = () => {
+    let formattedDetails = "";
+    
+    if (locationDetails.type === "house") {
+      if (locationDetails.houseNumber) {
+        formattedDetails += `House #${locationDetails.houseNumber}`;
+      }
+      if (locationDetails.additionalInfo) {
+        formattedDetails += formattedDetails ? `, ${locationDetails.additionalInfo}` : locationDetails.additionalInfo;
+      }
+    } else {
+      if (locationDetails.buildingName) {
+        formattedDetails += locationDetails.buildingName;
+      }
+      if (locationDetails.floor) {
+        formattedDetails += formattedDetails ? `, Floor ${locationDetails.floor}` : `Floor ${locationDetails.floor}`;
+      }
+      if (locationDetails.apartmentNumber) {
+        formattedDetails += formattedDetails ? `, Apt #${locationDetails.apartmentNumber}` : `Apt #${locationDetails.apartmentNumber}`;
+      }
+      if (locationDetails.additionalInfo) {
+        formattedDetails += formattedDetails ? `, ${locationDetails.additionalInfo}` : locationDetails.additionalInfo;
+      }
+    }
+    
+    if (formattedDetails && location) {
+      return `${formattedDetails}, ${location}`;
+    }
+    
+    return location;
+  };
+
+  // Update location with details when continuing
+  const handleContinue = () => {
+    const fullAddress = formatFullAddress();
+    setLocation(fullAddress);
+    setCurrentStep("preview");
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -215,6 +288,97 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             )}
           </div>
           
+          {isLocationValid && (
+            <div className="space-y-4 border p-4 rounded-md">
+              <h3 className="font-medium">Location Details</h3>
+              
+              <RadioGroup 
+                value={locationDetails.type} 
+                onValueChange={handleLocationTypeChange}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="house" id="house" />
+                  <Label htmlFor="house" className="flex items-center">
+                    <Home className="mr-2 h-4 w-4" />
+                    House
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="apartment" id="apartment" />
+                  <Label htmlFor="apartment" className="flex items-center">
+                    <Building className="mr-2 h-4 w-4" />
+                    Apartment
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              {locationDetails.type === "house" ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="houseNumber">House Number</Label>
+                    <Input
+                      id="houseNumber"
+                      placeholder="e.g., 123"
+                      value={locationDetails.houseNumber || ""}
+                      onChange={(e) => handleLocationDetailsChange("houseNumber", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
+                    <Input
+                      id="additionalInfo"
+                      placeholder="e.g., Gate code, landmark"
+                      value={locationDetails.additionalInfo || ""}
+                      onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="buildingName">Building Name</Label>
+                    <Input
+                      id="buildingName"
+                      placeholder="e.g., Sunset Towers"
+                      value={locationDetails.buildingName || ""}
+                      onChange={(e) => handleLocationDetailsChange("buildingName", e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="floor">Floor</Label>
+                      <Input
+                        id="floor"
+                        placeholder="e.g., 5"
+                        value={locationDetails.floor || ""}
+                        onChange={(e) => handleLocationDetailsChange("floor", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="apartmentNumber">Apartment Number</Label>
+                      <Input
+                        id="apartmentNumber"
+                        placeholder="e.g., 502"
+                        value={locationDetails.apartmentNumber || ""}
+                        onChange={(e) => handleLocationDetailsChange("apartmentNumber", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
+                    <Input
+                      id="additionalInfo"
+                      placeholder="e.g., Buzzer code, landmark"
+                      value={locationDetails.additionalInfo || ""}
+                      onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="rounded-md overflow-hidden border">
             {mapVisible && (
               <LocationMap 
@@ -246,7 +410,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
         </Button>
         <Button 
           disabled={!isLocationValid} 
-          onClick={() => setCurrentStep("preview")}
+          onClick={handleContinue}
           className="bg-youbuy hover:bg-youbuy-dark"
         >
           Continue

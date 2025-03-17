@@ -21,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import { Home, Building } from "lucide-react";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -29,6 +34,14 @@ const formSchema = z.object({
   address: z.string().min(5, {
     message: "Address must be at least 5 characters.",
   }),
+  locationType: z.enum(["house", "apartment"], {
+    required_error: "Please select a location type.",
+  }),
+  houseNumber: z.string().optional(),
+  buildingName: z.string().optional(),
+  apartmentNumber: z.string().optional(),
+  floor: z.string().optional(),
+  additionalInfo: z.string().optional(),
   city: z.string().min(2, {
     message: "City is required.",
   }),
@@ -42,6 +55,19 @@ const formSchema = z.object({
     required_error: "Please select a delivery time preference.",
   }),
   instructions: z.string().optional(),
+}).refine(data => {
+  // If house type is selected, house number should be provided
+  if (data.locationType === "house" && !data.houseNumber) {
+    return false;
+  }
+  // If apartment type is selected, building name and apartment number should be provided
+  if (data.locationType === "apartment" && (!data.buildingName || !data.apartmentNumber)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please fill in the required fields for your location type",
+  path: ["locationType"],
 });
 
 export type CheckoutFormValues = z.infer<typeof formSchema>;
@@ -57,6 +83,12 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
     defaultValues: {
       fullName: initialValues?.fullName || "",
       address: initialValues?.address || "",
+      locationType: initialValues?.locationType || "house",
+      houseNumber: initialValues?.houseNumber || "",
+      buildingName: initialValues?.buildingName || "",
+      apartmentNumber: initialValues?.apartmentNumber || "",
+      floor: initialValues?.floor || "",
+      additionalInfo: initialValues?.additionalInfo || "",
       city: initialValues?.city || "",
       postalCode: initialValues?.postalCode || "",
       phone: initialValues?.phone || "",
@@ -64,6 +96,8 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
       instructions: initialValues?.instructions || "",
     },
   });
+
+  const watchLocationType = form.watch("locationType");
 
   return (
     <Form {...form}>
@@ -85,17 +119,156 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
 
           <FormField
             control={form.control}
-            name="address"
+            name="locationType"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Delivery Address</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel>Location Type</FormLabel>
                 <FormControl>
-                  <Input placeholder="Street address" {...field} />
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex space-x-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="house" id="checkout-house" />
+                      <FormLabel htmlFor="checkout-house" className="flex items-center">
+                        <Home className="mr-2 h-4 w-4" />
+                        House
+                      </FormLabel>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="apartment" id="checkout-apartment" />
+                      <FormLabel htmlFor="checkout-apartment" className="flex items-center">
+                        <Building className="mr-2 h-4 w-4" />
+                        Apartment
+                      </FormLabel>
+                    </div>
+                  </RadioGroup>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {watchLocationType === "house" ? (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Street name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="houseNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>House Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 123" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="additionalInfo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Information (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Gate code, landmark" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Street name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="buildingName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Building Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Sunset Towers" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="floor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Floor</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 5" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="apartmentNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Apartment Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 502" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="additionalInfo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Information (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Buzzer code, landmark" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
