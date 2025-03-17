@@ -138,10 +138,11 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       // Create map instance
       const map = new mapboxgl.Map({
         container: mapRef.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/mapbox/streets-v11', // Changed to streets-v11 which is more reliable
         center: [center.longitude, center.latitude],
         zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
-        interactive: interactive
+        interactive: interactive,
+        attributionControl: true
       });
       
       // Store map instance
@@ -176,31 +177,33 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         if (approximate) {
           // For approximate location, we'll add this when the map is loaded
           map.on('load', () => {
-            // Create a circular area to represent approximate location
-            map.addSource('approximate-location', {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: [longitude, latitude]
-                },
-                properties: {}
-              }
-            });
-            
-            map.addLayer({
-              id: 'approximate-location-circle',
-              type: 'circle',
-              source: 'approximate-location',
-              paint: {
-                'circle-radius': 70,
-                'circle-color': '#ff385c',
-                'circle-opacity': 0.2,
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ff385c'
-              }
-            });
+            if (!map.getSource('approximate-location')) {
+              // Create a circular area to represent approximate location
+              map.addSource('approximate-location', {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: [longitude, latitude]
+                  },
+                  properties: {}
+                }
+              });
+              
+              map.addLayer({
+                id: 'approximate-location-circle',
+                type: 'circle',
+                source: 'approximate-location',
+                paint: {
+                  'circle-radius': 70,
+                  'circle-color': '#ff385c',
+                  'circle-opacity': 0.2,
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#ff385c'
+                }
+              });
+            }
           });
         } else {
           // For exact location, use a marker
