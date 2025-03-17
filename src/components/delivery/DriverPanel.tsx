@@ -170,13 +170,6 @@ export const DriverPanel = () => {
     });
   };
 
-  // Helper function to determine badge variant
-  const getBadgeVariant = (status: string) => {
-    if (status === 'delivered') return "success";
-    if (status === 'out_for_delivery') return "default";
-    return "outline";
-  };
-
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       <Card className="border-primary/10">
@@ -293,7 +286,7 @@ export const DriverPanel = () => {
                             <div>
                               <p className="font-medium">Status</p>
                               <Badge 
-                                variant={getBadgeVariant(stop.currentStatus)}
+                                variant={stop.currentStatus === 'delivered' ? 'success' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
                                 className="mt-1"
                               >
                                 {stop.currentStatus}
@@ -414,7 +407,7 @@ export const DriverPanel = () => {
                             <div>
                               <p className="font-medium">Status</p>
                               <Badge 
-                                variant={getBadgeVariant(stop.currentStatus)}
+                                variant={stop.currentStatus === 'delivered' ? 'success' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
                                 className="mt-1"
                               >
                                 {stop.currentStatus}

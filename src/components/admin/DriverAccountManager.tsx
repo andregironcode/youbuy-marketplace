@@ -63,8 +63,7 @@ export const DriverAccountManager = () => {
       
       const token = sessionData.session.access_token;
       
-      // Fix: Use the appropriate URL to access Supabase functions
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-driver-account`, {
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-driver-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
