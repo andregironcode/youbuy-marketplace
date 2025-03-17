@@ -1,125 +1,124 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  ShoppingBag, 
-  Tag, 
-  Package, 
-  MessageCircle, 
-  Heart, 
-  BarChart2, 
-  Wallet, 
-  Settings, 
+import {
+  User,
+  Package,
+  ShoppingBag,
+  CreditCard,
+  Settings,
   HelpCircle,
-  LogOut,
   Crown,
-  ShieldAlert
+  Store,
+  MessageSquare
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-type SidebarItem = {
-  icon: React.ElementType;
-  label: string;
-  path: string;
-};
-
-const sidebarItems: SidebarItem[] = [
-  { icon: ShoppingBag, label: "Purchases", path: "/profile/purchases" },
-  { icon: Tag, label: "Sales", path: "/profile/sales" },
-  { icon: Package, label: "Products", path: "/profile/products" },
-  { icon: MessageCircle, label: "Messages", path: "/messages" },
-  { icon: Heart, label: "Favorites", path: "/favorites" },
-  { icon: BarChart2, label: "Stats", path: "/profile/stats" },
-  { icon: Crown, label: "Premium", path: "/profile/premium" },
-  { icon: Wallet, label: "Wallet", path: "/profile/wallet" },
-  { icon: Settings, label: "Settings", path: "/profile/settings" },
-  { icon: HelpCircle, label: "Help", path: "/profile/help" },
-];
 
 export const ProfileSidebar = () => {
-  const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
+  const { user } = useAuth();
   
-  if (!user) return null;
-  
-  const getInitials = () => {
-    if (user.user_metadata?.full_name) {
-      return user.user_metadata.full_name.charAt(0).toUpperCase();
-    }
-    return user.email?.charAt(0).toUpperCase() || "U";
-  };
-  
-  const isPathActive = (itemPath: string) => {
-    return location.pathname.startsWith(itemPath);
+  const isActive = (path: string) => {
+    return location.pathname.includes(path);
   };
 
+  // Base items that are always shown
+  const items = [
+    {
+      icon: User,
+      label: "Account",
+      href: "/profile/settings",
+      active: isActive("/settings"),
+    },
+    {
+      icon: Package,
+      label: "My Products",
+      href: "/profile/products",
+      active: isActive("/products"),
+    },
+    {
+      icon: ShoppingBag,
+      label: "Purchases",
+      href: "/profile/purchases",
+      active: isActive("/purchases"),
+    },
+    {
+      icon: Store,
+      label: "Sales",
+      href: "/profile/sales",
+      active: isActive("/sales"),
+    },
+    {
+      icon: CreditCard,
+      label: "Wallet",
+      href: "/profile/wallet",
+      active: isActive("/wallet"),
+    },
+    {
+      icon: MessageSquare,
+      label: "Support",
+      href: "/profile/support",
+      active: isActive("/support"),
+    },
+    {
+      icon: HelpCircle,
+      label: "Help Center",
+      href: "/profile/help",
+      active: isActive("/help"),
+    },
+    {
+      icon: Crown,
+      label: "Premium",
+      href: "/profile/premium",
+      active: isActive("/premium"),
+    },
+  ];
+  
   return (
-    <aside className="w-60 bg-sidebar border-r h-screen flex flex-col overflow-hidden">
-      <div className="p-4 border-b">
+    <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user.user_metadata?.avatar_url} />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          </Avatar>
+          {user?.profile?.avatar_url ? (
+            <img
+              src={user.profile.avatar_url}
+              alt="Avatar"
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-500" />
+            </div>
+          )}
           <div className="flex flex-col">
-            <span className="font-semibold truncate max-w-[160px]">
-              {user.user_metadata?.full_name || user.email?.split('@')[0]}
+            <span className="font-bold text-md">
+              {user?.profile?.full_name || "My Account"}
             </span>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <span>Since {new Date(user.created_at).getFullYear()}</span>
+            <div className="flex items-center text-xs text-gray-400">
+              <span>{user?.email}</span>
             </div>
           </div>
         </div>
       </div>
-      
-      <nav className="flex-1 overflow-y-auto">
-        <ul className="space-y-0">
-          {sidebarItems.map((item) => {
-            const isActive = isPathActive(item.path);
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-youbuy text-white font-bold shadow-md" 
-                      : "text-sidebar-foreground hover:bg-youbuy/20 hover:text-youbuy hover:font-semibold"
-                  )}
-                >
-                  <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-          
-          {isAdmin && (
-            <li>
+
+      <nav className="flex-1 overflow-y-auto py-4">
+        <ul className="space-y-1 px-2">
+          {items.map((item) => (
+            <li key={item.href}>
               <Link
-                to="/admin/dashboard"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 hover:font-semibold mt-2"
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
+                  item.active
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                )}
               >
-                <ShieldAlert className="h-5 w-5" />
-                <span>Admin Panel</span>
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
               </Link>
             </li>
-          )}
+          ))}
         </ul>
       </nav>
-      
-      <div className="p-3 border-t mt-auto">
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start hover:bg-red-100 hover:text-red-600 hover:font-semibold text-red-500 transition-all"
-          onClick={signOut}
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          <span>Sign out</span>
-        </Button>
-      </div>
     </aside>
   );
 };

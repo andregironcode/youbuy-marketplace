@@ -9,7 +9,8 @@ import {
   LogOut,
   Flag, 
   Box,
-  Home
+  Home,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +28,7 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: ShoppingBag, label: "Products", path: "/admin/products" },
   { icon: Box, label: "Orders", path: "/admin/orders" },
   { icon: Flag, label: "Reports", path: "/admin/reports" },
+  { icon: HelpCircle, label: "Support", path: "/admin/support" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
 

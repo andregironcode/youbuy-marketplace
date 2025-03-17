@@ -7,6 +7,7 @@ import { AdminProducts } from "@/components/admin/pages/AdminProducts";
 import { AdminOrders } from "@/components/admin/pages/AdminOrders";
 import { AdminReports } from "@/components/admin/pages/AdminReports";
 import { AdminSettings } from "@/components/admin/pages/AdminSettings";
+import { AdminSupport } from "@/components/admin/pages/AdminSupport";
 
 const AdminPage = () => {
   return (
@@ -19,6 +20,7 @@ const AdminPage = () => {
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/reports" element={<AdminReports />} />
         <Route path="/settings" element={<AdminSettings />} />
+        <Route path="/support" element={<AdminSupport />} />
       </Routes>
     </AdminLayout>
   );
