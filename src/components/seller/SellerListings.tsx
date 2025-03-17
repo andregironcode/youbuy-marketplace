@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductType, convertToProductType } from "@/types/product";
@@ -8,6 +7,7 @@ import { ListingsLoader } from "./ListingsLoader";
 import { EmptyListings } from "./EmptyListings";
 import { ListingItem } from "./ListingItem";
 import { ListingsTabs } from "./ListingsTabs";
+import { useAuth } from "@/context/AuthContext";
 
 interface SellerListingsProps {
   userId?: string;
@@ -34,11 +34,11 @@ export const SellerListings = ({
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Use either internal or external tab state
   const currentActiveTab = onTabChange ? activeTab : internalActiveTab;
+  const isOwnListings = user?.id === userId;
 
-  // Fetch products when userId changes or tab changes
   useEffect(() => {
     const fetchProducts = async () => {
       if (!userId) return;
@@ -133,7 +133,11 @@ export const SellerListings = ({
           ) : (
             <div className="space-y-3">
               {displayProducts.map((product) => (
-                <ListingItem key={product.id} product={product} />
+                <ListingItem 
+                  key={product.id} 
+                  product={product} 
+                  showBuyButtons={!isOwnListings}
+                />
               ))}
             </div>
           )}
