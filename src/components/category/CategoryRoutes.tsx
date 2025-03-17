@@ -11,5 +11,5 @@ export const CategoryRoutes = () => {
   );
 };
 
-// Alternatively, you can simply add this route to the App.tsx route structure:
+// Important: Add this route to your App.tsx route structure:
 // <Route path="/categories" element={<CategoriesPage />} />

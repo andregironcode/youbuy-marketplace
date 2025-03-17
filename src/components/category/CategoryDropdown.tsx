@@ -28,7 +28,7 @@ const ListItem = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <li>
+    <li className="list-none">
       <NavigationMenuLink asChild>
         <Link
           to={href}
@@ -72,7 +72,7 @@ export const CategoryDropdown = () => {
             Categories
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] list-none">
               {categories.slice(0, 6).map((category) => (
                 <ListItem
                   key={category.id}
@@ -82,7 +82,7 @@ export const CategoryDropdown = () => {
                   Browse {category.name.toLowerCase()}
                 </ListItem>
               ))}
-              <div className="col-span-full mt-4 border-t pt-4">
+              <li className="col-span-full mt-4 border-t pt-4 list-none">
                 <Link 
                   to="/categories" 
                   className="flex items-center text-sm font-medium text-youbuy hover:text-youbuy-dark transition-colors"
@@ -90,8 +90,8 @@ export const CategoryDropdown = () => {
                   View all categories
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
-              </div>
-            </div>
+              </li>
+            </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
       </NavigationMenuList>
