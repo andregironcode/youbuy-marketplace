@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { TrackingUpdate } from "@/components/sales/TrackingUpdate";
+import { Database } from "@/integrations/supabase/types";
+import { Json } from "@/integrations/supabase/types";
 
 // Define more specific interfaces
 interface Profile {
@@ -55,7 +57,7 @@ interface Product {
   image_urls?: string[] | null;
 }
 
-// Raw order from database
+// Raw order from database - without joined relationships
 interface OrderRaw {
   id: string;
   buyer_id: string;
@@ -66,10 +68,18 @@ interface OrderRaw {
   created_at: string;
   updated_at: string;
   current_stage: string | null;
-  // These fields will be populated separately
-  buyer: Profile | null;
-  seller: Profile | null;
-  product: Product | null;
+  delivery_details: Json;
+  // Additional properties from the database schema
+  payment_status?: string | null;
+  stripe_payment_intent_id?: string | null;
+  stripe_transfer_id?: string | null;
+  estimated_delivery?: string | null;
+  last_status_change?: string | null;
+  last_updated_by?: string | null;
+  delivery_confirmed_at?: string | null;
+  dispute_deadline?: string | null;
+  dispute_reason?: string | null;
+  dispute_status?: string | null;
 }
 
 // Processed order with derived properties
@@ -193,7 +203,10 @@ export const AdminOrders = () => {
       
       // Process the raw orders with additional data
       const processedOrders: ProcessedOrder[] = await Promise.all(
-        ordersData.map(async (order: OrderRaw) => {
+        ordersData.map(async (orderData) => {
+          // Explicitly cast to ensure TypeScript knows this matches our OrderRaw interface
+          const order = orderData as OrderRaw;
+          
           // Fetch buyer profile
           const { data: buyerData } = await supabase
             .from('profiles')
