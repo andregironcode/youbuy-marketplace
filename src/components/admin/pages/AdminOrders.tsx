@@ -134,37 +134,43 @@ export const AdminOrders = () => {
 
       // Map the data to include names
       const ordersWithNames = data.map((order: any) => {
-        // Handle buyer and seller which could be arrays or objects
+        // Handle buyer data - could be array or object
         let buyerName = 'Unknown Buyer';
-        let sellerName = 'Unknown Seller';
         
-        // Check if buyer exists and handle different possible structures
         if (order.buyer) {
-          if (Array.isArray(order.buyer) && order.buyer.length > 0) {
-            buyerName = order.buyer[0].full_name || 'Unknown Buyer';
-          } else if (typeof order.buyer === 'object') {
+          if (Array.isArray(order.buyer)) {
+            // If it's an array, take the first item if it exists
+            buyerName = order.buyer.length > 0 ? order.buyer[0]?.full_name || 'Unknown Buyer' : 'Unknown Buyer';
+          } else {
+            // If it's an object, access directly
             buyerName = order.buyer.full_name || 'Unknown Buyer';
           }
         }
         
-        // Check if seller exists and handle different possible structures
+        // Handle seller data - could be array or object
+        let sellerName = 'Unknown Seller';
+        
         if (order.seller) {
-          if (Array.isArray(order.seller) && order.seller.length > 0) {
-            sellerName = order.seller[0].full_name || 'Unknown Seller';
-          } else if (typeof order.seller === 'object') {
+          if (Array.isArray(order.seller)) {
+            // If it's an array, take the first item if it exists
+            sellerName = order.seller.length > 0 ? order.seller[0]?.full_name || 'Unknown Seller' : 'Unknown Seller';
+          } else {
+            // If it's an object, access directly
             sellerName = order.seller.full_name || 'Unknown Seller';
           }
         }
         
-        // Handle product which could be an array or object
+        // Handle product data - could be array or object
         let productTitle = 'Unknown Product';
         let productImage = null;
         
         if (order.product) {
-          if (Array.isArray(order.product) && order.product.length > 0) {
-            productTitle = order.product[0].title || 'Unknown Product';
-            productImage = order.product[0].image_urls?.[0] || null;
-          } else if (typeof order.product === 'object') {
+          if (Array.isArray(order.product)) {
+            // If it's an array, take the first item if it exists
+            productTitle = order.product.length > 0 ? order.product[0]?.title || 'Unknown Product' : 'Unknown Product';
+            productImage = order.product.length > 0 ? order.product[0]?.image_urls?.[0] || null : null;
+          } else {
+            // If it's an object, access directly
             productTitle = order.product.title || 'Unknown Product';
             productImage = order.product.image_urls?.[0] || null;
           }
@@ -237,28 +243,28 @@ export const AdminOrders = () => {
         
         // Handle buyer which could be an array or object
         if (fallbackData.buyer) {
-          if (Array.isArray(fallbackData.buyer) && fallbackData.buyer.length > 0) {
-            buyerName = fallbackData.buyer[0].full_name || 'Unknown';
-          } else if (typeof fallbackData.buyer === 'object') {
+          if (Array.isArray(fallbackData.buyer)) {
+            buyerName = fallbackData.buyer.length > 0 ? fallbackData.buyer[0]?.full_name || 'Unknown' : 'Unknown';
+          } else {
             buyerName = fallbackData.buyer.full_name || 'Unknown';
           }
         }
         
         // Handle seller which could be an array or object
         if (fallbackData.seller) {
-          if (Array.isArray(fallbackData.seller) && fallbackData.seller.length > 0) {
-            sellerName = fallbackData.seller[0].full_name || 'Unknown';
-          } else if (typeof fallbackData.seller === 'object') {
+          if (Array.isArray(fallbackData.seller)) {
+            sellerName = fallbackData.seller.length > 0 ? fallbackData.seller[0]?.full_name || 'Unknown' : 'Unknown';
+          } else {
             sellerName = fallbackData.seller.full_name || 'Unknown';
           }
         }
         
         // Handle product which could be an array or object
         if (fallbackData.product) {
-          if (Array.isArray(fallbackData.product) && fallbackData.product.length > 0) {
-            productTitle = fallbackData.product[0].title || 'Unknown Product';
-            productImages = fallbackData.product[0].image_urls || [];
-          } else if (typeof fallbackData.product === 'object') {
+          if (Array.isArray(fallbackData.product)) {
+            productTitle = fallbackData.product.length > 0 ? fallbackData.product[0]?.title || 'Unknown Product' : 'Unknown Product';
+            productImages = fallbackData.product.length > 0 ? fallbackData.product[0]?.image_urls || [] : [];
+          } else {
             productTitle = fallbackData.product.title || 'Unknown Product';
             productImages = fallbackData.product.image_urls || [];
           }
