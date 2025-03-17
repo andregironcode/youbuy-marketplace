@@ -192,10 +192,10 @@ export default function ProductDetail() {
           <Link to="/" className="hover:underline">Home</Link>
           <span>/</span>
           <Link 
-            to={`/category/${product.categoryId}`} 
+            to={`/category/${product.category}`} 
             className="hover:underline"
           >
-            {getCategoryById(product.categoryId)?.name || "Category"}
+            {getCategoryById(product.category)?.name || "Category"}
           </Link>
           <span>/</span>
           <span className="text-foreground font-medium truncate max-w-[200px]">
@@ -296,13 +296,13 @@ export default function ProductDetail() {
                 </Link>
               </div>
               
-              {product.views && (
+              {product.viewCount && (
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
                     <span>Views</span>
                   </div>
-                  <span className="text-right">{product.views}</span>
+                  <span className="text-right">{product.viewCount}</span>
                 </div>
               )}
             </CardContent>
@@ -336,9 +336,9 @@ export default function ProductDetail() {
                         </Badge>
                       )}
                     </div>
-                    {product.seller.memberSince && (
+                    {product.seller.joinedDate && (
                       <p className="text-xs text-muted-foreground">
-                        Member since {product.seller.memberSince}
+                        Member since {product.seller.joinedDate}
                       </p>
                     )}
                   </div>
@@ -363,7 +363,7 @@ export default function ProductDetail() {
                         {product.seller.rating.toFixed(1)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        ({product.seller.totalRatings || 0} reviews)
+                        ({product.seller.totalReviews || 0} reviews)
                       </span>
                     </div>
                     <Progress 
