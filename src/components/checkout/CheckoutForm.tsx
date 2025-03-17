@@ -327,9 +327,9 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="morning">Morning (9am - 12pm)</SelectItem>
-                    <SelectItem value="afternoon">Afternoon (12pm - 5pm)</SelectItem>
-                    <SelectItem value="evening">Evening (5pm - 9pm)</SelectItem>
+                    <SelectItem value="morning">Morning (9am - 12pm) - Next Day </SelectItem>
+                    <SelectItem value="afternoon">Afternoon (12pm - 5pm) - Next Day </SelectItem>
+                    <SelectItem value="evening">Evening (5pm - 9pm) - Today </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
