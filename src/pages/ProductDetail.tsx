@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/context/AuthContext";
 import { MessageButton } from "@/components/product/MessageButton";
+import { LocationMap } from "@/components/map/LocationMap";
 
 const placeholderImages = [
   "https://via.placeholder.com/400x400?text=Placeholder+Image",
@@ -228,6 +230,7 @@ export default function ProductDetail() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left Column - Product Images and Details */}
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
             <img
@@ -330,7 +333,34 @@ export default function ProductDetail() {
               )}
             </CardContent>
           </Card>
+        </div>
+        
+        {/* Right Column - Product Description and Seller Info */}
+        <div className="space-y-6">
+          {/* Product Description */}
+          <ProductDetails product={product} />
           
+          {/* Map showing product location */}
+          {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Location</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LocationMap 
+                  latitude={product.coordinates.latitude} 
+                  longitude={product.coordinates.longitude} 
+                  zoom={14}
+                  height="200px"
+                  interactive={false}
+                  approximate={true}
+                />
+                <p className="text-sm text-muted-foreground mt-2">{product.location}</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Seller Information */}
           {product.seller && (
             <Card>
               <CardHeader className="pb-2">
@@ -361,7 +391,7 @@ export default function ProductDetail() {
                     </div>
                     {product.seller.joinedDate && (
                       <p className="text-xs text-muted-foreground">
-                        Member since {product.seller.joinedDate}
+                        Member since {new Date(product.seller.joinedDate).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -429,10 +459,9 @@ export default function ProductDetail() {
             </Card>
           )}
         </div>
-        
-        <ProductDetails product={product} />
       </div>
       
+      {/* Related Products */}
       {relatedProducts.length > 0 && (
         <div className="mt-12">
           <h2 className="text-xl font-semibold mb-4">Related Products</h2>
@@ -449,4 +478,3 @@ export default function ProductDetail() {
     </div>
   );
 }
-
