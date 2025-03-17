@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductType } from "@/types/product";
@@ -24,12 +23,10 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Function to handle variation selection
   const handleVariationSelect = (variationId: string, optionId: string) => {
     const newSelections = { ...selectedVariations, [variationId]: optionId };
     setSelectedVariations(newSelections);
     
-    // Recalculate price based on selected variations
     if (product.variations) {
       let newPrice = product.price;
       
@@ -47,7 +44,6 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
     }
   };
   
-  // Check if all required variations are selected
   const areAllRequiredVariationsSelected = () => {
     if (!product.variations) return true;
     
@@ -56,7 +52,6 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       .every(v => selectedVariations[v.id]);
   };
   
-  // Handle Buy Now button click
   const handleBuyNow = () => {
     if (!user) {
       toast({
@@ -68,13 +63,11 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       return;
     }
     
-    // Check if the seller has a Stripe account set up
     if (product.id) {
       navigate(`/checkout/${product.id}`);
     }
   };
   
-  // Render the product status badge
   const renderStatusBadge = () => {
     if (!product.status || product.status === 'available') return null;
     
@@ -99,13 +92,11 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
     return null;
   };
 
-  // Render product specifications
   const renderSpecifications = () => {
     if (!product.specifications || Object.keys(product.specifications).length === 0) {
       return null;
     }
 
-    // Helper function to get human-readable name for a specification
     const getSpecificationName = (key: string): string => {
       const nameMap: Record<string, string> = {
         brand: "Brand",
@@ -127,7 +118,6 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       return nameMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
     };
 
-    // Helper function to format specification values
     const formatSpecValue = (key: string, value: any): string => {
       if (key === "condition") {
         const conditionMap: Record<string, string> = {
@@ -181,11 +171,9 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       return String(value);
     };
 
-    // Get specifications to show excluding empty ones
     const specsToShow = Object.entries(product.specifications)
       .filter(([_, value]) => value !== undefined && value !== "" && value !== null)
       .sort(([keyA], [keyB]) => {
-        // Sort to show certain specs first
         const priority = ["brand", "model", "condition", "computerType"];
         const indexA = priority.indexOf(keyA);
         const indexB = priority.indexOf(keyB);
@@ -238,7 +226,6 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         )}
       </div>
       
-      {/* Reserved notification */}
       {product.status === 'reserved' && product.reservedUntil && (
         <Card className="bg-amber-50 border-amber-200">
           <CardContent className="p-4 flex items-center space-x-2">
@@ -255,12 +242,10 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         </Card>
       )}
       
-      {/* Product specifications */}
       {renderSpecifications()}
-
+      
       <Separator />
       
-      {/* Variations selection */}
       {product.variations && product.variations.length > 0 && (
         <div className="space-y-6">
           {product.variations.map(variation => (
@@ -323,9 +308,9 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
       
-      {/* Buy Now button */}
       <Button 
-        className="w-full bg-youbuy hover:bg-youbuy-dark mt-4"
+        className="w-full mt-4"
+        variant="action"
         disabled={
           product.status === 'sold' || 
           product.status === 'reserved' || 

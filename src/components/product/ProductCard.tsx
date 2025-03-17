@@ -88,8 +88,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="flex items-center gap-2 mt-3">
           <Button
             onClick={handleBuyNow}
-            className="bg-youbuy hover:bg-youbuy-dark text-white flex-1"
+            variant="action"
             size="sm"
+            className="flex-1"
           >
             <ShoppingBag className="h-4 w-4" /> Buy Now
           </Button>
