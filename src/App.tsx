@@ -54,6 +54,7 @@ function App() {
                           <Routes>
                             <Route path="/" element={<Index />} />
                             <Route path="/auth" element={<Auth />} />
+                            {/* Fixed route here to ensure parameter is named 'id' */}
                             <Route path="/product/:id" element={<ProductDetail />} />
                             <Route path="/checkout/:id" element={<CheckoutPage />} />
                             <Route path="/category/:categoryId" element={<CategoryPage />} />

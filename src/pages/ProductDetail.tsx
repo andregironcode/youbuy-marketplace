@@ -96,7 +96,7 @@ const getCategoryById = (categoryId: string) => {
 };
 
 export default function ProductDetail() {
-  const { productId } = useParams();
+  const { id } = useParams();
   const [currentImage, setCurrentImage] = useState<string | undefined>(undefined);
   const [isFavorite, setIsFavorite] = useState(false);
   const navigate = useNavigate();
@@ -105,14 +105,14 @@ export default function ProductDetail() {
   const location = window.location;
 
   useEffect(() => {
-    const storedFavorite = localStorage.getItem(`favorite-${productId}`);
+    const storedFavorite = localStorage.getItem(`favorite-${id}`);
     setIsFavorite(storedFavorite === 'true');
-  }, [productId]);
+  }, [id]);
 
   const handleToggleFavorite = () => {
     const newFavoriteStatus = !isFavorite;
     setIsFavorite(newFavoriteStatus);
-    localStorage.setItem(`favorite-${productId}`, newFavoriteStatus.toString());
+    localStorage.setItem(`favorite-${id}`, newFavoriteStatus.toString());
 
     toast({
       title: newFavoriteStatus ? "Product saved to favorites!" : "Product removed from favorites.",
@@ -151,11 +151,11 @@ export default function ProductDetail() {
     isLoading, 
     error 
   } = useQuery({
-    queryKey: ['product', productId],
+    queryKey: ['product', id],
     queryFn: async () => {
-      if (!productId) throw new Error('Product ID is undefined');
-      console.log("Fetching product with ID:", productId);
-      const result = await getProductById(productId);
+      if (!id) throw new Error('Product ID is undefined');
+      console.log("Fetching product with ID:", id);
+      const result = await getProductById(id);
       console.log("Query result:", result);
       if (!result) throw new Error('Product not found');
       return result;
@@ -188,7 +188,7 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <p className="text-xl font-semibold text-red-500 mb-2">Error: Could not load product details</p>
-          <p className="text-muted-foreground mb-4">The product you're looking for might not exist or there was an issue loading it. ProductID: {productId}</p>
+          <p className="text-muted-foreground mb-4">The product you're looking for might not exist or there was an issue loading it. ProductID: {id}</p>
           <Button onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
@@ -449,3 +449,4 @@ export default function ProductDetail() {
     </div>
   );
 }
+
