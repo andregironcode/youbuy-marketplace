@@ -1,3 +1,4 @@
+
 /**
  * Calculate the distance between two geographic coordinates using the Haversine formula
  * @param lat1 Latitude of first point in degrees
@@ -62,7 +63,7 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
   console.log("Geocoding address:", address);
   try {
     const encodedAddress = encodeURIComponent(address);
-    const access_token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+    const access_token = 'pk.eyJ1IjoiYW5kcmVnaXJvbiIsImEiOiJjbThkamljNjQyNjFqMmxzNWt1NzdyZ3d4In0.8UA0NxYTGPiSsdcSV_5szA';
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${access_token}&limit=1`;
     console.log("Geocoding URL:", url);
     
@@ -104,7 +105,7 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   console.log("Reverse geocoding:", lat, lng);
   try {
-    const access_token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+    const access_token = 'pk.eyJ1IjoiYW5kcmVnaXJvbiIsImEiOiJjbThkamljNjQyNjFqMmxzNWt1NzdyZ3d4In0.8UA0NxYTGPiSsdcSV_5szA';
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${access_token}&types=address,neighborhood,locality,place`;
     console.log("Reverse geocoding URL:", url);
     
@@ -143,7 +144,7 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
  */
 export const getFuzzyLocation = async (lat: number, lng: number): Promise<string> => {
   try {
-    const access_token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+    const access_token = 'pk.eyJ1IjoiYW5kcmVnaXJvbiIsImEiOiJjbThkamljNjQyNjFqMmxzNWt1NzdyZ3d4In0.8UA0NxYTGPiSsdcSV_5szA';
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${access_token}&types=neighborhood,locality,place`;
     console.log("Fuzzy location URL:", url);
     
