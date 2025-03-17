@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -11,9 +10,11 @@ import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/CheckoutForm";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building } from "lucide-react";
+import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PaymentForm } from "@/components/checkout/PaymentForm";
+import { LocationMap } from "@/components/map/LocationMap";
+import { geocodeAddress } from "@/utils/locationUtils";
 
 const CheckoutPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,8 +33,8 @@ const CheckoutPage = () => {
     instructions: ""
   });
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
 
-  // Fetch product details
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -64,8 +65,23 @@ const CheckoutPage = () => {
     enabled: !!id,
   });
 
-  const handleDeliveryDetailsChange = (details: CheckoutFormValues) => {
+  const handleDeliveryDetailsChange = async (details: CheckoutFormValues) => {
     setDeliveryDetails(details);
+    
+    try {
+      const addressString = `${details.address}, ${details.city}, ${details.postalCode}`;
+      const coords = await geocodeAddress(addressString);
+      setCoordinates(coords);
+      console.log("Geocoded coordinates:", coords);
+    } catch (error) {
+      console.error("Failed to geocode address:", error);
+      toast({
+        title: "Address location error",
+        description: "Could not pinpoint the exact location for delivery, but your order will still be processed.",
+        variant: "default"
+      });
+    }
+    
     setStep('payment');
   };
 
@@ -80,7 +96,6 @@ const CheckoutPage = () => {
     }
 
     try {
-      // Create order record
       const { data: orderData, error: orderError } = await supabase.rpc('create_order', {
         p_product_id: id,
         p_buyer_id: user.id,
@@ -92,7 +107,6 @@ const CheckoutPage = () => {
 
       if (orderError) throw orderError;
 
-      // Update product status to reserved
       const { error: productError } = await supabase
         .from("products")
         .update({ 
@@ -103,7 +117,6 @@ const CheckoutPage = () => {
 
       if (productError) throw productError;
 
-      // Create notification for seller
       await supabase.from("notifications").insert({
         user_id: product.seller.id,
         type: "new_order",
@@ -125,11 +138,9 @@ const CheckoutPage = () => {
   };
 
   const handlePaymentSuccess = async () => {
-    // Create order
     const newOrderId = await createOrder();
     if (newOrderId) {
       setOrderId(newOrderId);
-      // Move to confirmation step
       setStep('confirmation');
       
       toast({
@@ -196,6 +207,68 @@ const CheckoutPage = () => {
     );
   }
 
+  const renderLocationDetails = () => {
+    if (!deliveryDetails) return null;
+    
+    return (
+      <div className="p-4 bg-gray-50 rounded-md">
+        <h3 className="font-medium mb-2">Delivery Details</h3>
+        <div className="flex items-center gap-2 mt-2 mb-3">
+          {deliveryDetails.locationType === 'house' ? (
+            <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded">
+              <Home className="h-3 w-3 mr-1" />
+              House
+            </div>
+          ) : (
+            <div className="flex items-center text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded">
+              <Building className="h-3 w-3 mr-1" />
+              Apartment
+            </div>
+          )}
+        </div>
+        
+        <p><strong>Name:</strong> {deliveryDetails.fullName}</p>
+        
+        {deliveryDetails.locationType === 'house' ? (
+          <div>
+            <p><strong>Address:</strong> {deliveryDetails.address}</p>
+            {deliveryDetails.houseNumber && (
+              <p><strong>House Number:</strong> {deliveryDetails.houseNumber}</p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <p><strong>Address:</strong> {deliveryDetails.address}</p>
+            {deliveryDetails.buildingName && (
+              <p><strong>Building:</strong> {deliveryDetails.buildingName}</p>
+            )}
+            {deliveryDetails.floor && (
+              <p><strong>Floor:</strong> {deliveryDetails.floor}</p>
+            )}
+            {deliveryDetails.apartmentNumber && (
+              <p><strong>Apartment:</strong> #{deliveryDetails.apartmentNumber}</p>
+            )}
+          </div>
+        )}
+        
+        <p><strong>City:</strong> {deliveryDetails.city}</p>
+        <p><strong>Postal Code:</strong> {deliveryDetails.postalCode}</p>
+        <p><strong>Phone:</strong> {deliveryDetails.phone}</p>
+        <p><strong>Delivery Time:</strong> {
+          deliveryDetails.deliveryTime === 'morning' ? 'Morning (9am - 12pm)' :
+          deliveryDetails.deliveryTime === 'afternoon' ? 'Afternoon (12pm - 5pm)' : 
+          'Evening (5pm - 9pm)'
+        }</p>
+        {deliveryDetails.additionalInfo && (
+          <p><strong>Additional Info:</strong> {deliveryDetails.additionalInfo}</p>
+        )}
+        {deliveryDetails.instructions && (
+          <p><strong>Instructions:</strong> {deliveryDetails.instructions}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 container py-8">
@@ -209,7 +282,6 @@ const CheckoutPage = () => {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column: Checkout form */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -228,70 +300,38 @@ const CheckoutPage = () => {
                 )}
                 {step === 'payment' && (
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-md">
-                      <h3 className="font-medium mb-2">Delivery Details</h3>
-                      <div className="flex items-center gap-2 mt-2 mb-3">
-                        {deliveryDetails.locationType === 'house' ? (
-                          <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                            <Home className="h-3 w-3 mr-1" />
-                            House
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded">
-                            <Building className="h-3 w-3 mr-1" />
-                            Apartment
-                          </div>
-                        )}
-                      </div>
-                      
-                      <p><strong>Name:</strong> {deliveryDetails.fullName}</p>
-                      
-                      {deliveryDetails.locationType === 'house' ? (
-                        <div>
-                          <p><strong>Address:</strong> {deliveryDetails.address}</p>
-                          {deliveryDetails.houseNumber && (
-                            <p><strong>House Number:</strong> {deliveryDetails.houseNumber}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <div>
-                          <p><strong>Address:</strong> {deliveryDetails.address}</p>
-                          {deliveryDetails.buildingName && (
-                            <p><strong>Building:</strong> {deliveryDetails.buildingName}</p>
-                          )}
-                          {deliveryDetails.floor && (
-                            <p><strong>Floor:</strong> {deliveryDetails.floor}</p>
-                          )}
-                          {deliveryDetails.apartmentNumber && (
-                            <p><strong>Apartment:</strong> #{deliveryDetails.apartmentNumber}</p>
-                          )}
-                        </div>
-                      )}
-                      
-                      <p><strong>City:</strong> {deliveryDetails.city}</p>
-                      <p><strong>Postal Code:</strong> {deliveryDetails.postalCode}</p>
-                      <p><strong>Phone:</strong> {deliveryDetails.phone}</p>
-                      <p><strong>Delivery Time:</strong> {
-                        deliveryDetails.deliveryTime === 'morning' ? 'Morning (9am - 12pm)' :
-                        deliveryDetails.deliveryTime === 'afternoon' ? 'Afternoon (12pm - 5pm)' : 
-                        'Evening (5pm - 9pm)'
-                      }</p>
-                      {deliveryDetails.additionalInfo && (
-                        <p><strong>Additional Info:</strong> {deliveryDetails.additionalInfo}</p>
-                      )}
-                      {deliveryDetails.instructions && (
-                        <p><strong>Instructions:</strong> {deliveryDetails.instructions}</p>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        className="mt-2" 
-                        onClick={() => setStep('address')}
-                      >
-                        Edit Details
-                      </Button>
-                    </div>
+                    {renderLocationDetails()}
                     
-                    <div className="space-y-4">
+                    {coordinates && (
+                      <div className="mt-4">
+                        <h3 className="font-medium mb-2 flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-red-500" />
+                          Delivery Location
+                        </h3>
+                        <LocationMap 
+                          latitude={coordinates.lat}
+                          longitude={coordinates.lng}
+                          height="250px"
+                          zoom={15}
+                          interactive={false}
+                          showMarker={true}
+                          className="mt-2 rounded-md overflow-hidden border border-gray-200"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This is the approximate delivery location based on the address provided.
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      variant="outline" 
+                      className="mt-2" 
+                      onClick={() => setStep('address')}
+                    >
+                      Edit Details
+                    </Button>
+                    
+                    <div className="space-y-4 mt-6">
                       <h3 className="font-medium">Payment Method</h3>
                       <PaymentForm onSuccess={handlePaymentSuccess} />
                     </div>
@@ -306,7 +346,26 @@ const CheckoutPage = () => {
                     <p className="text-muted-foreground">
                       Your order has been successfully placed and will be processed by the seller soon.
                     </p>
-                    <div className="p-4 bg-gray-50 rounded-md text-left">
+                    
+                    {coordinates && (
+                      <div className="mt-4">
+                        <h3 className="font-medium mb-2 flex items-center text-left">
+                          <MapPin className="h-4 w-4 mr-1 text-red-500" />
+                          Delivery Location
+                        </h3>
+                        <LocationMap 
+                          latitude={coordinates.lat}
+                          longitude={coordinates.lng}
+                          height="200px"
+                          zoom={15}
+                          interactive={false}
+                          showMarker={true}
+                          className="mt-2 rounded-md overflow-hidden border border-gray-200"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="p-4 bg-gray-50 rounded-md text-left mt-4">
                       <h3 className="font-medium mb-2">Delivery Information</h3>
                       <div className="flex items-center gap-2 mb-2">
                         {deliveryDetails.locationType === 'house' ? (
@@ -347,7 +406,6 @@ const CheckoutPage = () => {
             </Card>
           </div>
 
-          {/* Right column: Order summary */}
           <div>
             <OrderSummary product={product} />
           </div>
