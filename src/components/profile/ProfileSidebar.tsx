@@ -90,8 +90,8 @@ export const ProfileSidebar = () => {
   
   return (
     <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col">
-      {/* Fixed header section */}
-      <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+      {/* Fixed header section that stays visible */}
+      <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
           {extendedUser?.profile?.avatar_url ? (
             <img
@@ -115,27 +115,29 @@ export const ProfileSidebar = () => {
         </div>
       </div>
 
-      {/* Scrollable navigation section */}
-      <nav className="flex-1 py-4 overflow-y-auto no-scrollbar">
-        <ul className="space-y-1 px-2">
-          {items.map((item) => (
-            <li key={item.href}>
-              <Link
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
-                  item.active
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* Scrollable navigation section with fixed height */}
+      <div className="overflow-y-auto flex-1 no-scrollbar">
+        <nav className="py-4">
+          <ul className="space-y-1 px-2">
+            {items.map((item) => (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
+                    item.active
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
     </aside>
   );
 };
