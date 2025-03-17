@@ -275,7 +275,7 @@ export const DriverPanel = () => {
                             <div>
                               <p className="font-medium">Status</p>
                               <Badge 
-                                variant={stop.currentStatus === 'delivered' ? 'success' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
+                                variant={stop.currentStatus === 'delivered' ? 'default' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
                                 className="mt-1"
                               >
                                 {stop.currentStatus}
@@ -396,7 +396,7 @@ export const DriverPanel = () => {
                             <div>
                               <p className="font-medium">Status</p>
                               <Badge 
-                                variant={stop.currentStatus === 'delivered' ? 'success' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
+                                variant={stop.currentStatus === 'delivered' ? 'default' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
                                 className="mt-1"
                               >
                                 {stop.currentStatus}

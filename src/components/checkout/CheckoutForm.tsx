@@ -28,6 +28,7 @@ import {
 import { Home, Building, MapPin } from "lucide-react";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress, reverseGeocode } from "@/utils/locationUtils";
+import { isValidTimeSlot } from "@/types/database.d";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -86,6 +87,48 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
       ? { lat: initialValues.latitude, lng: initialValues.longitude } 
       : null
   );
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<Array<{
+    value: 'morning' | 'afternoon' | 'evening',
+    label: string,
+    day: 'today' | 'tomorrow'
+  }>>([]);
+
+  // Determine available delivery time slots based on current time
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    const timeSlots = [];
+
+    // If it's before 2pm (14:00), we can offer same-day evening delivery
+    if (currentHour < 14) {
+      timeSlots.push({ 
+        value: 'evening', 
+        label: 'Evening (5pm - 9pm)', 
+        day: 'today' 
+      });
+    }
+
+    // Next day morning and afternoon are always available
+    timeSlots.push({ 
+      value: 'morning', 
+      label: 'Morning (9am - 12pm)', 
+      day: 'tomorrow' 
+    });
+    
+    timeSlots.push({ 
+      value: 'afternoon', 
+      label: 'Afternoon (12pm - 5pm)', 
+      day: 'tomorrow' 
+    });
+
+    // Next day evening is always available
+    timeSlots.push({ 
+      value: 'evening', 
+      label: 'Evening (5pm - 9pm)', 
+      day: 'tomorrow' 
+    });
+
+    setAvailableTimeSlots(timeSlots);
+  }, []);
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(formSchema),
@@ -105,6 +148,19 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
       formattedAddress: initialValues?.formattedAddress || "",
     },
   });
+
+  // Update default delivery time if current selected option is not available
+  useEffect(() => {
+    if (availableTimeSlots.length > 0) {
+      const currentValue = form.getValues('deliveryTime');
+      const isCurrentValueAvailable = availableTimeSlots.some(slot => slot.value === currentValue);
+      
+      if (!isCurrentValueAvailable) {
+        // Set to first available option
+        form.setValue('deliveryTime', availableTimeSlots[0].value);
+      }
+    }
+  }, [availableTimeSlots, form]);
 
   const watchLocationType = form.watch("locationType");
 
@@ -327,9 +383,11 @@ export function CheckoutForm({ initialValues, onSubmit }: CheckoutFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="morning">Morning (9am - 12pm) - Next Day </SelectItem>
-                    <SelectItem value="afternoon">Afternoon (12pm - 5pm) - Next Day </SelectItem>
-                    <SelectItem value="evening">Evening (5pm - 9pm) - Today </SelectItem>
+                    {availableTimeSlots.map((slot) => (
+                      <SelectItem key={`${slot.value}-${slot.day}`} value={slot.value}>
+                        {slot.label}{slot.day === 'tomorrow' ? ' - Tomorrow' : ' - Today'}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

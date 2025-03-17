@@ -1,3 +1,4 @@
+// src/components/delivery/DriverRoutes.tsx
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,112 +21,119 @@ import {
   User,
   Calendar,
   Navigation,
+  ChevronRight,
   RefreshCw,
-  Clock,
-  CheckCircle,
-  Route,
 } from "lucide-react";
+import { LocationMap } from "@/components/map/LocationMap";
 
-type RouteStop = {
+type DriverRoute = {
   id: string;
   type: 'pickup' | 'delivery';
   orderId: string;
-  location: {
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
-  personName: string;
   productTitle: string;
-  preferredTime: string | null;
-  completed?: boolean;
+  address: string;
+  latitude: number;
+  longitude: number;
+  personName: string;
+  currentStatus: string;
+  time: string | null;
 };
 
-type DeliveryRoute = {
-  id: string;
-  date: string;
-  time_slot: 'morning' | 'afternoon';
-  pickup_route: RouteStop[];
-  delivery_route: RouteStop[];
-  status: string;
-  created_at: string;
-};
-
-export const DriverRoutes = () => {
+export const DriverPanel = () => {
   const [currentDate] = useState<Date>(new Date());
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [timeSlot, setTimeSlot] = useState<'morning' | 'afternoon'>(
     new Date().getHours() < 13 ? 'morning' : 'afternoon'
   );
   const [routeType, setRouteType] = useState<'pickups' | 'deliveries'>('pickups');
-  const [stops, setStops] = useState<RouteStop[]>([]);
+  const [routes, setRoutes] = useState<DriverRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  const fetchOptimizedRoutes = async () => {
+  const fetchRoutes = async () => {
     setIsLoading(true);
     try {
-      // Format the date for the query
       const formattedDate = format(currentDate, 'yyyy-MM-dd');
       
-      // Use RPC function instead of direct table access
-      const { data: routes, error } = await supabase.rpc(
-        'get_delivery_route_by_date_time',
-        {
-          p_date: formattedDate,
-          p_time_slot: timeSlot
-        }
-      );
+      const startTime = timeSlot === 'morning' ? '19:00:00' : '13:00:00';
+      const endTime = timeSlot === 'morning' ? '13:00:00' : '19:00:00';
       
-      if (error) {
-        throw error;
-      }
+      const previousDay = new Date(currentDate);
+      previousDay.setDate(previousDay.getDate() - (timeSlot === 'morning' ? 1 : 0));
+      const formattedPreviousDay = format(previousDay, 'yyyy-MM-dd');
       
-      if (!routes || routes.length === 0) {
-        toast({
-          title: "No routes available",
-          description: `No routes found for ${format(currentDate, 'MMMM d, yyyy')} (${timeSlot} shift)`,
-          variant: "destructive"
-        });
-        setStops([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Cast to DeliveryRoute with appropriate type checking
-      const route = routes[0] as unknown as DeliveryRoute;
-      console.log("Fetched optimized routes:", route);
-      
-      // Ensure pickup_route and delivery_route are arrays
-      const pickupRoutes = Array.isArray(route.pickup_route) ? route.pickup_route : [];
-      const deliveryRoutes = Array.isArray(route.delivery_route) ? route.delivery_route : [];
-      
-      // Extract the appropriate route based on the selected type
-      const routeData = routeType === 'pickups' 
-        ? pickupRoutes 
-        : deliveryRoutes;
-        
-      // Get completed orders to mark them in the route
-      const { data: completedOrders } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .select('id, status')
-        .in('status', ['delivered', 'completed'])
-        .in('id', routeData.map((stop: RouteStop) => stop.orderId));
+        .select(`
+          id,
+          status,
+          current_stage,
+          created_at,
+          products:product_id (
+            title,
+            location,
+            latitude,
+            longitude
+          ),
+          delivery_details,
+          buyer:buyer_id (
+            full_name
+          ),
+          seller:seller_id (
+            full_name
+          )
+        `)
+        .gte('created_at', `${formattedPreviousDay} ${startTime}`)
+        .lte('created_at', `${formattedDate} ${endTime}`)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      const driverRoutes: DriverRoute[] = [];
+      
+      (data || []).forEach((order: any) => {
+        if (routeType === 'pickups') {
+          driverRoutes.push({
+            id: `pickup-${order.id}`,
+            type: 'pickup',
+            orderId: order.id,
+            productTitle: order.products?.title || 'Unknown Product',
+            address: order.products?.location || 'Unknown Location',
+            latitude: order.products?.latitude || 0,
+            longitude: order.products?.longitude || 0,
+            personName: order.seller?.full_name || 'Unknown Seller',
+            currentStatus: order.current_stage || order.status,
+            time: null,
+          });
+        } else {
+          const deliveryDetails = typeof order.delivery_details === 'string'
+            ? JSON.parse(order.delivery_details)
+            : order.delivery_details;
+          
+          driverRoutes.push({
+            id: `delivery-${order.id}`,
+            type: 'delivery',
+            orderId: order.id,
+            productTitle: order.products?.title || 'Unknown Product',
+            address: deliveryDetails?.address || 'Unknown Location',
+            latitude: deliveryDetails?.latitude || 0,
+            longitude: deliveryDetails?.longitude || 0,
+            personName: order.buyer?.full_name || 'Unknown Buyer',
+            currentStatus: order.current_stage || order.status,
+            time: deliveryDetails?.preferred_time || null,
+          });
+        }
+      });
+      
+      const sortedRoutes = driverRoutes.sort((a, b) => {
+        if (a.time && b.time) {
+          return a.time.localeCompare(b.time);
+        }
         
-      // Create a set of completed order IDs for faster lookup
-      const completedOrderIds = new Set(
-        (completedOrders || []).map((order: any) => order.id)
-      );
+        return a.latitude - b.latitude;
+      });
       
-      // Mark completed stops
-      const routeWithCompletionStatus = routeData.map((stop: RouteStop) => ({
-        ...stop,
-        completed: completedOrderIds.has(stop.orderId)
-      }));
-      
-      setStops(routeWithCompletionStatus);
-      setLastUpdated(new Date(route.created_at));
+      setRoutes(sortedRoutes);
     } catch (error) {
       console.error("Error fetching routes:", error);
       toast({
@@ -139,27 +147,31 @@ export const DriverRoutes = () => {
   };
 
   useEffect(() => {
-    fetchOptimizedRoutes();
+    fetchRoutes();
   }, [timeSlot, routeType]);
 
   const handleStatusUpdate = () => {
-    // Reset selected order and refresh routes
     setSelectedOrder(null);
-    fetchOptimizedRoutes();
+    fetchRoutes();
     
     toast({
       title: "Status updated",
-      description: "The order status has been successfully updated"
+      description: "The order status has been successfully updated."
     });
   };
 
-  const getCompletedCount = () => {
-    return stops.filter(stop => stop.completed).length;
-  };
-
-  const getProgressPercentage = () => {
-    if (stops.length === 0) return 0;
-    return (getCompletedCount() / stops.length) * 100;
+  // Update the mapping of route types for the Badge component
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'completed':
+        return 'default';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
   };
 
   return (
@@ -169,32 +181,10 @@ export const DriverRoutes = () => {
           <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center justify-between">
             <span>Today's Routes: {format(currentDate, 'EEEE, MMMM d')}</span>
             <Badge variant={timeSlot === 'morning' ? 'default' : 'outline'} className="mt-2 sm:mt-0">
-              {timeSlot === 'morning' ? 'Morning Shift (7PM-1PM)' : 'Afternoon Shift (1PM-7PM)'}
+              {timeSlot === 'morning' ? 'Morning Shift' : 'Afternoon Shift'}
             </Badge>
           </CardTitle>
-          {lastUpdated && (
-            <p className="text-xs text-muted-foreground">
-              Last updated: {format(lastUpdated, 'h:mm a')}
-            </p>
-          )}
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Route className="h-4 w-4 mr-1 text-primary" />
-              <span className="text-sm font-medium">Optimized Route</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-medium">{getCompletedCount()} of {stops.length} complete</span>
-              <span className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <span 
-                  className="h-full bg-green-500 block" 
-                  style={{ width: `${getProgressPercentage()}%` }}
-                />
-              </span>
-            </div>
-          </div>
-        </CardContent>
       </Card>
       
       <Tabs 
@@ -213,147 +203,247 @@ export const DriverRoutes = () => {
           </TabsTrigger>
         </TabsList>
         
-        <div className="flex justify-between items-center mt-4">
-          <h3 className="text-md font-medium">
-            {routeType === 'pickups' ? 'Pickup' : 'Delivery'} Route ({stops.length} stops)
-          </h3>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setTimeSlot(timeSlot === 'morning' ? 'afternoon' : 'morning')}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Switch Shift
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={fetchOptimizedRoutes} 
-              disabled={isLoading}
-            >
+        <TabsContent value="pickups" className="mt-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-md font-medium">Pickup Route ({routes.length} stops)</h3>
+            <Button variant="outline" size="sm" onClick={fetchRoutes} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
-        </div>
-        
-        {selectedOrder ? (
-          <Card className="mt-4">
-            <CardHeader className="pb-2">
-              <Button 
-                variant="ghost" 
-                onClick={() => setSelectedOrder(null)}
-                className="p-0 h-auto mb-2"
-              >
-                ← Back to route
-              </Button>
-              <CardTitle>Update Order Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TrackingUpdate 
-                orderId={selectedOrder} 
-                currentStatus={stops.find(s => s.orderId === selectedOrder)?.completed ? 'delivered' : 'out_for_delivery'}
-                onUpdateSuccess={handleStatusUpdate}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {isLoading ? (
-              <div className="flex justify-center py-12 mt-4">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : stops.length === 0 ? (
-              <Card className="text-center py-8 mt-4">
-                <CardContent>
-                  <p className="text-muted-foreground">No optimized routes available for this time period</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Accordion type="single" collapsible className="w-full mt-4">
-                {stops.map((stop, index) => (
-                  <AccordionItem 
-                    key={stop.id} 
-                    value={stop.id} 
-                    className={`border rounded-lg mb-2 overflow-hidden ${stop.completed ? 'bg-gray-50' : ''}`}
-                  >
-                    <AccordionTrigger className="hover:bg-gray-50 px-4 py-2">
-                      <div className="flex-1 flex items-center">
-                        <div className={`w-8 h-8 rounded-full ${stop.completed ? 'bg-green-500' : 'bg-primary'} text-white flex items-center justify-center mr-3 flex-shrink-0`}>
-                          {stop.completed ? <CheckCircle className="h-4 w-4" /> : index + 1}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-medium">{stop.productTitle}</p>
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-xs">
-                            {stop.location.address}
-                          </p>
-                        </div>
-                        {stop.preferredTime && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
-                            {stop.preferredTime}
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-start">
-                          <MapPin className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Location</p>
-                            <p className="text-sm text-muted-foreground">{stop.location.address}</p>
+          
+          {selectedOrder ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-0 h-auto mb-2"
+                >
+                  ← Back to route
+                </Button>
+                <CardTitle>Update Order Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TrackingUpdate 
+                  orderId={selectedOrder} 
+                  currentStatus={routes.find(r => r.orderId === selectedOrder)?.currentStatus || ''}
+                  onUpdateSuccess={handleStatusUpdate}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : routes.length === 0 ? (
+                <Card className="text-center py-8">
+                  <CardContent>
+                    <p className="text-muted-foreground">No pickups scheduled for this time period</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Accordion type="single" collapsible className="w-full">
+                  {routes.map((stop, index) => (
+                    <AccordionItem key={stop.id} value={stop.id} className="border rounded-lg mb-2 overflow-hidden">
+                      <AccordionTrigger className="hover:bg-gray-50 px-4 py-2">
+                        <div className="flex-1 flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3 flex-shrink-0">
+                            {index + 1}
                           </div>
-                        </div>
-                        
-                        <div className="flex items-start">
-                          <User className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">
-                              {stop.type === 'pickup' ? 'Pickup from' : 'Deliver to'} {stop.personName}
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">{stop.productTitle}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-xs">
+                              {stop.address}
                             </p>
                           </div>
+                          {stop.time && (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
+                              {stop.time}
+                            </span>
+                          )}
                         </div>
-                        
-                        <div className="flex items-start">
-                          <Calendar className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
-                          <div>
-                            <p className="font-medium">Status</p>
-                            <Badge 
-                              variant={stop.completed ? "success" : "outline"}
-                              className="mt-1"
-                            >
-                              {stop.completed ? 'Completed' : 'Pending'}
-                            </Badge>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-start">
+                            <MapPin className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Location</p>
+                              <p className="text-sm text-muted-foreground">{stop.address}</p>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="pt-2 flex flex-col sm:flex-row gap-2">
-                          {!stop.completed && (
+                          
+                          <div className="flex items-start">
+                            <User className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">
+                                {stop.type === 'pickup' ? 'Pickup from' : 'Deliver to'} {stop.personName}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start">
+                            <Calendar className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Status</p>
+                              <Badge 
+                                variant={stop.currentStatus === 'delivered' ? 'default' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
+                                className="mt-1"
+                              >
+                                {stop.currentStatus}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 flex flex-col sm:flex-row gap-2">
                             <Button className="flex-1" variant="default" onClick={() => setSelectedOrder(stop.orderId)}>
                               Update Status
                             </Button>
-                          )}
-                          
-                          <Button className="flex-1" variant="outline" asChild>
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${stop.location.latitude},${stop.location.longitude}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Navigation className="h-4 w-4 mr-2" />
-                              Directions
-                            </a>
-                          </Button>
+                            
+                            <Button className="flex-1" variant="outline" asChild>
+                              <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <Navigation className="h-4 w-4 mr-2" />
+                                Directions
+                              </a>
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </>
-        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="deliveries" className="mt-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-md font-medium">Delivery Route ({routes.length} stops)</h3>
+            <Button variant="outline" size="sm" onClick={fetchRoutes} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+          
+          {selectedOrder ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-0 h-auto mb-2"
+                >
+                  ← Back to route
+                </Button>
+                <CardTitle>Update Order Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TrackingUpdate 
+                  orderId={selectedOrder} 
+                  currentStatus={routes.find(r => r.orderId === selectedOrder)?.currentStatus || ''}
+                  onUpdateSuccess={handleStatusUpdate}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : routes.length === 0 ? (
+                <Card className="text-center py-8">
+                  <CardContent>
+                    <p className="text-muted-foreground">No deliveries scheduled for this time period</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Accordion type="single" collapsible className="w-full">
+                  {routes.map((stop, index) => (
+                    <AccordionItem key={stop.id} value={stop.id} className="border rounded-lg mb-2 overflow-hidden">
+                      <AccordionTrigger className="hover:bg-gray-50 px-4 py-2">
+                        <div className="flex-1 flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3 flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">{stop.productTitle}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-xs">
+                              {stop.address}
+                            </p>
+                          </div>
+                          {stop.time && (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
+                              {stop.time}
+                            </span>
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-start">
+                            <MapPin className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Location</p>
+                              <p className="text-sm text-muted-foreground">{stop.address}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start">
+                            <User className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">
+                                {stop.type === 'pickup' ? 'Pickup from' : 'Deliver to'} {stop.personName}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start">
+                            <Calendar className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Status</p>
+                              <Badge 
+                                variant={stop.currentStatus === 'delivered' ? 'default' : stop.currentStatus === 'out_for_delivery' ? 'default' : 'outline'}
+                                className="mt-1"
+                              >
+                                {stop.currentStatus}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                            <Button className="flex-1" variant="default" onClick={() => setSelectedOrder(stop.orderId)}>
+                              Update Status
+                            </Button>
+                            
+                            <Button className="flex-1" variant="outline" asChild>
+                              <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <Navigation className="h-4 w-4 mr-2" />
+                                Directions
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </>
+          )}
+        </TabsContent>
       </Tabs>
       
       <div className="mt-6">
