@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { categories } from '@/data/categories';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
   NavigationMenu,
@@ -50,15 +50,25 @@ const ListItem = ({
 
 export const CategoryDropdown = () => {
   const [isClient, setIsClient] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
   
+  const handleCategoriesClick = () => {
+    navigate('/categories');
+  };
+  
   // We need to handle SSR/CSR difference for the NavigationMenu
   if (!isClient) {
     return (
-      <Button variant="ghost" size="sm" className="gap-2 whitespace-nowrap">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="gap-2 whitespace-nowrap"
+        onClick={handleCategoriesClick}
+      >
         Categories
       </Button>
     );
@@ -68,7 +78,10 @@ export const CategoryDropdown = () => {
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-transparent hover:bg-transparent focus:bg-transparent text-foreground">
+          <NavigationMenuTrigger 
+            className="bg-transparent hover:bg-accent hover:text-accent-foreground focus:bg-accent text-foreground" 
+            onClick={handleCategoriesClick}
+          >
             Categories
           </NavigationMenuTrigger>
           <NavigationMenuContent>
