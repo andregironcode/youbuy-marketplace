@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Edit, Trash2, Ban, CheckSquare, Filter, Download, AlertCircle, UserPlus } from "lucide-react";
+import { Search, Edit, Trash2, Ban, CheckSquare, Filter, Download, AlertCircle, UserPlus, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -35,6 +34,7 @@ type UserWithProfile = {
   } | null;
   role: string;
   status: string;
+  is_banned?: boolean;
 };
 
 export const AdminUsers = () => {
@@ -48,33 +48,31 @@ export const AdminUsers = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [userMessages, setUserMessages] = useState<any[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsersWithBanStatus();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsersWithBanStatus = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch all profiles with expanded data
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profilesWithBan, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*, banned:banned');
       
       if (profilesError) throw profilesError;
       
-      // Instead of directly querying the user_roles table which has RLS issues,
-      // Let's use the is_admin RPC function to check admin status for each user
-      if (profiles && profiles.length > 0) {
-        // Get the current user's info for comparison
+      if (profilesWithBan && profilesWithBan.length > 0) {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         
-        // Process each profile and determine admin status
         const usersWithRoles = await Promise.all(
-          profiles.map(async (profile) => {
-            // Check if user is admin using the is_admin RPC function
+          profilesWithBan.map(async (profile) => {
             const { data: isAdmin, error: adminCheckError } = await supabase
               .rpc('is_admin', { user_uuid: profile.id });
             
@@ -82,7 +80,6 @@ export const AdminUsers = () => {
               console.error("Error checking admin status:", adminCheckError);
             }
             
-            // For the current user, we know the email
             const isCurrentUser = currentUser?.id === profile.id;
             const email = isCurrentUser 
               ? currentUser.email 
@@ -99,8 +96,8 @@ export const AdminUsers = () => {
                 avatar_url: profile.avatar_url || null
               },
               role: isAdmin ? 'admin' : 'user',
-              // We don't have status info without admin API, default to active
-              status: 'active'
+              status: profile.banned ? 'banned' : 'active',
+              is_banned: profile.banned || false
             };
           })
         );
@@ -128,8 +125,7 @@ export const AdminUsers = () => {
   };
 
   const handleProfileUpdated = () => {
-    // Refresh the users list to reflect changes
-    fetchUsers();
+    fetchUsersWithBanStatus();
   };
 
   const handleManageUserRole = (user: UserWithProfile, action: string) => {
@@ -143,8 +139,6 @@ export const AdminUsers = () => {
     
     try {
       if (confirmAction === 'make-admin') {
-        // Instead of directly inserting into user_roles, use a more reliable approach
-        // Create an RPC function call to assign admin role
         const { data, error } = await supabase
           .rpc('assign_admin_role', { 
             target_user_id: selectedUser.id 
@@ -158,7 +152,6 @@ export const AdminUsers = () => {
             description: `${selectedUser.profile?.full_name || 'User'} is now an admin.`
           });
           
-          // Update local state
           setUsers(users.map(user => 
             user.id === selectedUser.id 
               ? {...user, role: 'admin'} 
@@ -172,9 +165,6 @@ export const AdminUsers = () => {
           });
         }
       } else if (confirmAction === 'remove-admin') {
-        // For removing admin role, we'll need a similar approach
-        // Note: We would ideally have an RPC function for this, but for now
-        // let's use a direct approach with proper error handling
         const { error } = await supabase
           .from('user_roles')
           .delete()
@@ -191,7 +181,6 @@ export const AdminUsers = () => {
           description: `${selectedUser.profile?.full_name || 'User'} is no longer an admin.`
         });
         
-        // Update local state
         setUsers(users.map(user => 
           user.id === selectedUser.id 
             ? {...user, role: 'user'} 
@@ -212,7 +201,6 @@ export const AdminUsers = () => {
 
   const handleExportUsers = () => {
     try {
-      // Create CSV content
       const headers = ["Name", "Email", "Role", "Status", "Join Date"];
       const csvRows = [headers];
       
@@ -226,10 +214,8 @@ export const AdminUsers = () => {
         ]);
       });
       
-      // Create CSV string
       const csvContent = csvRows.map(row => row.join(",")).join("\n");
       
-      // Create download link
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -260,7 +246,6 @@ export const AdminUsers = () => {
     setSearchTerm("");
   };
 
-  // Filter users based on search term and filters
   const filteredUsers = users.filter(user => 
     (user.profile?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.profile?.username || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -319,7 +304,7 @@ export const AdminUsers = () => {
             <Download className="h-4 w-4" />
             <span>Export</span>
           </Button>
-          <Button onClick={fetchUsers} disabled={isLoading} className="gap-1 w-full sm:w-auto">
+          <Button onClick={fetchUsersWithBanStatus} disabled={isLoading} className="gap-1 w-full sm:w-auto">
             {isLoading ? "Loading..." : "Refresh"}
           </Button>
         </div>
@@ -378,7 +363,7 @@ export const AdminUsers = () => {
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <TableRow key={user.id} className="hover:bg-gray-50">
+                <TableRow key={user.id} className={user.is_banned ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}>
                   <TableCell>
                     <div className="flex items-center">
                       {user.profile?.avatar_url ? (
@@ -415,7 +400,8 @@ export const AdminUsers = () => {
                   <TableCell>
                     <span 
                       className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        user.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        user.status === 'banned' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
                       }`}
                     >
                       {user.status}
@@ -435,6 +421,29 @@ export const AdminUsers = () => {
                         <span className="sr-only">Edit Profile</span>
                         <Edit className="h-4 w-4" />
                       </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleViewMessages(user)}
+                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                      >
+                        <span className="sr-only">View Messages</span>
+                        <Shield className="h-4 w-4" />
+                      </Button>
+                      
+                      {user.role !== 'admin' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleBanUser(user)}
+                          className={`h-8 w-8 p-0 ${user.is_banned ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
+                        >
+                          <span className="sr-only">{user.is_banned ? 'Unban User' : 'Ban User'}</span>
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
                       {user.role !== 'admin' ? (
                         <Button 
                           variant="ghost" 
@@ -453,7 +462,7 @@ export const AdminUsers = () => {
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                         >
                           <span className="sr-only">Remove Admin</span>
-                          <Ban className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -465,7 +474,6 @@ export const AdminUsers = () => {
         </Table>
       </div>
 
-      {/* Admin Role Dialog */}
       <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -488,7 +496,88 @@ export const AdminUsers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Profile Edit Dialog */}
+      <Dialog open={isBanDialogOpen} onOpenChange={setIsBanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm {confirmAction === 'ban-user' ? 'Ban' : 'Unban'}</DialogTitle>
+            <DialogDescription>
+              {confirmAction === 'ban-user' 
+                ? `Are you sure you want to ban ${selectedUser?.profile?.full_name || 'this user'}? They will not be able to use the platform until unbanned.` 
+                : `Are you sure you want to unban ${selectedUser?.profile?.full_name || 'this user'}? This will restore their access to the platform.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBanDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleConfirmBanAction}
+              variant={confirmAction === 'ban-user' ? 'destructive' : 'default'}
+            >
+              Confirm {confirmAction === 'ban-user' ? 'Ban' : 'Unban'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Messages from {selectedUser?.profile?.full_name || 'User'}</DialogTitle>
+            <DialogDescription>
+              Recent message history for this user
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isLoadingMessages ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : userMessages.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No messages found for this user
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              {userMessages.map((msg) => (
+                <div 
+                  key={msg.id} 
+                  className={`p-4 rounded-lg ${
+                    msg.type === 'sent' 
+                      ? 'bg-blue-50 border border-blue-100' 
+                      : 'bg-gray-50 border border-gray-100'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-medium">
+                      {msg.type === 'sent' ? 'Sent to' : 'Received from'} #{msg.type === 'sent' ? msg.receiver_id.substring(0, 8) : msg.sender_id.substring(0, 8)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(msg.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap">
+                    {msg.content.startsWith('image:') 
+                      ? <img src={msg.content.substring(6)} className="max-h-40 rounded" />
+                      : msg.content}
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground flex justify-between">
+                    <span>Product: #{msg.product_id.substring(0, 8)}</span>
+                    {msg.type === 'received' && (
+                      <span className={msg.read ? 'text-green-600' : 'text-amber-600'}>
+                        {msg.read ? 'Read' : 'Unread'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="mt-4 flex justify-end">
+            <Button onClick={() => setIsMessageDialogOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {selectedUser && (
         <UserProfileEdit
           userId={selectedUser.id}
