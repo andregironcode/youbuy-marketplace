@@ -108,6 +108,7 @@ export const AdminOrders = () => {
     setError(null);
     
     try {
+      console.log("Fetching orders data...");
       // Get orders data with better error handling
       const { data, error } = await supabase
         .from('orders')
@@ -132,14 +133,21 @@ export const AdminOrders = () => {
       }
 
       // Map the data to include names
-      const ordersWithNames = data.map((order: any) => ({
-        ...order,
-        buyer_name: order.buyer?.full_name || 'Unknown Buyer',
-        seller_name: order.seller?.full_name || 'Unknown Seller',
-        product_title: order.product?.title || 'Unknown Product',
-        product_image: order.product?.image_urls?.[0] || null
-      }));
+      const ordersWithNames = data.map((order: any) => {
+        // Safely access the buyer and seller objects, which may be objects and not arrays
+        const buyerName = order.buyer?.full_name || 'Unknown Buyer';
+        const sellerName = order.seller?.full_name || 'Unknown Seller';
+        
+        return {
+          ...order,
+          buyer_name: buyerName,
+          seller_name: sellerName,
+          product_title: order.product?.title || 'Unknown Product',
+          product_image: order.product?.image_urls?.[0] || null
+        };
+      });
       
+      console.log("Processed orders data:", ordersWithNames);
       setOrders(ordersWithNames);
     } catch (error) {
       console.error("Error in fetchOrders:", error);
@@ -157,6 +165,7 @@ export const AdminOrders = () => {
   const viewOrderDetails = async (orderId: string) => {
     try {
       setIsLoading(true);
+      console.log("Fetching order details for order ID:", orderId);
       
       // Get detailed order data
       const { data: orderData, error: orderError } = await supabase
@@ -169,6 +178,7 @@ export const AdminOrders = () => {
         console.error("Error fetching order details:", orderError);
         
         // Fallback to getting from orders table directly
+        console.log("Attempting fallback to orders table for order ID:", orderId);
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('orders')
           .select(`
@@ -186,10 +196,13 @@ export const AdminOrders = () => {
         }
         
         // Format fallback data to match expected structure
+        const buyerName = fallbackData.buyer?.full_name || 'Unknown';
+        const sellerName = fallbackData.seller?.full_name || 'Unknown';
+        
         const formattedData = {
           ...fallbackData,
-          buyer_name: fallbackData.buyer?.full_name || 'Unknown',
-          seller_name: fallbackData.seller?.full_name || 'Unknown',
+          buyer_name: buyerName,
+          seller_name: sellerName,
           product_title: fallbackData.product?.title || 'Unknown Product',
           product_images: fallbackData.product?.image_urls || [],
           current_stage: fallbackData.status || 'pending',
