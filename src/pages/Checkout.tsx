@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -10,18 +11,21 @@ import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/CheckoutForm";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building, MapPin } from "lucide-react";
+import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building, MapPin, Package, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PaymentForm } from "@/components/checkout/PaymentForm";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress } from "@/utils/locationUtils";
+
+// Steps in the checkout process
+type CheckoutStep = 'delivery' | 'payment' | 'confirmation';
 
 const CheckoutPage = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<'address' | 'payment' | 'confirmation'>('address');
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>('delivery');
   const [deliveryDetails, setDeliveryDetails] = useState<CheckoutFormValues>({
     fullName: "",
     address: "",
@@ -34,7 +38,9 @@ const CheckoutPage = () => {
   });
   const [orderId, setOrderId] = useState<string | null>(null);
   const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [progress, setProgress] = useState<number>(33);
 
+  // Query to fetch the product data
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -65,6 +71,21 @@ const CheckoutPage = () => {
     enabled: !!id,
   });
 
+  // Update progress bar based on current step
+  useEffect(() => {
+    switch (currentStep) {
+      case 'delivery':
+        setProgress(33);
+        break;
+      case 'payment':
+        setProgress(66);
+        break;
+      case 'confirmation':
+        setProgress(100);
+        break;
+    }
+  }, [currentStep]);
+
   const handleDeliveryDetailsChange = async (details: CheckoutFormValues) => {
     setDeliveryDetails(details);
     
@@ -82,7 +103,7 @@ const CheckoutPage = () => {
       });
     }
     
-    setStep('payment');
+    setCurrentStep('payment');
   };
 
   const createOrder = async () => {
@@ -141,7 +162,7 @@ const CheckoutPage = () => {
     const newOrderId = await createOrder();
     if (newOrderId) {
       setOrderId(newOrderId);
-      setStep('confirmation');
+      setCurrentStep('confirmation');
       
       toast({
         title: "Order successful!",
@@ -152,6 +173,37 @@ const CheckoutPage = () => {
 
   const handleBackToProduct = () => {
     navigate(`/product/${id}`);
+  };
+
+  // Render steps indicator
+  const renderStepIndicator = () => {
+    return (
+      <div className="w-full mb-8">
+        <div className="flex justify-between mb-2">
+          <div className="flex flex-col items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${currentStep === 'delivery' ? 'bg-youbuy text-white' : currentStep === 'payment' || currentStep === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              <Truck className="h-5 w-5" />
+            </div>
+            <span className="text-xs">Delivery</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${currentStep === 'payment' ? 'bg-youbuy text-white' : currentStep === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              <CreditCard className="h-5 w-5" />
+            </div>
+            <span className="text-xs">Payment</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${currentStep === 'confirmation' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <span className="text-xs">Confirmation</span>
+          </div>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="bg-youbuy h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -281,24 +333,26 @@ const CheckoutPage = () => {
           Back to product
         </Button>
 
+        {renderStepIndicator()}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  {step === 'address' && <><ShoppingBag className="mr-2 h-5 w-5" />Delivery Details</>}
-                  {step === 'payment' && <><CreditCard className="mr-2 h-5 w-5" />Payment Information</>}
-                  {step === 'confirmation' && <><CheckCircle className="mr-2 h-5 w-5" />Order Confirmation</>}
+                  {currentStep === 'delivery' && <><Truck className="mr-2 h-5 w-5" />Delivery Details</>}
+                  {currentStep === 'payment' && <><CreditCard className="mr-2 h-5 w-5" />Payment Information</>}
+                  {currentStep === 'confirmation' && <><CheckCircle className="mr-2 h-5 w-5" />Order Confirmation</>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {step === 'address' && (
+                {currentStep === 'delivery' && (
                   <CheckoutForm 
                     initialValues={deliveryDetails}
                     onSubmit={handleDeliveryDetailsChange}
                   />
                 )}
-                {step === 'payment' && (
+                {currentStep === 'payment' && (
                   <div className="space-y-4">
                     {renderLocationDetails()}
                     
@@ -326,7 +380,7 @@ const CheckoutPage = () => {
                     <Button 
                       variant="outline" 
                       className="mt-2" 
-                      onClick={() => setStep('address')}
+                      onClick={() => setCurrentStep('delivery')}
                     >
                       Edit Details
                     </Button>
@@ -337,10 +391,10 @@ const CheckoutPage = () => {
                     </div>
                   </div>
                 )}
-                {step === 'confirmation' && (
+                {currentStep === 'confirmation' && (
                   <div className="space-y-6 text-center">
                     <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <ShoppingBag className="h-8 w-8 text-green-600" />
+                      <Package className="h-8 w-8 text-green-600" />
                     </div>
                     <h2 className="text-2xl font-bold">Thank You for Your Purchase!</h2>
                     <p className="text-muted-foreground">
@@ -393,7 +447,7 @@ const CheckoutPage = () => {
                       }</p>
                     </div>
                     <div className="flex justify-center space-x-4">
-                      <Button asChild>
+                      <Button asChild className="bg-youbuy hover:bg-youbuy-dark">
                         <Link to="/">Continue Shopping</Link>
                       </Button>
                       <Button asChild variant="outline">
