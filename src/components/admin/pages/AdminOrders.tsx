@@ -41,12 +41,60 @@ import {
 import { format } from "date-fns";
 import { TrackingUpdate } from "@/components/sales/TrackingUpdate";
 
+// Define types for better type safety
+type Profile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  username: string | null;
+};
+
+type Product = {
+  id: string;
+  title: string;
+  image_urls?: string[] | null;
+};
+
+type OrderWithDetails = {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  product_id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  current_stage: string | null;
+  // These will be populated with either objects or arrays
+  buyer: Profile | Profile[];
+  seller: Profile | Profile[];
+  product: Product | Product[];
+  // These are derived properties
+  buyer_name: string;
+  seller_name: string;
+  product_title: string;
+  product_image: string | null;
+};
+
+type OrderDetails = {
+  order_id: string;
+  buyer_name?: string;
+  seller_name?: string;
+  product_title?: string;
+  product_images?: string[];
+  current_stage?: string;
+  status?: string;
+  stage_name?: string;
+  order_date?: string;
+  estimated_delivery?: string;
+};
+
 export const AdminOrders = () => {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string | null>(null);
   const { toast } = useToast();
@@ -132,45 +180,51 @@ export const AdminOrders = () => {
         return;
       }
 
-      // Map the data to include names
-      const ordersWithNames = data.map((order: any) => {
-        // Handle buyer data - could be array or object
+      // Process the data with proper type safety
+      const processedOrders = data.map((order: any) => {
+        // Extract buyer name with proper type checking
         let buyerName = 'Unknown Buyer';
-        
         if (order.buyer) {
+          // Check if buyer is an array
           if (Array.isArray(order.buyer)) {
-            // If it's an array, take the first item if it exists
-            buyerName = order.buyer.length > 0 ? order.buyer[0]?.full_name || 'Unknown Buyer' : 'Unknown Buyer';
+            // Array case - take first item if it exists
+            if (order.buyer.length > 0) {
+              buyerName = order.buyer[0]?.full_name || 'Unknown Buyer';
+            }
           } else {
-            // If it's an object, access directly
+            // Object case - access directly
             buyerName = order.buyer.full_name || 'Unknown Buyer';
           }
         }
         
-        // Handle seller data - could be array or object
+        // Extract seller name with proper type checking
         let sellerName = 'Unknown Seller';
-        
         if (order.seller) {
+          // Check if seller is an array
           if (Array.isArray(order.seller)) {
-            // If it's an array, take the first item if it exists
-            sellerName = order.seller.length > 0 ? order.seller[0]?.full_name || 'Unknown Seller' : 'Unknown Seller';
+            // Array case - take first item if it exists
+            if (order.seller.length > 0) {
+              sellerName = order.seller[0]?.full_name || 'Unknown Seller';
+            }
           } else {
-            // If it's an object, access directly
+            // Object case - access directly
             sellerName = order.seller.full_name || 'Unknown Seller';
           }
         }
         
-        // Handle product data - could be array or object
+        // Extract product info with proper type checking
         let productTitle = 'Unknown Product';
         let productImage = null;
-        
         if (order.product) {
+          // Check if product is an array
           if (Array.isArray(order.product)) {
-            // If it's an array, take the first item if it exists
-            productTitle = order.product.length > 0 ? order.product[0]?.title || 'Unknown Product' : 'Unknown Product';
-            productImage = order.product.length > 0 ? order.product[0]?.image_urls?.[0] || null : null;
+            // Array case - take first item if it exists
+            if (order.product.length > 0) {
+              productTitle = order.product[0]?.title || 'Unknown Product';
+              productImage = order.product[0]?.image_urls?.[0] || null;
+            }
           } else {
-            // If it's an object, access directly
+            // Object case - access directly
             productTitle = order.product.title || 'Unknown Product';
             productImage = order.product.image_urls?.[0] || null;
           }
@@ -182,11 +236,11 @@ export const AdminOrders = () => {
           seller_name: sellerName,
           product_title: productTitle,
           product_image: productImage
-        };
+        } as OrderWithDetails;
       });
       
-      console.log("Processed orders data:", ordersWithNames);
-      setOrders(ordersWithNames);
+      console.log("Processed orders data:", processedOrders);
+      setOrders(processedOrders);
     } catch (error) {
       console.error("Error in fetchOrders:", error);
       setError("Failed to load orders. Please try again.");
@@ -235,35 +289,41 @@ export const AdminOrders = () => {
         
         console.log("Fallback data:", fallbackData);
         
-        // Format fallback data to match expected structure
+        // Process fallback data with proper type safety
         let buyerName = 'Unknown';
         let sellerName = 'Unknown';
         let productTitle = 'Unknown Product';
         let productImages: string[] = [];
         
-        // Handle buyer which could be an array or object
+        // Process buyer data safely
         if (fallbackData.buyer) {
           if (Array.isArray(fallbackData.buyer)) {
-            buyerName = fallbackData.buyer.length > 0 ? fallbackData.buyer[0]?.full_name || 'Unknown' : 'Unknown';
+            if (fallbackData.buyer.length > 0) {
+              buyerName = fallbackData.buyer[0]?.full_name || 'Unknown';
+            }
           } else {
             buyerName = fallbackData.buyer.full_name || 'Unknown';
           }
         }
         
-        // Handle seller which could be an array or object
+        // Process seller data safely
         if (fallbackData.seller) {
           if (Array.isArray(fallbackData.seller)) {
-            sellerName = fallbackData.seller.length > 0 ? fallbackData.seller[0]?.full_name || 'Unknown' : 'Unknown';
+            if (fallbackData.seller.length > 0) {
+              sellerName = fallbackData.seller[0]?.full_name || 'Unknown';
+            }
           } else {
             sellerName = fallbackData.seller.full_name || 'Unknown';
           }
         }
         
-        // Handle product which could be an array or object
+        // Process product data safely
         if (fallbackData.product) {
           if (Array.isArray(fallbackData.product)) {
-            productTitle = fallbackData.product.length > 0 ? fallbackData.product[0]?.title || 'Unknown Product' : 'Unknown Product';
-            productImages = fallbackData.product.length > 0 ? fallbackData.product[0]?.image_urls || [] : [];
+            if (fallbackData.product.length > 0) {
+              productTitle = fallbackData.product[0]?.title || 'Unknown Product';
+              productImages = fallbackData.product[0]?.image_urls || [];
+            }
           } else {
             productTitle = fallbackData.product.title || 'Unknown Product';
             productImages = fallbackData.product.image_urls || [];
