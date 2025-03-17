@@ -1,10 +1,26 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUpDown, Filter, MessageSquare, RefreshCw, Search, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,715 +29,629 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/context/AuthContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow } from "date-fns";
+import { AlertCircle, MessageSquare, Search, User } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
-// Define types for our tickets and replies
-type SupportTicket = {
+// Type definitions
+interface Profile {
+  full_name: string;
+  avatar_url: string;
+  email?: string;
+}
+
+interface SupportTicket {
   id: string;
   user_id: string;
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
   assigned_admin: string | null;
   created_at: string;
   updated_at: string;
-  profile?: {
-    full_name: string | null;
-    avatar_url: string | null;
-    email?: string;
-  };
-  replies_count?: number;
-};
+  replies_count: number;
+  profile: Profile;
+}
 
-type TicketReply = {
+interface TicketReply {
   id: string;
   ticket_id: string;
   user_id: string;
   message: string;
   is_admin: boolean;
   created_at: string;
-  profile?: {
-    full_name: string | null;
-    avatar_url: string | null;
-  };
-};
+  profile: Profile;
+}
 
 export const AdminSupport = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+  const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [ticketReplies, setTicketReplies] = useState<TicketReply[]>([]);
-  const [replyMessage, setReplyMessage] = useState("");
-  const [replyLoading, setReplyLoading] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [updatedStatus, setUpdatedStatus] = useState<string>("");
-  const [updatedPriority, setUpdatedPriority] = useState<string>("");
-  const [sortColumn, setSortColumn] = useState<string>("created_at");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [replies, setReplies] = useState<TicketReply[]>([]);
+  const [newReply, setNewReply] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Fetch tickets
   const fetchTickets = async () => {
-    setLoading(true);
-    try {
-      const { data: ticketsData, error } = await supabase
-        .from('support_tickets')
-        .select(`
-          *,
-          profile:profiles(full_name, avatar_url)
-        `)
-        .order(sortColumn, { ascending: sortDirection === "asc" });
-        
-      if (error) throw error;
-
-      // Get reply counts for each ticket
-      const ticketsWithReplyCounts = await Promise.all(
-        ticketsData.map(async (ticket) => {
-          const { count, error: countError } = await supabase
-            .from('ticket_replies')
-            .select('id', { count: 'exact', head: true })
-            .eq('ticket_id', ticket.id);
-            
-          if (countError) throw countError;
-          
-          return {
-            ...ticket,
-            replies_count: count || 0
-          };
-        })
-      );
-      
-      setTickets(ticketsWithReplyCounts);
-    } catch (error) {
-      console.error("Error fetching tickets:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to load tickets",
-        description: "There was an error loading the support tickets."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get ticket replies
-  const fetchTicketReplies = async (ticketId: string) => {
-    setReplyLoading(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('ticket_replies')
+        .from("support_tickets")
         .select(`
           *,
-          profile:profiles(full_name, avatar_url)
+          profile:profiles!support_tickets_user_id_fkey(full_name, avatar_url),
+          replies_count:ticket_replies(count)
         `)
-        .eq('ticket_id', ticketId)
-        .order('created_at', { ascending: true });
-        
-      if (error) throw error;
-      
-      setTicketReplies(data || []);
-    } catch (error) {
-      console.error("Error fetching ticket replies:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to load replies",
-        description: "There was an error loading the ticket conversation."
-      });
-    } finally {
-      setReplyLoading(false);
-    }
-  };
+        .order("created_at", { ascending: false });
 
-  // Submit reply
-  const handleSubmitReply = async () => {
-    if (!selectedTicket || !replyMessage.trim() || !user) return;
-    
-    setReplyLoading(true);
-    try {
-      const { error } = await supabase
-        .from('ticket_replies')
-        .insert({
-          ticket_id: selectedTicket.id,
-          user_id: user.id,
-          message: replyMessage,
-          is_admin: true
+      if (error) {
+        console.error("Error fetching tickets:", error);
+        toast({
+          title: "Error fetching tickets",
+          description: error.message,
+          variant: "destructive",
         });
-        
-      if (error) throw error;
-      
-      // Update ticket status to in_progress if it's open
-      if (selectedTicket.status === 'open') {
-        await supabase
-          .from('support_tickets')
-          .update({ status: 'in_progress' })
-          .eq('id', selectedTicket.id);
-          
-        setSelectedTicket({
-          ...selectedTicket,
-          status: 'in_progress'
-        });
+        return;
       }
+
+      // Transform the data to match our SupportTicket type
+      const transformedData = data.map((ticket: any) => ({
+        ...ticket,
+        replies_count: ticket.replies_count[0]?.count || 0,
+        profile: ticket.profile || { full_name: "Unknown User", avatar_url: "" }
+      })) as SupportTicket[];
       
-      setReplyMessage("");
-      await fetchTicketReplies(selectedTicket.id);
-      
-      toast({
-        title: "Reply sent",
-        description: "Your reply has been added to the ticket."
-      });
+      setTickets(transformedData);
+      setFilteredTickets(transformedData);
     } catch (error) {
-      console.error("Error sending reply:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to send reply",
-        description: "There was an error sending your reply."
-      });
+      console.error("Error in fetchTickets:", error);
     } finally {
-      setReplyLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Update ticket
-  const handleUpdateTicket = async () => {
+  const fetchTicketReplies = async (ticketId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("ticket_replies")
+        .select(`
+          *,
+          profile:profiles!ticket_replies_user_id_fkey(full_name, avatar_url)
+        `)
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching replies:", error);
+        toast({
+          title: "Error fetching replies",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform the data to match our TicketReply type
+      const transformedData = data.map((reply: any) => ({
+        ...reply,
+        profile: reply.profile || { full_name: "Unknown User", avatar_url: "" }
+      })) as TicketReply[];
+
+      setReplies(transformedData);
+    } catch (error) {
+      console.error("Error in fetchTicketReplies:", error);
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
     if (!selectedTicket) return;
-    
+
+    // Validate status is one of the allowed values
+    const validStatus = ["open", "in_progress", "resolved", "closed"].includes(newStatus);
+    if (!validStatus) {
+      toast({
+        title: "Invalid status",
+        description: "The selected status is not valid.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
-        .from('support_tickets')
-        .update({
-          status: updatedStatus,
-          priority: updatedPriority,
-          assigned_admin: user?.id
-        })
-        .eq('id', selectedTicket.id);
-        
-      if (error) throw error;
+        .from("support_tickets")
+        .update({ status: newStatus as "open" | "in_progress" | "resolved" | "closed" })
+        .eq("id", selectedTicket.id);
+
+      if (error) {
+        console.error("Error updating ticket status:", error);
+        toast({
+          title: "Error updating ticket",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setSelectedTicket({ ...selectedTicket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" });
       
-      setSelectedTicket({
-        ...selectedTicket,
-        status: updatedStatus as any,
-        priority: updatedPriority as any,
-        assigned_admin: user?.id || null
-      });
+      // Update in the tickets list
+      const updatedTickets = tickets.map((ticket) =>
+        ticket.id === selectedTicket.id
+          ? { ...ticket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" }
+          : ticket
+      );
       
-      setIsUpdateModalOpen(false);
-      await fetchTickets();
-      
+      setTickets(updatedTickets);
+      setFilteredTickets(
+        updatedTickets.filter((ticket) => 
+          applyFilters(ticket, searchQuery, statusFilter, priorityFilter)
+        )
+      );
+
       toast({
         title: "Ticket updated",
-        description: "The ticket has been successfully updated."
+        description: `Ticket status changed to ${newStatus}`,
       });
     } catch (error) {
-      console.error("Error updating ticket:", error);
+      console.error("Error in handleStatusChange:", error);
+    }
+  };
+
+  const handlePriorityChange = async (newPriority: string) => {
+    if (!selectedTicket) return;
+
+    // Validate priority is one of the allowed values
+    const validPriority = ["low", "medium", "high", "urgent"].includes(newPriority);
+    if (!validPriority) {
       toast({
+        title: "Invalid priority",
+        description: "The selected priority is not valid.",
         variant: "destructive",
-        title: "Update failed",
-        description: "There was an error updating the ticket."
       });
+      return;
     }
-  };
 
-  // Handle ticket selection
-  const handleSelectTicket = async (ticket: SupportTicket) => {
-    setSelectedTicket(ticket);
-    setUpdatedStatus(ticket.status);
-    setUpdatedPriority(ticket.priority);
-    setIsDetailModalOpen(true);
-    await fetchTicketReplies(ticket.id);
-  };
+    try {
+      const { error } = await supabase
+        .from("support_tickets")
+        .update({ priority: newPriority as "low" | "medium" | "high" | "urgent" })
+        .eq("id", selectedTicket.id);
 
-  // Handle sort change
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("desc");
-    }
-  };
+      if (error) {
+        console.error("Error updating ticket priority:", error);
+        toast({
+          title: "Error updating ticket",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
-  // Filter tickets
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = 
-      ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (ticket.profile?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase());
+      // Update local state
+      setSelectedTicket({ ...selectedTicket, priority: newPriority as "low" | "medium" | "high" | "urgent" });
       
-    const matchesStatus = !statusFilter || ticket.status === statusFilter;
-    const matchesPriority = !priorityFilter || ticket.priority === priorityFilter;
-    
+      // Update in the tickets list
+      const updatedTickets = tickets.map((ticket) =>
+        ticket.id === selectedTicket.id
+          ? { ...ticket, priority: newPriority as "low" | "medium" | "high" | "urgent" }
+          : ticket
+      );
+      
+      setTickets(updatedTickets);
+      setFilteredTickets(
+        updatedTickets.filter((ticket) => 
+          applyFilters(ticket, searchQuery, statusFilter, priorityFilter)
+        )
+      );
+
+      toast({
+        title: "Ticket updated",
+        description: `Ticket priority changed to ${newPriority}`,
+      });
+    } catch (error) {
+      console.error("Error in handlePriorityChange:", error);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!newReply.trim() || !selectedTicket) return;
+
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const newReplyData = {
+        ticket_id: selectedTicket.id,
+        user_id: userData.user.id,
+        message: newReply,
+        is_admin: true,
+      };
+
+      const { data, error } = await supabase
+        .from("ticket_replies")
+        .insert(newReplyData)
+        .select(`
+          *,
+          profile:profiles!ticket_replies_user_id_fkey(full_name, avatar_url)
+        `)
+        .single();
+
+      if (error) {
+        console.error("Error sending reply:", error);
+        toast({
+          title: "Error sending reply",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If the ticket was previously "open", set it to "in_progress"
+      if (selectedTicket.status === "open") {
+        await handleStatusChange("in_progress");
+      }
+
+      // Add the new reply to the list
+      const transformedReply = {
+        ...data,
+        profile: data.profile || { full_name: "Admin", avatar_url: "" }
+      } as TicketReply;
+      
+      setReplies([...replies, transformedReply]);
+      setNewReply("");
+
+      toast({
+        title: "Reply sent",
+        description: "Your reply has been sent successfully.",
+      });
+    } catch (error) {
+      console.error("Error in handleSendReply:", error);
+    }
+  };
+
+  const handleSelectTicket = (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    fetchTicketReplies(ticket.id);
+  };
+
+  const applyFilters = (
+    ticket: SupportTicket,
+    query: string,
+    status: string,
+    priority: string
+  ) => {
+    // Apply search filter
+    const matchesSearch =
+      query === "" ||
+      ticket.title.toLowerCase().includes(query.toLowerCase()) ||
+      ticket.description.toLowerCase().includes(query.toLowerCase()) ||
+      ticket.profile.full_name.toLowerCase().includes(query.toLowerCase());
+
+    // Apply status filter
+    const matchesStatus = status === "all" || ticket.status === status;
+
+    // Apply priority filter
+    const matchesPriority = priority === "all" || ticket.priority === priority;
+
     return matchesSearch && matchesStatus && matchesPriority;
-  });
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm("");
-    setStatusFilter(null);
-    setPriorityFilter(null);
   };
 
-  // Status badge styling
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'open':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Open</Badge>;
-      case 'in_progress':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">In Progress</Badge>;
-      case 'resolved':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Resolved</Badge>;
-      case 'closed':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Closed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setFilteredTickets(
+      tickets.filter((ticket) => 
+        applyFilters(ticket, query, statusFilter, priorityFilter)
+      )
+    );
   };
 
-  // Priority badge styling
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'low':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Low</Badge>;
-      case 'medium':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Medium</Badge>;
-      case 'high':
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">High</Badge>;
-      case 'urgent':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Urgent</Badge>;
-      default:
-        return <Badge variant="outline">{priority}</Badge>;
-    }
+  const handleStatusFilter = (status: string) => {
+    setStatusFilter(status);
+    setFilteredTickets(
+      tickets.filter((ticket) => 
+        applyFilters(ticket, searchQuery, status, priorityFilter)
+      )
+    );
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+  const handlePriorityFilter = (priority: string) => {
+    setPriorityFilter(priority);
+    setFilteredTickets(
+      tickets.filter((ticket) => 
+        applyFilters(ticket, searchQuery, statusFilter, priority)
+      )
+    );
   };
 
-  // Load tickets on initial render and when sort changes
   useEffect(() => {
     fetchTickets();
-  }, [sortColumn, sortDirection]);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open":
+        return "bg-blue-500";
+      case "in_progress":
+        return "bg-yellow-500";
+      case "resolved":
+        return "bg-green-500";
+      case "closed":
+        return "bg-gray-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "low":
+        return "bg-green-500";
+      case "medium":
+        return "bg-blue-500";
+      case "high":
+        return "bg-orange-500";
+      case "urgent":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    return (
+      <Badge
+        className={`${getStatusColor(status)} text-white`}
+      >
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    return (
+      <Badge
+        className={`${getPriorityColor(priority)} text-white`}
+      >
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </Badge>
+    );
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
-        <p className="text-muted-foreground">Manage customer support tickets and respond to inquiries</p>
-      </div>
-
-      {/* Filters and search */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search tickets..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setStatusFilter('open')}>
-                Open Tickets
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('in_progress')}>
-                In Progress Tickets
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('resolved')}>
-                Resolved Tickets
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('closed')}>
-                Closed Tickets
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPriorityFilter('urgent')}>
-                Urgent Priority
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPriorityFilter('high')}>
-                High Priority
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={resetFilters}>
-                Clear Filters
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button onClick={fetchTickets} variant="outline" className="gap-1 w-full sm:w-auto">
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </Button>
-        </div>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Support Tickets</h1>
       
-      {/* Applied filters */}
-      {(statusFilter || priorityFilter) && (
-        <div className="flex flex-wrap gap-2 text-sm">
-          <div className="text-muted-foreground">Filters:</div>
-          {statusFilter && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Status: {statusFilter}
-              <button 
-                className="ml-1 hover:text-destructive" 
-                onClick={() => setStatusFilter(null)}
-              >
-                ×
-              </button>
-            </Badge>
-          )}
-          {priorityFilter && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Priority: {priorityFilter}
-              <button 
-                className="ml-1 hover:text-destructive" 
-                onClick={() => setPriorityFilter(null)}
-              >
-                ×
-              </button>
-            </Badge>
-          )}
-          <Button 
-            variant="link" 
-            className="text-xs h-auto p-0" 
-            onClick={resetFilters}
-          >
-            Clear All
-          </Button>
-        </div>
-      )}
-
-      {/* Tickets table */}
-      <div className="border rounded-md shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead 
-                className="w-[250px] cursor-pointer"
-                onClick={() => handleSort("title")}
-              >
-                <div className="flex items-center">
-                  Title
-                  {sortColumn === "title" && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead>User</TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("status")}
-              >
-                <div className="flex items-center">
-                  Status
-                  {sortColumn === "status" && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("priority")}
-              >
-                <div className="flex items-center">
-                  Priority
-                  {sortColumn === "priority" && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("created_at")}
-              >
-                <div className="flex items-center">
-                  Created
-                  {sortColumn === "created_at" && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead>Replies</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  <div className="flex justify-center">
-                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+      <Tabs defaultValue="tickets" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="tickets">All Tickets</TabsTrigger>
+          <TabsTrigger value="open">Open</TabsTrigger>
+          <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved</TabsTrigger>
+        </TabsList>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Ticket List</CardTitle>
+                <CardDescription>Manage support requests</CardDescription>
+                
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center border rounded-md px-3 py-2">
+                    <Search className="h-4 w-4 mr-2 text-gray-500" />
+                    <Input 
+                      placeholder="Search tickets..."
+                      className="border-0 p-0 shadow-none focus-visible:ring-0"
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                    />
                   </div>
-                  <div className="mt-2 text-sm text-muted-foreground">Loading tickets...</div>
-                </TableCell>
-              </TableRow>
-            ) : filteredTickets.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No tickets found</p>
-                    {(searchTerm || statusFilter || priorityFilter) && (
-                      <Button variant="link" onClick={resetFilters} className="mt-2">
-                        Clear filters
-                      </Button>
-                    )}
+                  
+                  <div className="flex space-x-2">
+                    <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={priorityFilter} onValueChange={handlePriorityFilter}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Priorities</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTickets.map((ticket) => (
-                <TableRow 
-                  key={ticket.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => handleSelectTicket(ticket)}
-                >
-                  <TableCell className="font-medium">{ticket.title}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {ticket.profile?.avatar_url ? (
-                        <img 
-                          src={ticket.profile.avatar_url} 
-                          alt={`${ticket.profile.full_name || 'User'}'s avatar`}
-                          className="h-6 w-6 rounded-full mr-2 object-cover"
-                        />
-                      ) : (
-                        <div className="h-6 w-6 rounded-full bg-neutral-200 flex items-center justify-center mr-2">
-                          <User className="h-3 w-3 text-neutral-500" />
-                        </div>
-                      )}
-                      <span>{ticket.profile?.full_name || "Unnamed User"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(ticket.status)}</TableCell>
-                  <TableCell>{getPriorityBadge(ticket.priority)}</TableCell>
-                  <TableCell>{formatDate(ticket.created_at)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{ticket.replies_count || 0}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Ticket detail modal */}
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex justify-between items-start gap-4">
-              <div>
-                <div>{selectedTicket?.title}</div>
-                <div className="flex gap-2 mt-1">
-                  {selectedTicket && getStatusBadge(selectedTicket.status)}
-                  {selectedTicket && getPriorityBadge(selectedTicket.priority)}
                 </div>
-              </div>
-              <Button
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsUpdateModalOpen(true);
-                }}
-              >
-                Update Ticket
-              </Button>
-            </DialogTitle>
-            <DialogDescription className="flex justify-between items-center">
-              <div>
-                Ticket #{selectedTicket?.id.slice(0, 8)} • Created {selectedTicket && formatDate(selectedTicket.created_at)}
-              </div>
-              <div className="flex items-center">
-                <User className="h-4 w-4 mr-1" />
-                <span>{selectedTicket?.profile?.full_name || "Unnamed User"}</span>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto mt-2">
-            {/* Original ticket description */}
-            <Card className="mb-6">
-              <CardHeader className="py-3">
-                <CardTitle className="text-base">Original Request</CardTitle>
               </CardHeader>
+              
               <CardContent>
-                <p className="whitespace-pre-wrap">{selectedTicket?.description}</p>
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <p>Loading tickets...</p>
+                  </div>
+                ) : filteredTickets.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
+                    <h3 className="font-medium text-gray-900">No tickets found</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {tickets.length > 0
+                        ? "Try adjusting your search or filters"
+                        : "There are no support tickets in the system yet"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                    {filteredTickets.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        className={`p-3 rounded-md border cursor-pointer hover:bg-gray-50 transition-colors ${
+                          selectedTicket?.id === ticket.id ? "border-blue-500 bg-blue-50" : ""
+                        }`}
+                        onClick={() => handleSelectTicket(ticket)}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="font-medium truncate">{ticket.title}</h3>
+                          <div className="flex space-x-1">
+                            {getStatusBadge(ticket.status)}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center text-xs text-gray-500 mb-2">
+                          <User className="h-3 w-3 mr-1" />
+                          <span>{ticket.profile.full_name}</span>
+                          <span className="mx-1">•</span>
+                          <span>{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          {getPriorityBadge(ticket.priority)}
+                          <div className="flex items-center text-xs text-gray-500">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            <span>{ticket.replies_count}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-            
-            {/* Conversation thread */}
-            <div className="space-y-4">
-              {replyLoading && ticketReplies.length === 0 ? (
-                <div className="flex justify-center my-8">
-                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : ticketReplies.length > 0 ? (
-                ticketReplies.map(reply => (
-                  <div 
-                    key={reply.id} 
-                    className={`flex ${reply.is_admin ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div 
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        reply.is_admin 
-                          ? 'bg-blue-100 text-blue-900' 
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <div className="flex items-center mb-1">
-                        <div className="flex items-center text-xs text-gray-500">
-                          {reply.profile?.full_name || "Unnamed User"}
-                          {reply.is_admin && <Badge className="ml-2 bg-blue-500">Admin</Badge>}
-                        </div>
-                      </div>
-                      <div className="whitespace-pre-wrap">{reply.message}</div>
-                      <div className="text-xs text-right mt-1 text-gray-500">
-                        {formatDate(reply.created_at)}
-                      </div>
+          </div>
+          
+          <div className="lg:col-span-2">
+            {selectedTicket ? (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between">
+                    <div>
+                      <CardTitle>{selectedTicket.title}</CardTitle>
+                      <CardDescription className="mt-1">
+                        Opened by {selectedTicket.profile.full_name} •{" "}
+                        {formatDistanceToNow(new Date(selectedTicket.created_at), { addSuffix: true })}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Select value={selectedTicket.status} onValueChange={handleStatusChange}>
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select value={selectedTicket.priority} onValueChange={handlePriorityChange}>
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  No replies yet
-                </div>
-              )}
-            </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="p-4 bg-gray-50 rounded-md mb-6">
+                    <p className="whitespace-pre-wrap">{selectedTicket.description}</p>
+                  </div>
+                  
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto mb-4">
+                    {replies.map((reply) => (
+                      <div
+                        key={reply.id}
+                        className={`flex ${reply.is_admin ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[80%] p-3 rounded-lg ${
+                            reply.is_admin
+                              ? "bg-blue-100 text-blue-900"
+                              : "bg-gray-100 text-gray-900"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={reply.profile.avatar_url} />
+                              <AvatarFallback>
+                                {reply.profile.full_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">
+                              {reply.profile.full_name} {reply.is_admin && "(Admin)"}
+                            </span>
+                            <span className="text-xs">
+                              {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="whitespace-pre-wrap">{reply.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4">
+                    <Textarea
+                      placeholder="Type your reply here..."
+                      value={newReply}
+                      onChange={(e) => setNewReply(e.target.value)}
+                      rows={3}
+                      className="mb-2"
+                    />
+                    <Button
+                      onClick={handleSendReply}
+                      disabled={!newReply.trim()}
+                      className="w-full"
+                    >
+                      Send Reply
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="h-full flex items-center justify-center">
+                <CardContent className="py-12 text-center">
+                  <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900">No ticket selected</h3>
+                  <p className="text-gray-500 mt-1">
+                    Select a ticket from the list to view details
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
-          
-          {/* Reply form */}
-          <div className="mt-4 border-t pt-4">
-            <Textarea
-              placeholder="Type your reply..."
-              className="resize-none"
-              rows={3}
-              value={replyMessage}
-              onChange={(e) => setReplyMessage(e.target.value)}
-            />
-            <div className="flex justify-end mt-2">
-              <Button 
-                onClick={handleSubmitReply} 
-                disabled={!replyMessage.trim() || replyLoading}
-              >
-                {replyLoading ? "Sending..." : "Send Reply"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Update ticket modal */}
-      <Dialog open={isUpdateModalOpen} onOpenChange={setIsUpdateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Ticket</DialogTitle>
-            <DialogDescription>
-              Change the status and priority of this ticket.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={updatedStatus} 
-                onValueChange={setUpdatedStatus}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select a status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select 
-                value={updatedPriority} 
-                onValueChange={setUpdatedPriority}
-              >
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select a priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUpdateModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateTicket}>
-              Update Ticket
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </Tabs>
     </div>
   );
 };

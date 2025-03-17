@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -13,9 +14,23 @@ import {
   MessageSquare
 } from "lucide-react";
 
+// Define the profile type
+interface UserProfile {
+  full_name?: string;
+  avatar_url?: string;
+}
+
+// Extend the user type
+interface ExtendedUser {
+  id: string;
+  email?: string;
+  profile?: UserProfile;
+}
+
 export const ProfileSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const extendedUser = user as ExtendedUser;
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
@@ -77,9 +92,9 @@ export const ProfileSidebar = () => {
     <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          {user?.profile?.avatar_url ? (
+          {extendedUser?.profile?.avatar_url ? (
             <img
-              src={user.profile.avatar_url}
+              src={extendedUser.profile.avatar_url}
               alt="Avatar"
               className="h-8 w-8 rounded-full object-cover"
             />
@@ -90,10 +105,10 @@ export const ProfileSidebar = () => {
           )}
           <div className="flex flex-col">
             <span className="font-bold text-md">
-              {user?.profile?.full_name || "My Account"}
+              {extendedUser?.profile?.full_name || "My Account"}
             </span>
             <div className="flex items-center text-xs text-gray-400">
-              <span>{user?.email}</span>
+              <span>{extendedUser?.email}</span>
             </div>
           </div>
         </div>
