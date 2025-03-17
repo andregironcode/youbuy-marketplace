@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -9,36 +8,19 @@ interface PaymentFormProps {
 }
 
 export function PaymentForm({ onSuccess }: PaymentFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!stripe || !elements) {
-      // Stripe.js hasn't yet loaded.
-      return;
-    }
-
     setIsProcessing(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/profile/purchases`,
-        },
-        redirect: "if_required"
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        // Payment succeeded
-        onSuccess();
-      }
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Call onSuccess callback to complete the order
+      onSuccess();
     } catch (error) {
       console.error('Payment error:', error);
       setErrorMessage('An unexpected error occurred.');
@@ -49,7 +31,16 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <div className="p-4 border border-gray-200 rounded-md space-y-4">
+        <div className="flex items-center justify-between">
+          <span>Cash on Delivery</span>
+          <span className="text-green-600 font-medium">Selected</span>
+        </div>
+        
+        <p className="text-sm text-muted-foreground">
+          Pay when you receive the item. The seller will be notified of your order.
+        </p>
+      </div>
       
       {errorMessage && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
@@ -61,7 +52,7 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
         type="submit" 
         className="w-full"
         variant="action"
-        disabled={!stripe || isProcessing}
+        disabled={isProcessing}
       >
         {isProcessing ? (
           <>
@@ -69,12 +60,12 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
             Processing...
           </>
         ) : (
-          "Pay Now"
+          "Complete Order"
         )}
       </Button>
       
       <p className="text-xs text-muted-foreground text-center mt-4">
-        Your payment will be held securely until you confirm receipt of the item.
+        By completing this order, you agree to the terms of service and privacy policy.
       </p>
     </form>
   );

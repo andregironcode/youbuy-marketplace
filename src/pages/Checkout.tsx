@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -12,12 +13,7 @@ import { CheckoutForm, CheckoutFormValues } from "@/components/checkout/Checkout
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { Loader2, ArrowLeft, ShoppingBag, CreditCard, CheckCircle, Home, Building } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { PaymentForm } from "@/components/checkout/PaymentForm";
-
-// Initialize Stripe (replace with your publishable key)
-const stripePromise = loadStripe("pk_test_YOUR_PUBLISHABLE_KEY");
 
 const CheckoutPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +31,6 @@ const CheckoutPage = () => {
     deliveryTime: "afternoon",
     instructions: ""
   });
-  const [clientSecret, setClientSecret] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
 
   // Fetch product details
@@ -69,25 +64,6 @@ const CheckoutPage = () => {
     enabled: !!id,
   });
 
-  // Check if seller has a Stripe account
-  const { data: sellerAccount, isLoading: checkingSellerAccount } = useQuery({
-    queryKey: ["sellerAccount", product?.seller?.id],
-    queryFn: async () => {
-      if (!product?.seller?.id) throw new Error("Seller ID is required");
-
-      const { data, error } = await supabase
-        .from("seller_accounts")
-        .select("*")
-        .eq("user_id", product.seller.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      return data;
-    },
-    enabled: !!product?.seller?.id,
-  });
-
   const handleDeliveryDetailsChange = (details: CheckoutFormValues) => {
     setDeliveryDetails(details);
     setStep('payment');
@@ -104,7 +80,7 @@ const CheckoutPage = () => {
     }
 
     try {
-      // 1. Create order record
+      // Create order record
       const { data: orderData, error: orderError } = await supabase.rpc('create_order', {
         p_product_id: id,
         p_buyer_id: user.id,
@@ -115,6 +91,26 @@ const CheckoutPage = () => {
       });
 
       if (orderError) throw orderError;
+
+      // Update product status to reserved
+      const { error: productError } = await supabase
+        .from("products")
+        .update({ 
+          product_status: "reserved",
+          reserved_user_id: user.id
+        })
+        .eq("id", id);
+
+      if (productError) throw productError;
+
+      // Create notification for seller
+      await supabase.from("notifications").insert({
+        user_id: product.seller.id,
+        type: "new_order",
+        title: "New Order Received",
+        description: `You have received a new order for ${product.title}`,
+        related_id: orderData
+      });
 
       return orderData;
     } catch (error) {
@@ -128,73 +124,26 @@ const CheckoutPage = () => {
     }
   };
 
-  const initializePaymentIntent = async (newOrderId: string) => {
-    try {
-      const response = await supabase.functions.invoke('stripe-payment/create-payment-intent', {
-        body: {
-          orderId: newOrderId,
-          amount: typeof product!.price === 'string' ? parseFloat(product!.price) : product!.price,
-          buyerId: user!.id,
-          sellerId: product!.seller.id,
-          productId: id
-        }
-      });
-
-      if (response.error) throw new Error(response.error);
-      
-      setClientSecret(response.data.clientSecret);
-      return true;
-    } catch (error) {
-      console.error("Error initializing payment:", error);
-      toast({
-        title: "Payment Error",
-        description: "Could not initialize payment. Please try again.",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    if (step === 'payment' && product && user && !clientSecret) {
-      const setupPayment = async () => {
-        const newOrderId = await createOrder();
-        if (newOrderId) {
-          setOrderId(newOrderId);
-          await initializePaymentIntent(newOrderId);
-        }
-      };
-      setupPayment();
-    }
-  }, [step, product, user]);
-
   const handlePaymentSuccess = async () => {
-    // Update product status to sold
-    if (id) {
-      const { error: productError } = await supabase
-        .from("products")
-        .update({ product_status: "sold" })
-        .eq("id", id);
-
-      if (productError) {
-        console.error("Error updating product status:", productError);
-      }
+    // Create order
+    const newOrderId = await createOrder();
+    if (newOrderId) {
+      setOrderId(newOrderId);
+      // Move to confirmation step
+      setStep('confirmation');
+      
+      toast({
+        title: "Order successful!",
+        description: "Your order has been placed successfully.",
+      });
     }
-
-    // Move to confirmation step
-    setStep('confirmation');
-    
-    toast({
-      title: "Purchase successful!",
-      description: "Your order has been placed successfully.",
-    });
   };
 
   const handleBackToProduct = () => {
     navigate(`/product/${id}`);
   };
 
-  if (isLoading || checkingSellerAccount) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <main className="flex-1 container py-8">
@@ -238,34 +187,8 @@ const CheckoutPage = () => {
                 Please sign in to continue with your purchase.
               </p>
               <Button asChild>
-                <Link to="/auth?redirect=/checkout/${id}">Sign In</Link>
+                <Link to={`/auth?redirect=/checkout/${id}`}>Sign In</Link>
               </Button>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
-  // Show message if seller hasn't set up Stripe
-  if (sellerAccount === null) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 container py-8">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-8">
-              <h2 className="text-2xl font-bold mb-2">Payment Not Available</h2>
-              <p className="text-muted-foreground mb-4">
-                This seller hasn't set up payments yet. You can contact them through messages.
-              </p>
-              <div className="flex gap-4">
-                <Button asChild variant="outline">
-                  <Link to={`/product/${id}`}>Back to Product</Link>
-                </Button>
-                <Button asChild>
-                  <Link to={`/messages?product=${id}`}>Message Seller</Link>
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </main>
@@ -303,7 +226,7 @@ const CheckoutPage = () => {
                     onSubmit={handleDeliveryDetailsChange}
                   />
                 )}
-                {step === 'payment' && clientSecret && (
+                {step === 'payment' && (
                   <div className="space-y-4">
                     <div className="p-4 bg-gray-50 rounded-md">
                       <h3 className="font-medium mb-2">Delivery Details</h3>
@@ -370,9 +293,7 @@ const CheckoutPage = () => {
                     
                     <div className="space-y-4">
                       <h3 className="font-medium">Payment Method</h3>
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <PaymentForm onSuccess={handlePaymentSuccess} />
-                      </Elements>
+                      <PaymentForm onSuccess={handlePaymentSuccess} />
                     </div>
                   </div>
                 )}
