@@ -1,14 +1,16 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
-import { searchProducts, getAllCategories, countActiveFilters } from "@/utils/searchUtils";
+import { searchProducts, getAllCategories, countActiveFilters, getUserLocation } from "@/utils/searchUtils";
 import { ProductType } from "@/types/product";
-import { Loader2, Tag } from "lucide-react";
+import { Loader2, Tag, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FilterSidebar } from "@/components/filters/FilterSidebar";
 import { FilterToggle } from "@/components/filters/FilterToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +23,31 @@ const SearchPage = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Get user location when distance filter is applied
+  useEffect(() => {
+    const distanceParam = searchParams.get("distance");
+    
+    if (distanceParam && !userLocation) {
+      setLocationLoading(true);
+      getUserLocation()
+        .then(location => {
+          setUserLocation(location);
+          if (!location) {
+            toast.error("Could not access your location. Distance filtering may not work correctly.");
+          }
+        })
+        .catch(error => {
+          console.error("Error getting location:", error);
+          toast.error("Error accessing your location. Please enable location services.");
+        })
+        .finally(() => {
+          setLocationLoading(false);
+        });
+    }
+  }, [searchParams, userLocation]);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -43,6 +70,7 @@ const SearchPage = () => {
           sortBy,
           distance,
           onlyAvailable,
+          userLocation
         });
         
         setProducts(results);
@@ -57,13 +85,14 @@ const SearchPage = () => {
         setActiveFiltersCount(countActiveFilters(searchParams));
       } catch (error) {
         console.error("Error searching products:", error);
+        toast.error("Error searching products. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchResults();
-  }, [searchParams, query, category, categories.length]);
+  }, [searchParams, query, category, categories.length, userLocation]);
 
   const getSearchTitle = () => {
     if (category && query) {
@@ -94,6 +123,12 @@ const SearchPage = () => {
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Tag className="h-3 w-3" />
                     {category}
+                  </Badge>
+                )}
+                {searchParams.get("distance") && userLocation && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Within {searchParams.get("distance")} km
                   </Badge>
                 )}
               </div>
@@ -156,10 +191,12 @@ const SearchPage = () => {
           )}
         </div>
 
-        {loading ? (
+        {loading || locationLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
-            <p className="mt-4 text-muted-foreground">Searching for products...</p>
+            <p className="mt-4 text-muted-foreground">
+              {locationLoading ? "Getting your location..." : "Searching for products..."}
+            </p>
           </div>
         ) : (
           <>

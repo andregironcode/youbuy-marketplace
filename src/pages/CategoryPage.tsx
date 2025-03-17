@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
 import { categories } from "@/data/categories";
 import { ProductType } from "@/types/product";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { convertToProductType } from "@/types/product";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
@@ -11,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { FilterSidebar } from "@/components/filters/FilterSidebar";
 import { FilterToggle } from "@/components/filters/FilterToggle";
 import { Badge } from "@/components/ui/badge";
-import { countActiveFilters } from "@/utils/searchUtils";
+import { countActiveFilters, getUserLocation } from "@/utils/searchUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { calculateDistance } from "@/utils/locationUtils";
+import { toast } from "sonner";
 
 const CategoryPage = () => {
   const { categoryId, subcategoryId, subSubcategoryId } = useParams();
@@ -26,6 +29,8 @@ const CategoryPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     const handleToggleCategories = () => {
@@ -46,15 +51,39 @@ const CategoryPage = () => {
     }
   }, [categoryId]);
 
+  // Get user location when distance filter is applied
+  useEffect(() => {
+    const distanceParam = searchParams.get("distance");
+    
+    if (distanceParam && !userLocation) {
+      setLocationLoading(true);
+      getUserLocation()
+        .then(location => {
+          setUserLocation(location);
+          if (!location) {
+            toast.error("Could not access your location. Distance filtering may not work correctly.");
+          }
+        })
+        .catch(error => {
+          console.error("Error getting location:", error);
+          toast.error("Error accessing your location. Please enable location services.");
+        })
+        .finally(() => {
+          setLocationLoading(false);
+        });
+    }
+  }, [searchParams, userLocation]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       
       try {
-        const minPrice = searchParams.get("min_price");
-        const maxPrice = searchParams.get("max_price");
+        const minPrice = searchParams.get("min_price") ? Number(searchParams.get("min_price")) : undefined;
+        const maxPrice = searchParams.get("max_price") ? Number(searchParams.get("max_price")) : undefined;
         const sortBy = searchParams.get("sort") || "recent";
         const onlyAvailable = searchParams.get("available") === "true";
+        const distance = searchParams.get("distance") ? Number(searchParams.get("distance")) : undefined;
         
         let query = supabase
           .from('products')
@@ -79,11 +108,11 @@ const CategoryPage = () => {
           }
         }
         
-        if (minPrice) {
+        if (minPrice !== undefined) {
           query = query.gte('price', minPrice);
         }
         
-        if (maxPrice) {
+        if (maxPrice !== undefined) {
           query = query.lte('price', maxPrice);
         }
         
@@ -112,20 +141,38 @@ const CategoryPage = () => {
         if (error) throw error;
         
         if (data) {
-          const mappedProducts = data.map(item => convertToProductType(item));
+          let mappedProducts = data.map(item => convertToProductType(item));
+          
+          // Filter by distance if user location is available
+          if (distance && userLocation && userLocation.lat && userLocation.lng) {
+            mappedProducts = mappedProducts.filter(product => {
+              if (product.location_lat && product.location_lng) {
+                const productDistance = calculateDistance(
+                  userLocation.lat,
+                  userLocation.lng,
+                  product.location_lat,
+                  product.location_lng
+                );
+                return productDistance <= distance;
+              }
+              return false;
+            });
+          }
+          
           setProducts(mappedProducts);
         }
         
         setActiveFiltersCount(countActiveFilters(searchParams));
       } catch (err) {
         console.error('Error fetching category products:', err);
+        toast.error("Error loading products. Please try again.");
       } finally {
         setLoading(false);
       }
     };
     
     fetchProducts();
-  }, [categoryId, subcategoryId, subSubcategoryId, searchParams]);
+  }, [categoryId, subcategoryId, subSubcategoryId, searchParams, userLocation]);
 
   const getCategoryName = () => {
     if (!categoryId || categoryId === "all") return "All Categories";
@@ -200,6 +247,12 @@ const CategoryPage = () => {
               <p className="text-muted-foreground">
                 {products.length} {products.length === 1 ? 'item' : 'items'} available
               </p>
+              {searchParams.get("distance") && userLocation && (
+                <Badge variant="outline" className="flex items-center gap-1 mt-1">
+                  <MapPin className="h-3 w-3" />
+                  Within {searchParams.get("distance")} km
+                </Badge>
+              )}
             </div>
             
             <FilterToggle 
@@ -280,10 +333,12 @@ const CategoryPage = () => {
           </div>
         )}
         
-        {loading ? (
+        {loading || locationLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
-            <p className="mt-4 text-muted-foreground">Loading products...</p>
+            <p className="mt-4 text-muted-foreground">
+              {locationLoading ? "Getting your location..." : "Loading products..."}
+            </p>
           </div>
         ) : (
           <>

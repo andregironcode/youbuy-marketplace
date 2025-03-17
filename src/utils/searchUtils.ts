@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
+import { calculateDistance, getCurrentPosition } from "@/utils/locationUtils";
 
 interface SearchFilters {
   query?: string;
@@ -11,6 +11,7 @@ interface SearchFilters {
   distance?: number;
   onlyAvailable?: boolean;
   limit?: number;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 /**
@@ -29,7 +30,8 @@ export const searchProducts = async (
     sortBy = "recent",
     distance,
     onlyAvailable = false,
-    limit = 50 
+    limit = 50,
+    userLocation = null
   } = filters;
 
   if (!query && !category && !minPrice && !maxPrice && !onlyAvailable) {
@@ -55,12 +57,12 @@ export const searchProducts = async (
     }
 
     // Apply price filters if provided
-    if (minPrice) {
-      searchQuery = searchQuery.gte('price', minPrice.toString());
+    if (minPrice !== undefined && minPrice !== null) {
+      searchQuery = searchQuery.gte('price', minPrice);
     }
     
-    if (maxPrice) {
-      searchQuery = searchQuery.lte('price', maxPrice.toString());
+    if (maxPrice !== undefined && maxPrice !== null) {
+      searchQuery = searchQuery.lte('price', maxPrice);
     }
     
     // Apply availability filter
@@ -106,13 +108,22 @@ export const searchProducts = async (
       return [];
     }
 
-    // For distance filtering, we'll do it client-side
-    // since we need the user's location which isn't available server-side
+    // Filter by distance if user location is available
     let filteredData = data;
     
-    if (distance && navigator.geolocation) {
-      // This will be handled in the component after fetching
-      // as we need the user's current location
+    if (distance && userLocation && userLocation.lat && userLocation.lng) {
+      filteredData = data.filter(product => {
+        if (product.location_lat && product.location_lng) {
+          const productDistance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            product.location_lat,
+            product.location_lng
+          );
+          return productDistance <= distance;
+        }
+        return false;
+      });
     }
 
     return filteredData.map(item => convertToProductType(item));
@@ -230,4 +241,21 @@ export const countActiveFilters = (searchParams: URLSearchParams): number => {
   if (searchParams.get("available") === "true") count++;
   if (searchParams.get("distance") && searchParams.get("distance") !== "50") count++;
   return count;
+};
+
+/**
+ * Get user's location for distance-based filtering
+ * @returns Promise resolving to user's location or null if unavailable
+ */
+export const getUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+  try {
+    const position = await getCurrentPosition();
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    };
+  } catch (error) {
+    console.error("Error getting user location:", error);
+    return null;
+  }
 };

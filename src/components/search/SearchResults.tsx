@@ -28,7 +28,7 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
       setLoading(true);
       try {
         const [productResults, categoryResults] = await Promise.all([
-          searchProducts(query, 5),
+          searchProducts({ query, limit: 5 }),
           getCategorySuggestions(query)
         ]);
         
