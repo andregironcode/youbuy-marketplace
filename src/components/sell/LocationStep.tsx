@@ -162,12 +162,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
     });
   };
 
-  // Force map re-initialization
-  const handleReloadMap = () => {
-    setMapVisible(false);
-    setTimeout(() => setMapVisible(true), 100);
-  };
-
   return (
     <Card>
       <CardHeader>

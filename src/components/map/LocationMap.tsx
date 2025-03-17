@@ -4,8 +4,8 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, ZoomIn, ZoomOut, Navigation } from 'lucide-react';
+import { Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Mapbox access token - in a real app, this should be in an environment variable
 const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiYW5kcmVnaXJvbiIsImEiOiJjbThkamljNjQyNjFqMmxzNWt1NzdyZ3d4In0.8UA0NxYTGPiSsdcSV_5szA';
@@ -77,24 +77,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     setLoading(false);
   };
 
-  const handleReloadMap = () => {
-    setLoading(true);
-    setMapError(null);
-    setMapKey(Date.now()); // Force re-render of map
-    
-    // Destroy existing map instance
-    if (mapInstance.current) {
-      mapInstance.current.remove();
-      mapInstance.current = null;
-    }
-    
-    // Reset marker reference
-    markerRef.current = null;
-    
-    // Reset initialization flag
-    mapInitialized.current = false;
-  };
-
   const handleMapClick = async (event: mapboxgl.MapMouseEvent) => {
     if (!interactive || !onLocationSelect) return;
     
@@ -129,22 +111,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     } catch (error) {
       console.error('Error in reverse geocoding:', error);
       onLocationSelect(lat, lng, "Unknown location");
-    }
-  };
-
-  const handleZoomIn = () => {
-    if (mapInstance.current) {
-      const newZoom = Math.min((mapInstance.current.getZoom() || currentZoom) + 1, 20);
-      mapInstance.current.zoomTo(newZoom);
-      setCurrentZoom(newZoom);
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (mapInstance.current) {
-      const newZoom = Math.max((mapInstance.current.getZoom() || currentZoom) - 1, 1);
-      mapInstance.current.zoomTo(newZoom);
-      setCurrentZoom(newZoom);
     }
   };
 
@@ -324,10 +290,12 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       {mapError && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-100 rounded-md">
           <p className="text-red-500 mb-4">{mapError}</p>
-          <Button onClick={handleReloadMap} variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reload Map
-          </Button>
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              Try refreshing the page to reload the map.
+            </AlertDescription>
+          </Alert>
         </div>
       )}
       
@@ -340,28 +308,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           {renderMarker()}
         </div>
       </div>
-      
-      {interactive && (
-        <>
-          {/* Custom zoom controls */}
-          <div className="absolute bottom-16 right-2 z-10 flex flex-col space-y-2">
-            <Button onClick={handleZoomIn} variant="outline" size="icon" className="bg-white h-8 w-8">
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleZoomOut} variant="outline" size="icon" className="bg-white h-8 w-8">
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Reload button */}
-          <div className="absolute bottom-2 right-2 z-10">
-            <Button onClick={handleReloadMap} variant="outline" size="sm" className="bg-white">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Reload Map
-            </Button>
-          </div>
-        </>
-      )}
     </div>
   );
 };
