@@ -7,11 +7,11 @@ import {
   Package,
   ShoppingBag,
   CreditCard,
-  Settings,
   HelpCircle,
   Crown,
   Store,
-  MessageSquare
+  MessageSquare,
+  HeadphonesIcon
 } from "lucide-react";
 
 // Define the profile type
@@ -69,7 +69,7 @@ export const ProfileSidebar = () => {
       active: isActive("/wallet"),
     },
     {
-      icon: MessageSquare,
+      icon: HeadphonesIcon,
       label: "Support",
       href: "/profile/support",
       active: isActive("/support"),

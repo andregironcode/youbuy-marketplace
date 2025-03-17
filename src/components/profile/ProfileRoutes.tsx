@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { ProfileLayout } from "./ProfileLayout";
+import { ProfileLayout } from "@/components/profile/ProfileLayout";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { PurchasesPage } from "./pages/PurchasesPage";
