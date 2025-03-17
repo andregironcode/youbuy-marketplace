@@ -1,3 +1,4 @@
+
 /**
  * Calculate the distance between two geographic coordinates using the Haversine formula
  * @param lat1 Latitude of first point in degrees
