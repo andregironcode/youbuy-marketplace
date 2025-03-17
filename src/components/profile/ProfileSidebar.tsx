@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -11,16 +10,15 @@ import {
   Crown,
   Store,
   MessageSquare,
-  HeadphonesIcon
+  HeadphonesIcon,
+  LogOut
 } from "lucide-react";
 
-// Define the profile type
 interface UserProfile {
   full_name?: string;
   avatar_url?: string;
 }
 
-// Extend the user type
 interface ExtendedUser {
   id: string;
   email?: string;
@@ -29,14 +27,13 @@ interface ExtendedUser {
 
 export const ProfileSidebar = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const extendedUser = user as ExtendedUser;
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
   };
 
-  // Base items that are always shown
   const items = [
     {
       icon: User,
@@ -86,11 +83,16 @@ export const ProfileSidebar = () => {
       href: "/profile/premium",
       active: isActive("/premium"),
     },
+    {
+      icon: LogOut,
+      label: "Sign Out",
+      onClick: signOut,
+      active: false,
+    },
   ];
   
   return (
     <aside className="w-60 border-r border-gray-200 bg-white fixed h-screen flex flex-col">
-      {/* Fixed header section that stays visible */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
           {extendedUser?.profile?.avatar_url ? (
@@ -115,24 +117,33 @@ export const ProfileSidebar = () => {
         </div>
       </div>
 
-      {/* Scrollable navigation section with fixed height */}
       <div className="overflow-y-auto flex-1 no-scrollbar">
         <nav className="py-4">
           <ul className="space-y-1 px-2">
             {items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
-                    item.active
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
+              <li key={item.label}>
+                {item.href ? (
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
+                      item.active
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={item.onClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors w-full text-left"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </button>
+                )}
               </li>
             ))}
           </ul>
