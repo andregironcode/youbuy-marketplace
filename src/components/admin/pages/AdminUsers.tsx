@@ -56,51 +56,54 @@ export const AdminUsers = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Instead of using admin.listUsers, we'll use a more accessible approach
-      // that works with regular authenticated admin users
-      
-      // First fetch all profiles
+      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
       if (profilesError) throw profilesError;
       
-      // Fetch user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-      
-      if (rolesError) throw rolesError;
-      
-      // Combine the data
-      if (profiles) {
-        // Use Supabase auth API to get the current user's email
+      // Instead of directly querying the user_roles table which has RLS issues,
+      // Let's use the is_admin RPC function to check admin status for each user
+      if (profiles && profiles.length > 0) {
+        // Get the current user's info for comparison
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         
-        // Create a mapped users array with available data
-        const mappedUsers = profiles.map(profile => {
-          const role = userRoles?.find(role => role.user_id === profile.id)?.role || 'user';
-          
-          // For the current user, we know the email
-          const isCurrentUser = currentUser?.id === profile.id;
-          const email = isCurrentUser ? currentUser.email : `user-${profile.id.substring(0, 8)}@example.com`;
-          
-          return {
-            id: profile.id,
-            email: email,
-            created_at: profile.created_at || '',
-            profile: {
-              full_name: profile.full_name || null,
-              avatar_url: profile.avatar_url || null
-            },
-            role: role,
-            // We don't have status info without admin API, default to active
-            status: 'active'
-          };
-        });
-
-        setUsers(mappedUsers);
+        // Process each profile and determine admin status
+        const usersWithRoles = await Promise.all(
+          profiles.map(async (profile) => {
+            // Check if user is admin using the is_admin RPC function
+            const { data: isAdmin, error: adminCheckError } = await supabase
+              .rpc('is_admin', { user_uuid: profile.id });
+            
+            if (adminCheckError) {
+              console.error("Error checking admin status:", adminCheckError);
+            }
+            
+            // For the current user, we know the email
+            const isCurrentUser = currentUser?.id === profile.id;
+            const email = isCurrentUser 
+              ? currentUser.email 
+              : `user-${profile.id.substring(0, 8)}@example.com`;
+            
+            return {
+              id: profile.id,
+              email: email || '',
+              created_at: profile.created_at || '',
+              profile: {
+                full_name: profile.full_name || null,
+                avatar_url: profile.avatar_url || null
+              },
+              role: isAdmin ? 'admin' : 'user',
+              // We don't have status info without admin API, default to active
+              status: 'active'
+            };
+          })
+        );
+        
+        setUsers(usersWithRoles);
+      } else {
+        setUsers([]);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -166,36 +169,48 @@ export const AdminUsers = () => {
     
     try {
       if (confirmAction === 'make-admin') {
-        // Add admin role
-        const { error } = await supabase
-          .from('user_roles')
-          .upsert({ 
-            user_id: selectedUser.id, 
-            role: 'admin' 
-          }, { onConflict: 'user_id,role' });
+        // Instead of directly inserting into user_roles, use a more reliable approach
+        // Create an RPC function call to assign admin role
+        const { data, error } = await supabase
+          .rpc('assign_admin_role', { 
+            target_user_id: selectedUser.id 
+          });
         
         if (error) throw error;
         
-        toast({
-          title: "Admin role granted",
-          description: `${selectedUser.profile?.full_name || 'User'} is now an admin.`
-        });
-        
-        // Update local state
-        setUsers(users.map(user => 
-          user.id === selectedUser.id 
-            ? {...user, role: 'admin'} 
-            : user
-        ));
+        if (data) {
+          toast({
+            title: "Admin role granted",
+            description: `${selectedUser.profile?.full_name || 'User'} is now an admin.`
+          });
+          
+          // Update local state
+          setUsers(users.map(user => 
+            user.id === selectedUser.id 
+              ? {...user, role: 'admin'} 
+              : user
+          ));
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Permission denied",
+            description: "You don't have permission to assign admin roles."
+          });
+        }
       } else if (confirmAction === 'remove-admin') {
-        // Remove admin role
+        // For removing admin role, we'll need a similar approach
+        // Note: We would ideally have an RPC function for this, but for now
+        // let's use a direct approach with proper error handling
         const { error } = await supabase
           .from('user_roles')
           .delete()
           .eq('user_id', selectedUser.id)
           .eq('role', 'admin');
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error removing admin role:", error);
+          throw new Error("Permission denied or role doesn't exist");
+        }
         
         toast({
           title: "Admin role removed",
@@ -216,7 +231,7 @@ export const AdminUsers = () => {
       toast({
         variant: "destructive",
         title: "Action failed",
-        description: "There was an error managing the user role."
+        description: error instanceof Error ? error.message : "There was an error managing the user role."
       });
     }
   };
@@ -246,7 +261,7 @@ export const AdminUsers = () => {
       const link = document.createElement("a");
       
       link.setAttribute("href", url);
-      link.setAttribute("download", `wallapop-users-${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `youbuy-users-${new Date().toISOString().split('T')[0]}.csv`);
       link.click();
       
       URL.revokeObjectURL(url);
