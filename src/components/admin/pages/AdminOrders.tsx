@@ -41,22 +41,22 @@ import {
 import { format } from "date-fns";
 import { TrackingUpdate } from "@/components/sales/TrackingUpdate";
 
-// Define more specific interfaces for better type safety
-interface ProfileData {
+// Define more specific interfaces
+interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
   username: string | null;
 }
 
-interface ProductData {
+interface Product {
   id: string;
   title: string;
   image_urls?: string[] | null;
 }
 
-// Raw order data from Supabase
-interface OrderData {
+// Raw order from database
+interface OrderRaw {
   id: string;
   buyer_id: string;
   seller_id: string;
@@ -66,9 +66,10 @@ interface OrderData {
   created_at: string;
   updated_at: string;
   current_stage: string | null;
-  buyer: ProfileData[] | ProfileData | null;
-  seller: ProfileData[] | ProfileData | null;
-  product: ProductData[] | ProductData | null;
+  // These fields will be populated separately
+  buyer: Profile | null;
+  seller: Profile | null;
+  product: Product | null;
 }
 
 // Processed order with derived properties
@@ -165,46 +166,6 @@ export const AdminOrders = () => {
     }
   };
   
-  // Helper function to extract profile information safely
-  const extractProfileName = (
-    profileData: ProfileData | ProfileData[] | null
-  ): string => {
-    if (!profileData) return "Unknown";
-    
-    // Handle array case
-    if (Array.isArray(profileData)) {
-      if (profileData.length === 0) return "Unknown";
-      const profile = profileData[0];
-      return profile.full_name || profile.username || "Unknown";
-    }
-    
-    // Handle object case
-    return profileData.full_name || profileData.username || "Unknown";
-  };
-  
-  // Helper function to extract product information safely
-  const extractProductInfo = (
-    productData: ProductData | ProductData[] | null
-  ): { title: string; image: string | null } => {
-    if (!productData) return { title: "Unknown Product", image: null };
-    
-    // Handle array case
-    if (Array.isArray(productData)) {
-      if (productData.length === 0) return { title: "Unknown Product", image: null };
-      const product = productData[0];
-      return { 
-        title: product.title || "Unknown Product", 
-        image: product.image_urls?.[0] || null 
-      };
-    }
-    
-    // Handle object case
-    return { 
-      title: productData.title || "Unknown Product", 
-      image: productData.image_urls?.[0] || null 
-    };
-  };
-  
   const fetchOrders = async () => {
     setIsLoading(true);
     setError(null);
@@ -212,53 +173,61 @@ export const AdminOrders = () => {
     try {
       console.log("Fetching orders data...");
       
-      // Get orders data with detailed joins
-      const { data, error } = await supabase
+      // First fetch the orders
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select(`
-          *,
-          buyer:profiles!orders_buyer_id_fkey(*),
-          seller:profiles!orders_seller_id_fkey(*),
-          product:products(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error("Error fetching orders:", error);
-        throw error;
+      if (ordersError) {
+        throw ordersError;
       }
 
-      console.log("Fetched orders data:", data);
-
-      if (!data || data.length === 0) {
+      console.log("Fetched orders data:", ordersData);
+      
+      if (!ordersData || ordersData.length === 0) {
         setOrders([]);
         setIsLoading(false);
         return;
       }
-
-      // Process the data with proper typing
-      const processedOrders: ProcessedOrder[] = data.map((order: OrderData) => {
-        // Extract buyer name
-        const buyerName = extractProfileName(order.buyer);
-        
-        // Extract seller name
-        const sellerName = extractProfileName(order.seller);
-        
-        // Extract product info
-        const { title: productTitle, image: productImage } = extractProductInfo(order.product);
-        
-        return {
-          ...order,
-          buyer_name: buyerName,
-          seller_name: sellerName,
-          product_title: productTitle,
-          product_image: productImage
-        };
-      });
       
-      console.log("Processed orders data:", processedOrders);
+      // Process the raw orders with additional data
+      const processedOrders: ProcessedOrder[] = await Promise.all(
+        ordersData.map(async (order: OrderRaw) => {
+          // Fetch buyer profile
+          const { data: buyerData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', order.buyer_id)
+            .single();
+          
+          // Fetch seller profile
+          const { data: sellerData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', order.seller_id)
+            .single();
+          
+          // Fetch product
+          const { data: productData } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', order.product_id)
+            .single();
+          
+          return {
+            ...order,
+            buyer_name: buyerData?.full_name || buyerData?.username || "Unknown Buyer",
+            seller_name: sellerData?.full_name || sellerData?.username || "Unknown Seller",
+            product_title: productData?.title || "Unknown Product",
+            product_image: productData?.image_urls?.[0] || null
+          };
+        })
+      );
+      
+      console.log("Processed orders:", processedOrders);
       setOrders(processedOrders);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in fetchOrders:", error);
       setError("Failed to load orders. Please try again.");
       toast({
@@ -276,89 +245,55 @@ export const AdminOrders = () => {
       setIsLoading(true);
       console.log("Fetching order details for order ID:", orderId);
       
-      // Get detailed order data
+      // Get the order
       const { data: orderData, error: orderError } = await supabase
-        .from('order_tracking')
-        .select(`*`)
-        .eq('order_id', orderId)
-        .maybeSingle(); // using maybeSingle instead of single for better error handling
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
       
-      if (orderError || !orderData) {
-        console.error("Error fetching order details or no data found:", orderError);
-        
-        // Fallback to getting from orders table directly
-        console.log("Attempting fallback to orders table for order ID:", orderId);
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('orders')
-          .select(`
-            *,
-            buyer:profiles!orders_buyer_id_fkey(*),
-            seller:profiles!orders_seller_id_fkey(*),
-            product:products(*)
-          `)
-          .eq('id', orderId)
-          .single();
-          
-        if (fallbackError) {
-          console.error("Fallback error:", fallbackError);
-          throw new Error("Could not load order details");
-        }
-        
-        console.log("Fallback data:", fallbackData);
-        
-        // Process fallback data safely
-        let buyerName = 'Unknown';
-        let sellerName = 'Unknown';
-        let productTitle = 'Unknown Product';
-        let productImages: string[] = [];
-        let productId = fallbackData.product_id;
-        
-        // Process buyer data
-        if (fallbackData.buyer) {
-          buyerName = extractProfileName(fallbackData.buyer);
-        }
-        
-        // Process seller data
-        if (fallbackData.seller) {
-          sellerName = extractProfileName(fallbackData.seller);
-        }
-        
-        // Process product data
-        if (fallbackData.product) {
-          const productInfo = extractProductInfo(fallbackData.product);
-          productTitle = productInfo.title;
-          if (productInfo.image) {
-            productImages = [productInfo.image];
-          }
-          
-          // If product is an array and has an ID
-          if (Array.isArray(fallbackData.product) && fallbackData.product.length > 0) {
-            productId = fallbackData.product[0].id;
-          } else if (!Array.isArray(fallbackData.product)) {
-            productId = fallbackData.product.id;
-          }
-        }
-        
-        const formattedData: OrderDetails = {
-          order_id: fallbackData.id,
-          buyer_name: buyerName,
-          seller_name: sellerName,
-          product_title: productTitle,
-          product_images: productImages,
-          product_id: productId,
-          current_stage: fallbackData.status || 'pending',
-          status: fallbackData.status,
-          order_date: fallbackData.created_at,
-          estimated_delivery: fallbackData.estimated_delivery
-        };
-        
-        console.log("Using fallback order data:", formattedData);
-        setOrderDetails(formattedData);
-      } else {
-        console.log("Fetched order details:", orderData);
-        setOrderDetails(orderData);
+      if (orderError) {
+        throw new Error("Could not load order details");
       }
       
+      console.log("Order data fetched:", orderData);
+      
+      // Get associated buyer
+      const { data: buyerData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', orderData.buyer_id)
+        .single();
+      
+      // Get associated seller
+      const { data: sellerData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', orderData.seller_id)
+        .single();
+      
+      // Get associated product
+      const { data: productData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', orderData.product_id)
+        .single();
+      
+      const formattedData: OrderDetails = {
+        order_id: orderData.id,
+        buyer_name: buyerData?.full_name || buyerData?.username || "Unknown Buyer",
+        seller_name: sellerData?.full_name || sellerData?.username || "Unknown Seller",
+        product_title: productData?.title || "Unknown Product",
+        product_images: productData?.image_urls || [],
+        product_id: productData?.id,
+        current_stage: orderData.current_stage || orderData.status,
+        status: orderData.status,
+        order_date: orderData.created_at,
+        estimated_delivery: orderData.estimated_delivery
+      };
+      
+      console.log("Formatted order details:", formattedData);
+      setOrderDetails(formattedData);
       setIsDetailDialogOpen(true);
     } catch (error) {
       console.error("Error in viewOrderDetails:", error);
