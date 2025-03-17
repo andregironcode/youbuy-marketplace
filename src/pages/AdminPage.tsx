@@ -8,6 +8,8 @@ import { AdminOrders } from "@/components/admin/pages/AdminOrders";
 import { AdminReports } from "@/components/admin/pages/AdminReports";
 import { AdminSettings } from "@/components/admin/pages/AdminSettings";
 import { AdminSupport } from "@/components/admin/pages/AdminSupport";
+import { DeliveryRoutes } from "@/components/admin/pages/DeliveryRoutes";
+import { DriverPanel } from "@/components/delivery/DriverPanel";
 
 const AdminPage = () => {
   return (
@@ -21,6 +23,8 @@ const AdminPage = () => {
         <Route path="/reports" element={<AdminReports />} />
         <Route path="/settings" element={<AdminSettings />} />
         <Route path="/support" element={<AdminSupport />} />
+        <Route path="/delivery-routes" element={<DeliveryRoutes />} />
+        <Route path="/driver-panel" element={<DriverPanel />} />
       </Routes>
     </AdminLayout>
   );
