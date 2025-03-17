@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { UserProfileEdit } from "@/components/admin/UserProfileEdit";
 import {
   Table,
   TableBody,
@@ -28,6 +29,8 @@ type UserWithProfile = {
   created_at: string;
   profile: {
     full_name: string | null;
+    username: string | null;
+    bio: string | null;
     avatar_url: string | null;
   } | null;
   role: string;
@@ -38,9 +41,8 @@ export const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithProfile | null>(null);
-  const [editName, setEditName] = useState("");
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export const AdminUsers = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch all profiles
+      // Fetch all profiles with expanded data
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -92,6 +94,8 @@ export const AdminUsers = () => {
               created_at: profile.created_at || '',
               profile: {
                 full_name: profile.full_name || null,
+                username: profile.username || null,
+                bio: profile.bio || null,
                 avatar_url: profile.avatar_url || null
               },
               role: isAdmin ? 'admin' : 'user',
@@ -118,44 +122,14 @@ export const AdminUsers = () => {
     }
   };
 
-  const handleEditUser = (user: UserWithProfile) => {
+  const handleEditProfile = (user: UserWithProfile) => {
     setSelectedUser(user);
-    setEditName(user.profile?.full_name || "");
-    setIsEditDialogOpen(true);
+    setIsProfileDialogOpen(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!selectedUser) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: editName })
-        .eq('id', selectedUser.id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "User updated",
-        description: "User information has been updated successfully."
-      });
-      
-      // Update local state
-      setUsers(users.map(user => 
-        user.id === selectedUser.id 
-          ? {...user, profile: {...user.profile, full_name: editName}} 
-          : user
-      ));
-      
-      setIsEditDialogOpen(false);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      toast({
-        variant: "destructive",
-        title: "Update failed",
-        description: "There was an error updating the user."
-      });
-    }
+  const handleProfileUpdated = () => {
+    // Refresh the users list to reflect changes
+    fetchUsers();
   };
 
   const handleManageUserRole = (user: UserWithProfile, action: string) => {
@@ -289,6 +263,7 @@ export const AdminUsers = () => {
   // Filter users based on search term and filters
   const filteredUsers = users.filter(user => 
     (user.profile?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.profile?.username || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   ).filter(user => 
     filterRole ? user.role === filterRole : true
@@ -419,7 +394,12 @@ export const AdminUsers = () => {
                           </span>
                         </div>
                       )}
-                      <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
+                      <div>
+                        <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
+                        {user.profile?.username && (
+                          <div className="text-xs text-muted-foreground">@{user.profile.username}</div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{user.email}</TableCell>
@@ -446,8 +426,13 @@ export const AdminUsers = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)} className="h-8 w-8 p-0">
-                        <span className="sr-only">Edit</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEditProfile(user)} 
+                        className="h-8 w-8 p-0"
+                      >
+                        <span className="sr-only">Edit Profile</span>
                         <Edit className="h-4 w-4" />
                       </Button>
                       {user.role !== 'admin' ? (
@@ -480,33 +465,6 @@ export const AdminUsers = () => {
         </Table>
       </div>
 
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Make changes to user information below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input 
-                id="name" 
-                value={editName} 
-                onChange={(e) => setEditName(e.target.value)} 
-                placeholder="Enter user's name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveEdit}>Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Admin Role Dialog */}
       <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
         <DialogContent>
@@ -529,6 +487,22 @@ export const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Profile Edit Dialog */}
+      {selectedUser && (
+        <UserProfileEdit
+          userId={selectedUser.id}
+          profileData={{
+            full_name: selectedUser.profile?.full_name || "",
+            username: selectedUser.profile?.username || "",
+            bio: selectedUser.profile?.bio || "", 
+            avatar_url: selectedUser.profile?.avatar_url || ""
+          }}
+          open={isProfileDialogOpen}
+          onOpenChange={setIsProfileDialogOpen}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
     </div>
   );
 };

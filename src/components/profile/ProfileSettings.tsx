@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,6 @@ const ProfileFormSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
   bio: z.string().max(300, "Bio must be less than 300 characters").optional(),
   location: z.string().max(100, "Location must be less than 100 characters").optional(),
-  website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   avatar_url: z.string().optional(),
   email: z.string().email("Please enter a valid email").optional(),
   phone: z.string().optional(),
@@ -42,7 +42,6 @@ export function ProfileSettings() {
       full_name: "",
       bio: "",
       location: "",
-      website: "",
       avatar_url: "",
       email: "",
       phone: "",
@@ -74,7 +73,6 @@ export function ProfileSettings() {
             full_name: profile.full_name || "",
             bio: profile.bio || "",
             location: profile.location || "",
-            website: profile.website || "",
             avatar_url: profile.avatar_url || "",
             email: user.email || "",
             phone: profile.phone || "",
@@ -171,7 +169,6 @@ export function ProfileSettings() {
           full_name: data.full_name,
           bio: data.bio,
           location: data.location,
-          website: data.website,
           avatar_url: data.avatar_url,
           phone: data.phone,
           updated_at: new Date().toISOString(),
@@ -360,24 +357,6 @@ export function ProfileSettings() {
                         <FormControl>
                           <Input 
                             placeholder="Dubai, UAE" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Website */}
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="https://yourwebsite.com" 
                             {...field}
                           />
                         </FormControl>
