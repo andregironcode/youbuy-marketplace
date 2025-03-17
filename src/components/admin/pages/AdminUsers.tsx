@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Edit, Trash2, Ban, CheckSquare } from "lucide-react";
+import { Search, Edit, Trash2, Ban, CheckSquare, Filter, Download, AlertCircle, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -15,6 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type UserWithProfile = {
   id: string;
@@ -38,6 +44,8 @@ export const AdminUsers = () => {
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [filterRole, setFilterRole] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -213,9 +221,64 @@ export const AdminUsers = () => {
     }
   };
 
+  const handleExportUsers = () => {
+    try {
+      // Create CSV content
+      const headers = ["Name", "Email", "Role", "Status", "Join Date"];
+      const csvRows = [headers];
+      
+      filteredUsers.forEach(user => {
+        csvRows.push([
+          user.profile?.full_name || "Unnamed User",
+          user.email,
+          user.role,
+          user.status,
+          new Date(user.created_at).toLocaleDateString()
+        ]);
+      });
+      
+      // Create CSV string
+      const csvContent = csvRows.map(row => row.join(",")).join("\n");
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `wallapop-users-${new Date().toISOString().split('T')[0]}.csv`);
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export successful",
+        description: "User data has been exported to CSV."
+      });
+    } catch (error) {
+      console.error("Error exporting users:", error);
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "There was an error exporting the user data."
+      });
+    }
+  };
+
+  const resetFilters = () => {
+    setFilterRole(null);
+    setFilterStatus(null);
+    setSearchTerm("");
+  };
+
+  // Filter users based on search term and filters
   const filteredUsers = users.filter(user => 
     (user.profile?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  ).filter(user => 
+    filterRole ? user.role === filterRole : true
+  ).filter(user => 
+    filterStatus ? user.status === filterStatus : true
   );
 
   return (
@@ -225,50 +288,102 @@ export const AdminUsers = () => {
         <p className="text-muted-foreground">View and manage user accounts on the platform</p>
       </div>
       
-      <div className="flex justify-between items-center">
-        <div className="relative w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search users..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setFilterRole('admin')}>
+                Admin Users
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterRole('user')}>
+                Regular Users
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('active')}>
+                Active Users
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={resetFilters}>
+                Clear Filters
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <Button onClick={fetchUsers} disabled={isLoading}>
-          {isLoading ? "Loading..." : "Refresh Users"}
-        </Button>
+        
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={handleExportUsers} variant="outline" className="gap-1 w-full sm:w-auto">
+            <Download className="h-4 w-4" />
+            <span>Export</span>
+          </Button>
+          <Button onClick={fetchUsers} disabled={isLoading} className="gap-1 w-full sm:w-auto">
+            {isLoading ? "Loading..." : "Refresh"}
+          </Button>
+        </div>
       </div>
       
       {error && (
-        <div className="p-4 border border-red-300 bg-red-50 text-red-700 rounded-md">
-          {error}
+        <div className="p-4 border border-red-300 bg-red-50 text-red-700 rounded-md flex items-center gap-2">
+          <AlertCircle className="h-5 w-5" />
+          <span>{error}</span>
         </div>
       )}
       
-      <div className="border rounded-md">
+      {filteredUsers.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredUsers.length} of {users.length} users
+          {filterRole && ` • Role: ${filterRole}`}
+          {filterStatus && ` • Status: ${filterStatus}`}
+        </div>
+      )}
+      
+      <div className="border rounded-md shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead className="w-[250px]">Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Join Date</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  Loading users...
+                  <div className="flex justify-center">
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">Loading users...</div>
                 </TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  No users found
+                  <div className="flex flex-col items-center justify-center">
+                    <UserPlus className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">No users found</p>
+                    {(searchTerm || filterRole || filterStatus) && (
+                      <Button variant="link" onClick={resetFilters} className="mt-2">
+                        Clear filters
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -276,17 +391,23 @@ export const AdminUsers = () => {
                 <TableRow key={user.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div className="flex items-center">
-                      {user.profile?.avatar_url && (
+                      {user.profile?.avatar_url ? (
                         <img 
                           src={user.profile.avatar_url} 
                           alt={`${user.profile.full_name || 'User'}'s avatar`}
-                          className="h-8 w-8 rounded-full mr-3"
+                          className="h-8 w-8 rounded-full mr-3 object-cover"
                         />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center mr-3">
+                          <span className="text-xs font-medium text-neutral-600">
+                            {(user.profile?.full_name || "U").charAt(0).toUpperCase()}
+                          </span>
+                        </div>
                       )}
                       <div className="font-medium">{user.profile?.full_name || "Unnamed User"}</div>
                     </div>
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell className="font-mono text-xs">{user.email}</TableCell>
                   <TableCell>
                     <span 
                       className={`inline-flex px-2 py-1 text-xs rounded-full ${
@@ -308,18 +429,31 @@ export const AdminUsers = () => {
                   <TableCell>
                     {new Date(user.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)} className="h-8 w-8 p-0">
+                        <span className="sr-only">Edit</span>
                         <Edit className="h-4 w-4" />
                       </Button>
                       {user.role !== 'admin' ? (
-                        <Button variant="ghost" size="icon" onClick={() => handleManageUserRole(user, 'make-admin')}>
-                          <CheckSquare className="h-4 w-4 text-green-500" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleManageUserRole(user, 'make-admin')}
+                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                        >
+                          <span className="sr-only">Make Admin</span>
+                          <CheckSquare className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="icon" onClick={() => handleManageUserRole(user, 'remove-admin')}>
-                          <Ban className="h-4 w-4 text-red-500" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleManageUserRole(user, 'remove-admin')}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <span className="sr-only">Remove Admin</span>
+                          <Ban className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -347,6 +481,7 @@ export const AdminUsers = () => {
                 id="name" 
                 value={editName} 
                 onChange={(e) => setEditName(e.target.value)} 
+                placeholder="Enter user's name"
               />
             </div>
           </div>
