@@ -78,7 +78,7 @@ export const useImageUpload = () => {
     const uploadedUrls: string[] = [];
     
     try {
-      // Check if product-images bucket exists
+      // Ensure product-images bucket exists by creating it if needed
       const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === 'product-images');
       
@@ -86,12 +86,25 @@ export const useImageUpload = () => {
       if (!bucketExists) {
         console.log('Creating product-images bucket');
         const { error } = await supabase.storage.createBucket('product-images', {
-          public: true
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
         });
         
         if (error) {
           console.error('Error creating bucket:', error);
           throw error;
+        }
+      }
+      
+      // Create bucket policy to allow public access if it doesn't exist
+      try {
+        await supabase.storage.from('product-images').getPublicUrl('test');
+      } catch {
+        const { error: policyError } = await supabase.storage.from('product-images').createSignedUrl('test', 1);
+        if (policyError) {
+          console.log('Setting public policy for product-images');
+          await supabase.storage.setBucketPublic('product-images', true);
         }
       }
       
@@ -102,7 +115,10 @@ export const useImageUpload = () => {
         
         const { error: uploadError, data } = await supabase.storage
           .from('product-images')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
           
         if (uploadError) {
           console.error('Error uploading image:', uploadError);

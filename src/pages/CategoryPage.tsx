@@ -148,8 +148,8 @@ const CategoryPage = () => {
                 const productDistance = calculateDistance(
                   userLocation.lat,
                   userLocation.lng,
-                  product.coordinates.latitude,
-                  product.coordinates.longitude
+                  product.latitude,
+                  product.longitude
                 );
                 return productDistance <= distance;
               }

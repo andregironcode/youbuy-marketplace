@@ -5,7 +5,7 @@ import { Navigate } from "react-router-dom";
 import { DriverRoutes } from "@/components/delivery/DriverRoutes";
 
 const DriverPage = () => {
-  const { user, loading, profile } = useAuth();
+  const { user, loading, profile: userData } = useAuth();
   
   // Show loading state
   if (loading) {
@@ -25,7 +25,7 @@ const DriverPage = () => {
   }
   
   // Redirect if not a driver
-  if (profile?.role !== 'driver') {
+  if (userData?.role !== 'driver') {
     return <Navigate to="/" replace />;
   }
 

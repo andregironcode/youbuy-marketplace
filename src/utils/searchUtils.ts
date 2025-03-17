@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
 import { calculateDistance, getCurrentPosition } from "@/utils/locationUtils";
