@@ -10,24 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 // Mapbox access token - in a real app, this should be in an environment variable
 const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiYW5kcmVnaXJvbiIsImEiOiJjbThkamljNjQyNjFqMmxzNWt1NzdyZ3d4In0.8UA0NxYTGPiSsdcSV_5szA';
 
-// Circle layer for approximate location
-const circleLayer = {
-  id: 'circle-layer',
-  type: 'circle',
-  paint: {
-    'circle-radius': 70,
-    'circle-color': '#ff385c',
-    'circle-opacity': 0.2,
-    'circle-stroke-width': 2,
-    'circle-stroke-color': '#ff385c'
-  }
-};
-
-const markerStyle = {
-  cursor: 'pointer',
-  fill: '#ff385c'
-};
-
 interface LocationMapProps {
   latitude?: number;
   longitude?: number;
@@ -53,12 +35,11 @@ export const LocationMap: React.FC<LocationMapProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [mapKey, setMapKey] = useState(Date.now()); // For map reloading
-  const [currentZoom, setCurrentZoom] = useState(zoom);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const mapInitialized = useRef(false);
+  const markersInitialized = useRef(false);
 
   // Default center if no coordinates provided - Dubai as an example location
   const center = {
@@ -78,7 +59,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   };
 
   const handleMapClick = async (event: mapboxgl.MapMouseEvent) => {
-    if (!interactive || !onLocationSelect) return;
+    if (!interactive || !onLocationSelect || !mapInstance.current) return;
     
     const { lngLat } = event;
     const lng = lngLat.lng;
@@ -93,24 +74,39 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       onLocationSelect(lat, lng, address);
       
       // Update marker position
-      if (markerRef.current && !approximate) {
-        markerRef.current.setLngLat([lng, lat]);
-      } else if (mapInstance.current && approximate) {
-        // Update approximate circle
-        if (mapInstance.current.getSource('approximate-location')) {
-          (mapInstance.current.getSource('approximate-location') as mapboxgl.GeoJSONSource).setData({
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [lng, lat]
-            },
-            properties: {}
-          });
-        }
-      }
+      updateMarkerPosition(lng, lat);
     } catch (error) {
       console.error('Error in reverse geocoding:', error);
       onLocationSelect(lat, lng, "Unknown location");
+    }
+  };
+
+  // Function to update marker position
+  const updateMarkerPosition = (lng: number, lat: number) => {
+    if (!mapInstance.current) return;
+
+    if (approximate) {
+      // Update approximate circle
+      if (mapInstance.current.getSource('approximate-location')) {
+        (mapInstance.current.getSource('approximate-location') as mapboxgl.GeoJSONSource).setData({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [lng, lat]
+          },
+          properties: {}
+        });
+      }
+    } else {
+      // Update exact marker
+      if (markerRef.current) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        // Create marker if it doesn't exist
+        markerRef.current = new mapboxgl.Marker({ color: '#ff385c' })
+          .setLngLat([lng, lat])
+          .addTo(mapInstance.current);
+      }
     }
   };
 
@@ -162,13 +158,13 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         );
       }
       
-      // Add marker if needed
-      if (showMarker && latitude !== undefined && longitude !== undefined) {
-        if (approximate) {
-          // For approximate location, we'll add this when the map is loaded
-          map.on('load', () => {
+      // Add map load listener for adding sources/layers
+      map.on('load', () => {
+        // Only initialize markers if we have coordinates and showMarker is true
+        if (showMarker && latitude !== undefined && longitude !== undefined && !markersInitialized.current) {
+          if (approximate) {
+            // For approximate location, add a circle
             if (!map.getSource('approximate-location')) {
-              // Create a circular area to represent approximate location
               map.addSource('approximate-location', {
                 type: 'geojson',
                 data: {
@@ -194,14 +190,17 @@ export const LocationMap: React.FC<LocationMapProps> = ({
                 }
               });
             }
-          });
-        } else {
-          // For exact location, use a marker
-          markerRef.current = new mapboxgl.Marker({ color: '#ff385c' })
-            .setLngLat([longitude, latitude])
-            .addTo(map);
+          } else {
+            // For exact location, use a marker
+            if (!markerRef.current) {
+              markerRef.current = new mapboxgl.Marker({ color: '#ff385c' })
+                .setLngLat([longitude, latitude])
+                .addTo(map);
+            }
+          }
+          markersInitialized.current = true;
         }
-      }
+      });
       
       console.log("Map initialization completed");
     } catch (error) {
@@ -222,9 +221,14 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         mapInstance.current.remove();
         mapInstance.current = null;
       }
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
       mapInitialized.current = false;
+      markersInitialized.current = false;
     };
-  }, [mapKey]); // Only re-run when mapKey changes
+  }, []); // Only run once on component mount
   
   // Update map when coordinates change
   useEffect(() => {
@@ -239,24 +243,9 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       });
       
       // Update marker position
-      if (markerRef.current && !approximate) {
-        markerRef.current.setLngLat([longitude, latitude]);
-      } else if (approximate && mapInstance.current.getSource('approximate-location')) {
-        try {
-          (mapInstance.current.getSource('approximate-location') as mapboxgl.GeoJSONSource).setData({
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [longitude, latitude]
-            },
-            properties: {}
-          });
-        } catch (error) {
-          console.error("Error updating approximate location source:", error);
-        }
-      }
+      updateMarkerPosition(longitude, latitude);
     }
-  }, [latitude, longitude, zoom, approximate]);
+  }, [latitude, longitude, zoom, approximate, showMarker]);
 
   // Create a marker element for showing the location
   const renderMarker = () => {
