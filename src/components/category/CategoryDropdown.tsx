@@ -72,7 +72,7 @@ export const CategoryDropdown = () => {
             Categories
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] list-none">
+            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
               {categories.slice(0, 6).map((category) => (
                 <ListItem
                   key={category.id}

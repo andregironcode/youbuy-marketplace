@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useAuth } from "@/context/AuthContext";
@@ -5,9 +6,15 @@ import { ProductType, convertToProductType } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 import { useNavigate } from "react-router-dom";
+import { ProductSection } from "@/components/product/ProductSection";
+import { HomeBanner } from "@/components/home/HomeBanner";
+import { CategoryCards } from "@/components/home/CategoryCards";
+import { PopularNearYou } from "@/components/home/PopularNearYou";
+import { TrendingProducts } from "@/components/home/TrendingProducts";
 
 const Index = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCategories, setShowCategories] = useState(false);
   const { user } = useAuth();
@@ -31,6 +38,7 @@ const Index = () => {
       setLoading(true);
       
       try {
+        // Fetch regular products
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -53,6 +61,27 @@ const Index = () => {
         if (data) {
           const mappedProducts = data.map(item => convertToProductType(item));
           setProducts(mappedProducts);
+        }
+
+        // Fetch trending products (most liked)
+        const { data: trendingData, error: trendingError } = await supabase
+          .from('products')
+          .select(`
+            *,
+            profiles:seller_id(
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .order('like_count', { ascending: false })
+          .limit(12);
+          
+        if (trendingError) {
+          console.error('Error fetching trending products:', trendingError);
+        } else if (trendingData) {
+          const mappedTrending = trendingData.map(item => convertToProductType(item));
+          setTrendingProducts(mappedTrending);
         }
       } catch (err) {
         console.error('Error in products fetch:', err);
@@ -82,7 +111,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container py-8">
+      <main className="flex-1">
         {/* CategoryBrowser component */}
         <CategoryBrowser 
           open={showCategories} 
@@ -90,32 +119,28 @@ const Index = () => {
           onSelectCategory={handleCategorySelect} 
         />
         
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Discover amazing deals nearby</h1>
-          <p className="text-muted-foreground">Find items you'll love at prices you'll love even more</p>
-        </div>
+        {/* Hero Banner */}
+        <HomeBanner />
         
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, index) => (
-              <div key={index} className="bg-gray-100 rounded-lg aspect-square animate-pulse"></div>
-            ))}
-          </div>
-        ) : (
-          <>
-            {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No products found</p>
-              </div>
-            )}
-          </>
-        )}
+        <div className="container py-8">
+          {/* Category Cards */}
+          <CategoryCards />
+          
+          {/* Trending Products */}
+          <TrendingProducts products={trendingProducts} isLoading={loading} />
+          
+          {/* Popular Near You */}
+          <PopularNearYou />
+          
+          {/* Recently Added Products */}
+          <ProductSection
+            title="Recently Added"
+            products={products}
+            link="/search?sort=newest"
+            linkText="View all new items"
+            isLoading={loading}
+          />
+        </div>
       </main>
     </div>
   );
