@@ -10,6 +10,7 @@ import { AdminSettings } from "@/components/admin/pages/AdminSettings";
 import { AdminSupport } from "@/components/admin/pages/AdminSupport";
 import { DeliveryRoutes } from "@/components/admin/pages/DeliveryRoutes";
 import { DriverPanel } from "@/components/delivery/DriverPanel";
+import { DriverAccountManager } from "@/components/admin/DriverAccountManager";
 
 const AdminPage = () => {
   return (
@@ -21,10 +22,16 @@ const AdminPage = () => {
         <Route path="/products" element={<AdminProducts />} />
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/reports" element={<AdminReports />} />
-        <Route path="/settings" element={<AdminSettings />} />
+        <Route path="/settings" element={
+          <div className="space-y-8">
+            <AdminSettings />
+            <DriverAccountManager />
+          </div>
+        } />
         <Route path="/support" element={<AdminSupport />} />
         <Route path="/delivery-routes" element={<DeliveryRoutes />} />
         <Route path="/driver-panel" element={<DriverPanel />} />
+        <Route path="/driver-accounts" element={<DriverAccountManager />} />
       </Routes>
     </AdminLayout>
   );

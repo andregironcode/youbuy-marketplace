@@ -93,6 +93,20 @@ serve(async (req) => {
           user_id: newUser.user.id,
           role: 'driver'
         })
+      
+      // Create profile for the new user if it doesn't exist already
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: newUser.user.id,
+          full_name: fullName,
+          email: email,
+          phone: phoneNumber
+        }, { onConflict: 'id' })
+      
+      if (profileError) {
+        console.error('Error creating driver profile:', profileError)
+      }
     }
     
     return new Response(
