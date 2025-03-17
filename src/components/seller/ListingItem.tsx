@@ -1,7 +1,7 @@
 
 import { ProductType } from "@/types/product";
 import { Button } from "../ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import { MessageButton } from "../product/MessageButton";
 import { useAuth } from "@/context/AuthContext";
@@ -20,18 +20,22 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
 
   return (
     <div className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
+      {/* Make the image clickable */}
+      <Link to={`/product/${product.id}`} className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
         <img 
           src={product.image} 
           alt={product.title} 
           className="w-full h-full object-cover"
         />
-      </div>
+      </Link>
       <div className="flex-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-price font-bold">€{product.price.toFixed(2)}</p>
-            <h3 className="font-medium text-sm">{product.title}</h3>
+            {/* Make the title clickable */}
+            <Link to={`/product/${product.id}`} className="font-medium text-sm hover:text-youbuy transition-colors">
+              {product.title}
+            </Link>
           </div>
           <div className="mt-2 sm:mt-0 text-xs text-muted-foreground">
             <p>Listed {product.timeAgo}</p>
