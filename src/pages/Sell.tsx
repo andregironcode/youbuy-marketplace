@@ -22,6 +22,9 @@ const SellContent = () => {
   
   const { 
     images, 
+    setImages,
+    imagePreviewUrls,
+    setImagePreviewUrls,
     handleFileChange, 
     removeImage,
     uploadImages,
@@ -35,6 +38,14 @@ const SellContent = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Sync image state with form data
+  useEffect(() => {
+    updateFormData({ 
+      images: images,
+      imagePreviewUrls: imagePreviewUrls
+    });
+  }, [images, imagePreviewUrls, updateFormData]);
 
   useEffect(() => {
     if (!user) {

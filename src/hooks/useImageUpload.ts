@@ -12,7 +12,7 @@ export const useImageUpload = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
     if (images.length + files.length > 10) {
       toast({
@@ -52,6 +52,7 @@ export const useImageUpload = () => {
   };
 
   const removeImage = (index: number) => {
+    // Revoke the object URL to prevent memory leaks
     URL.revokeObjectURL(imagePreviewUrls[index]);
     
     const newImages = [...images];
@@ -64,12 +65,36 @@ export const useImageUpload = () => {
   };
 
   const uploadImages = async (userId: string) => {
-    if (!userId) return [];
+    if (!userId) {
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to upload images",
+        variant: "destructive"
+      });
+      return [];
+    }
     
     setUploading(true);
     const uploadedUrls: string[] = [];
     
     try {
+      // Check if product-images bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'product-images');
+      
+      // Create bucket if it doesn't exist
+      if (!bucketExists) {
+        console.log('Creating product-images bucket');
+        const { error } = await supabase.storage.createBucket('product-images', {
+          public: true
+        });
+        
+        if (error) {
+          console.error('Error creating bucket:', error);
+          throw error;
+        }
+      }
+      
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
         const fileExt = file.name.split('.').pop();
