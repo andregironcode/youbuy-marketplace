@@ -22,9 +22,9 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         youbuy: {
-          DEFAULT: "#FF9900",
+          DEFAULT: "#4CD137",  // Changed to lime green from orange
           foreground: "hsl(var(--primary-foreground))",
-          dark: "#F08300",
+          dark: "#44BD32",     // Darker lime green
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -36,10 +36,10 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        price: "#33A0FF", // Changed from red to a nice blue
-        cta: "#00A8E1",
+        price: "#FF3E7F",      // Changed from blue to pink
+        cta: "#FF3E7F",        // Changed to pink
         primary: {
-          DEFAULT: "#FF9900",
+          DEFAULT: "#4CD137",  // Changed to lime green
           foreground: "#FFFFFF",
         },
         secondary: {
@@ -47,7 +47,7 @@ const config: Config = {
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "#8E9196", // Changed from red to neutral gray
+          DEFAULT: "#8E9196", // Keeping neutral gray
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
@@ -55,7 +55,7 @@ const config: Config = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "#00A8E1",
+          DEFAULT: "#FF3E7F",  // Changed to pink
           foreground: "#FFFFFF",
         },
         popover: {

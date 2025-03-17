@@ -17,7 +17,7 @@
     --popover-foreground: 210 12% 16%; /* Popover text color (dark gray-blue) */
 
     /* === BRAND COLORS === */
-    --primary: 38 100% 50%;           /* Primary brand color (Amazon Orange) */
+    --primary: 129 64% 52%;           /* Primary brand color (Lime Green) */
     --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
     /* === UI COLORS === */
@@ -27,7 +27,7 @@
     --muted: 210 20% 96%;             /* Muted UI elements (light blue-gray) */
     --muted-foreground: 215 16% 47%;  /* Muted text color (medium gray) */
 
-    --accent: 200 100% 44%;           /* Accent UI color (Bright Amazon Blue) */
+    --accent: 340 100% 62%;           /* Accent UI color (Bright Pink) */
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === FEEDBACK COLORS === */
@@ -37,19 +37,19 @@
     /* === BORDER & FOCUS COLORS === */
     --border: 214 32% 91%;            /* Border color (light gray) */
     --input: 214 32% 91%;             /* Input border color (light gray) */
-    --ring: 38 100% 50%;              /* Focus ring color (Amazon Orange) */
+    --ring: 129 64% 52%;              /* Focus ring color (Lime Green) */
 
     --radius: 0.5rem;                 /* Border radius for components */
 
     /* === SIDEBAR COLORS === */
     --sidebar-background: 0 0% 98%;   /* Sidebar background (off-white) */
     --sidebar-foreground: 240 5% 26%; /* Sidebar text (dark gray) */
-    --sidebar-primary: 38 100% 50%;   /* Sidebar primary (Amazon Orange) */
+    --sidebar-primary: 129 64% 52%;   /* Sidebar primary (Lime Green) */
     --sidebar-primary-foreground: 0 0% 100%; /* Text on sidebar primary */
     --sidebar-accent: 240 5% 96%;     /* Sidebar accent (light gray) */
     --sidebar-accent-foreground: 240 6% 10%; /* Text on sidebar accent */
     --sidebar-border: 220 13% 91%;    /* Sidebar borders */
-    --sidebar-ring: 200 100% 44%;     /* Sidebar focus rings (Amazon Blue) */
+    --sidebar-ring: 340 100% 62%;     /* Sidebar focus rings (Pink) */
   }
 
   .dark {
@@ -65,7 +65,7 @@
     --popover-foreground: 210 40% 98%; /* Popover text color (light) */
 
     /* === DARK MODE BRAND COLORS === */
-    --primary: 38 100% 50%;           /* Primary brand color (Amazon Orange) */
+    --primary: 129 64% 52%;           /* Primary brand color (Lime Green) */
     --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
 
     /* === DARK MODE UI COLORS === */
@@ -75,7 +75,7 @@
     --muted: 217 33% 17%;             /* Muted UI elements (dark gray-blue) */
     --muted-foreground: 215 20% 65%;  /* Muted text color (light gray) */
 
-    --accent: 200 100% 37%;           /* Accent UI color (Amazon Blue) */
+    --accent: 340 100% 62%;           /* Accent UI color (Pink) */
     --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
 
     /* === DARK MODE FEEDBACK COLORS === */
@@ -85,17 +85,17 @@
     /* === DARK MODE BORDER & FOCUS COLORS === */
     --border: 217 33% 17%;            /* Border color (dark gray) */
     --input: 217 33% 17%;             /* Input border color (dark gray) */
-    --ring: 38 100% 50%;              /* Focus ring color (Amazon Orange) */
+    --ring: 129 64% 52%;              /* Focus ring color (Lime Green) */
     
     /* === DARK MODE SIDEBAR COLORS === */
     --sidebar-background: 240 6% 10%;  /* Sidebar background (very dark) */
     --sidebar-foreground: 240 5% 96%;  /* Sidebar text (very light) */
-    --sidebar-primary: 38 100% 50%;    /* Sidebar primary (Amazon Orange) */
+    --sidebar-primary: 129 64% 52%;    /* Sidebar primary (Lime Green) */
     --sidebar-primary-foreground: 0 0% 100%; /* Text on sidebar primary */
     --sidebar-accent: 240 4% 16%;     /* Sidebar accent (dark gray) */
     --sidebar-accent-foreground: 240 5% 96%; /* Text on sidebar accent */
     --sidebar-border: 240 4% 16%;     /* Sidebar borders */
-    --sidebar-ring: 200 100% 44%;     /* Sidebar focus rings (Amazon Blue) */
+    --sidebar-ring: 340 100% 62%;     /* Sidebar focus rings (Pink) */
   }
 }
 

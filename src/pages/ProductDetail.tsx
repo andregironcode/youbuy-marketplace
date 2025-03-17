@@ -1,377 +1,390 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { 
+  ArrowLeft, 
+  Heart, 
+  Share, 
+  MapPin, 
+  Clock, 
+  User, 
+  Star, 
+  MessageCircle, 
+  ShieldCheck,
+  Info
+} from "lucide-react";
+import { ProductType } from "@/types/product";
+import { getProductById } from "@/data/products";
 import { ProductDetails } from "@/components/product/ProductDetails";
-import { MessageButton } from "@/components/product/MessageButton";
-import { SellerReviews } from "@/components/product/SellerReviews";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ProductCard } from "@/components/product/ProductCard";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/context/AuthContext";
-import { useFavorites } from "@/hooks/useFavorites";
-import { Heart, MapPin, Share2, ShieldCheck, Star, Calendar, MessageCircle, ShoppingBag } from "lucide-react";
-import { ProductType, convertToProductType } from "@/types/product";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { LocationMap } from "@/components/map/LocationMap";
+import { MessageButton } from "@/components/product/MessageButton";
 
-const ProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
+const placeholderImages = [
+  "https://via.placeholder.com/400x400?text=Placeholder+Image",
+  "https://via.placeholder.com/400x400?text=Another+Image",
+];
+
+const relatedProducts = [
+  {
+    id: "rp1",
+    title: "Related Product 1",
+    price: 49.99,
+    imageUrl: "https://via.placeholder.com/200x200?text=Related+1",
+  },
+  {
+    id: "rp2",
+    title: "Related Product 2",
+    price: 79.99,
+    imageUrl: "https://via.placeholder.com/200x200?text=Related+2",
+  },
+  {
+    id: "rp3",
+    title: "Related Product 3",
+    price: 29.99,
+    imageUrl: "https://via.placeholder.com/200x200?text=Related+3",
+  },
+];
+
+const getCategoryById = (categoryId: string) => {
+  return {
+    id: categoryId,
+    name: "Electronics",
+  };
+};
+
+export default function ProductDetail() {
+  const { productId } = useParams();
+  const [currentImage, setCurrentImage] = useState<string | undefined>(undefined);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { favorites, toggleFavorite } = useFavorites();
-  const [activeImage, setActiveImage] = useState(0);
+  const location = window.location;
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    // Simulate fetching favorite status from local storage or API
+    const storedFavorite = localStorage.getItem(`favorite-${productId}`);
+    setIsFavorite(storedFavorite === 'true');
+  }, [productId]);
 
-  const { data: product, isLoading, error } = useQuery({
-    queryKey: ["product", id],
-    queryFn: async () => {
-      if (!id) throw new Error("Product ID is required");
+  const handleToggleFavorite = () => {
+    const newFavoriteStatus = !isFavorite;
+    setIsFavorite(newFavoriteStatus);
+    localStorage.setItem(`favorite-${productId}`, newFavoriteStatus.toString());
 
-      const { data, error } = await supabase
-        .from("products")
-        .select(`
-          *,
-          seller_id(
-            id,
-            username,
-            full_name,
-            avatar_url,
-            created_at
-          )
-        `)
-        .eq("id", id)
-        .single();
+    toast({
+      title: newFavoriteStatus ? "Product saved to favorites!" : "Product removed from favorites.",
+    });
+  };
 
-      if (error) throw error;
-      
-      await supabase
-        .from("products")
-        .update({ view_count: (data.view_count || 0) + 1 })
-        .eq("id", id);
-
-      return convertToProductType({
-        ...data,
-        profiles: data.seller_id,
-      }, true);
-    },
-    enabled: !!id,
-  });
-
-  const isFavorite = favorites.some((favorite) => favorite === id);
-
-  const handleToggleFavorite = async () => {
-    if (!user) {
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product?.title || 'Check out this product!',
+          text: product?.description || 'A great product you might like.',
+          url: window.location.href,
+        });
+        toast({
+          title: "Product shared successfully!",
+        });
+      } catch (error) {
+        toast({
+          title: "Sharing failed!",
+          description: "Could not share the product. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    } else {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to save items to your favorites",
-      });
-      return;
-    }
-
-    try {
-      toggleFavorite(id as string);
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites. Please try again.",
+        title: "Sharing not supported",
+        description: "Your browser does not support the sharing API.",
         variant: "destructive",
       });
     }
   };
 
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: product?.title || "Check out this product",
-          text: `Check out "${product?.title}" on YouBuy!`,
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast({
-          title: "Link copied",
-          description: "Product link copied to clipboard",
-        });
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-      if (error instanceof Error && error.name !== "AbortError") {
-        toast({
-          title: "Error",
-          description: "Failed to share. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleBuyNow = () => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to purchase this item",
-      });
-      return;
-    }
-    
-    navigate(`/checkout/${id}`);
-  };
+  const { 
+    data: product, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => getProductById(productId as string),
+    enabled: !!productId
+  });
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 container py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="animate-pulse bg-gray-200 rounded-lg h-[400px]"></div>
-            <div className="space-y-4">
-              <div className="animate-pulse bg-gray-200 h-10 w-3/4 rounded"></div>
-              <div className="animate-pulse bg-gray-200 h-8 w-1/3 rounded"></div>
-              <div className="animate-pulse bg-gray-200 h-32 w-full rounded"></div>
-            </div>
-          </div>
-        </main>
+      <div className="container mx-auto px-4 py-8">
+        <p>Loading product details...</p>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 container py-8">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-8">
-              <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
-              <p className="text-muted-foreground mb-4">
-                The product you're looking for doesn't exist or has been removed.
-              </p>
-              <Button asChild>
-                <Link to="/">Browse More Products</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
+      <div className="container mx-auto px-4 py-8">
+        <p>Error: Could not load product details.</p>
       </div>
     );
   }
 
-  const sellerId = typeof product.seller.id === 'object' 
-    ? (product.seller.userId || '') 
-    : product.seller.id;
-
-  console.log("Seller ID for navigation:", sellerId);
-  console.log("Full seller object:", product.seller);
-
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 container py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
-              {product.images && product.images.length > 0 ? (
-                <img
-                  src={product.images[activeImage]}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No image available
-                </div>
-              )}
-            </div>
-
-            {product.images && product.images.length > 1 && (
-              <div className="flex space-x-2 overflow-x-auto pb-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveImage(index)}
-                    className={`relative flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 
-                      ${index === activeImage ? "border-youbuy" : "border-transparent"}`}
-                  >
-                    <img
-                      src={image}
-                      alt={`Product view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-2" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <Link to="/" className="hover:underline">Home</Link>
+          <span>/</span>
+          <Link 
+            to={`/category/${product.categoryId}`} 
+            className="hover:underline"
+          >
+            {getCategoryById(product.categoryId)?.name || "Category"}
+          </Link>
+          <span>/</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">
+            {product.title}
+          </span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
+            <img
+              src={currentImage || product.images[0]}
+              alt={product.title}
+              className="h-full w-full object-contain"
+            />
+            {product.status === 'sold' && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <span className="text-white text-2xl font-bold">SOLD</span>
               </div>
             )}
-
-            <div className="flex items-center text-sm text-muted-foreground space-x-4">
-              <span className="flex items-center">
-                <Star className="mr-1 h-4 w-4" />
-                {product.viewCount || 0} views
-              </span>
-              <span>|</span>
-              <span className="flex items-center">
-                <Heart className="mr-1 h-4 w-4" />
-                {product.likeCount || 0} likes
-              </span>
-              <span>|</span>
-              <span className="flex items-center">
-                <Calendar className="mr-1 h-4 w-4" />
-                Listed on {format(new Date(product.createdAt || Date.now()), "MMM d, yyyy")}
-              </span>
-            </div>
-
-            <div className="mt-8">
-              <ProductDetails product={product} />
-            </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="flex space-x-2 mb-4">
-              <Button
-                variant="outline"
-                className={`flex-1 ${isFavorite ? "bg-red-50 border-red-200 text-red-600" : ""}`}
-                onClick={handleToggleFavorite}
+          
+          <div className="grid grid-cols-5 gap-2">
+            {product.images.map((image, index) => (
+              <div
+                key={index}
+                className={`aspect-square rounded-md border cursor-pointer overflow-hidden ${
+                  currentImage === image ? 'ring-2 ring-youbuy' : ''
+                }`}
+                onClick={() => setCurrentImage(image)}
               >
-                <Heart
-                  className={`mr-2 h-4 w-4 ${isFavorite ? "fill-red-600 text-red-600" : ""}`}
+                <img
+                  src={image}
+                  alt={`${product.title} ${index + 1}`}
+                  className="h-full w-full object-cover"
                 />
-                {isFavorite ? "Saved" : "Save"}
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={handleShare}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
-              </Button>
-            </div>
-
-            <Separator />
-
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-between">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleToggleFavorite}
+              className={isFavorite ? "text-youbuy" : ""}
+            >
+              <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-youbuy" : ""}`} />
+              {isFavorite ? "Saved" : "Save"}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleShare}
+            >
+              <Share className="mr-1 h-4 w-4" />
+              Share
+            </Button>
+          </div>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Product Details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 text-sm">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>Location</span>
+                </div>
+                <span className="text-right">{product.location || "Not specified"}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span>Posted</span>
+                </div>
+                <span className="text-right">
+                  {product.createdAt
+                    ? new Date(product.createdAt).toLocaleDateString()
+                    : "Recently"}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span>Seller</span>
+                </div>
+                <Link 
+                  to={`/seller/${product.seller.id}`}
+                  className="text-right text-youbuy hover:underline"
+                >
+                  {product.seller.name}
+                </Link>
+              </div>
+              
+              {product.views && (
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                    <span>Views</span>
+                  </div>
+                  <span className="text-right">{product.views}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {product.seller && (
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={product.seller.avatar || ""} />
-                    <AvatarFallback>
-                      {product.seller.name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Seller Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-10 w-10 rounded-full bg-muted overflow-hidden">
+                    {product.seller.avatar ? (
+                      <img
+                        src={product.seller.avatar}
+                        alt={product.seller.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">{product.seller.name}</h3>
                       {product.seller.rating && product.seller.rating > 4.5 && (
-                        <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="ml-2 bg-pink-50 text-pink-700 border-pink-200">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           Verified
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Member since {format(new Date(product.seller.joinedDate || Date.now()), "MMMM yyyy")}
-                    </p>
+                    {product.seller.memberSince && (
+                      <p className="text-xs text-muted-foreground">
+                        Member since {product.seller.memberSince}
+                      </p>
+                    )}
                   </div>
                 </div>
-
-                <div className="mt-4 space-y-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Link to={`/seller/${sellerId}`}>
-                      View profile
-                    </Link>
-                  </Button>
-                  
-                  <Button
-                    variant="default"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => {
-                      if (!user) {
-                        toast({
-                          title: "Sign in required",
-                          description: "Please sign in to message the seller",
-                        });
-                        return;
-                      }
-                      document.getElementById("message-button-trigger")?.click();
-                    }}
-                  >
-                    <MessageCircle className="mr-2 h-5 w-5" />
-                    Message Seller
-                  </Button>
-                  
-                  <Button 
-                    className="w-full py-6 text-lg font-semibold"
-                    variant="action"
-                    disabled={
-                      product.status === 'sold' || 
-                      product.status === 'reserved'
-                    }
-                    onClick={handleBuyNow}
-                  >
-                    <ShoppingBag className="mr-2 h-5 w-5" />
-                    Buy Now
-                  </Button>
-                  
-                  <div className="hidden">
-                    <MessageButton
-                      id="message-button-trigger"
-                      product={product}
-                      size="md"
-                      fullWidth={true}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Location</h3>
-                      <p className="text-sm text-muted-foreground">{product.location || "Not specified"}</p>
+                
+                {product.seller.rating && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < Math.floor(product.seller.rating)
+                                ? "fill-youbuy text-youbuy"
+                                : "text-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {product.seller.rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({product.seller.totalRatings || 0} reviews)
+                      </span>
                     </div>
-                  </div>
-                  
-                  {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
-                    <LocationMap
-                      latitude={product.coordinates.latitude}
-                      longitude={product.coordinates.longitude}
-                      height="150px"
-                      zoom={13}
-                      interactive={false}
-                      showMarker={true}
-                      approximate={true}
+                    <Progress 
+                      value={
+                        ((product.seller.rating || 0) / 5) * 100
+                      } 
+                      className="h-1"
                     />
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
+              <CardFooter className="flex flex-col gap-2">
+                <Button
+                  variant="default"
+                  className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: "Sign in required",
+                        description: "Please sign in to message this seller",
+                        variant: "destructive"
+                      });
+                      navigate("/auth?redirect=" + encodeURIComponent(location.pathname));
+                      return;
+                    }
+                    navigate(`/messages?userId=${product.seller.id}&productId=${product.id}`);
+                  }}
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Message Seller
+                </Button>
+                
+                <Link 
+                  to={`/seller/${product.seller.id}`}
+                  className="text-sm text-youbuy hover:underline w-full text-center"
+                >
+                  View Seller Profile
+                </Link>
+              </CardFooter>
             </Card>
-
-            <Card className="bg-gray-50 border-gray-200">
-              <CardContent className="p-4">
-                <h3 className="font-medium mb-2 flex items-center">
-                  <ShieldCheck className="h-4 w-4 mr-1 text-youbuy" />
-                  Safety Tips
-                </h3>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Meet in a safe, public place</li>
-                  <li>• Don't pay in advance</li>
-                  <li>• Check the item before paying</li>
-                  <li>• Report suspicious users</li>
-                </ul>
-              </CardContent>
-            </Card>
+          )}
+        </div>
+        
+        <ProductDetails product={product} />
+      </div>
+      
+      {relatedProducts.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">Related Products</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {relatedProducts.map((relatedProduct) => (
+              <ProductCard 
+                key={relatedProduct.id} 
+                product={relatedProduct} 
+              />
+            ))}
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
-};
-
-export default ProductDetail;
+}
