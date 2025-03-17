@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -31,24 +32,61 @@ const placeholderImages = [
   "https://via.placeholder.com/400x400?text=Another+Image",
 ];
 
-const relatedProducts = [
+// Updated relatedProducts to match ProductType interface
+const relatedProducts: ProductType[] = [
   {
     id: "rp1",
     title: "Related Product 1",
+    description: "A related product description",
     price: 49.99,
-    imageUrl: "https://via.placeholder.com/200x200?text=Related+1",
+    image: "https://via.placeholder.com/200x200?text=Related+1",
+    images: ["https://via.placeholder.com/200x200?text=Related+1"],
+    location: "Dubai",
+    timeAgo: "2 days ago",
+    createdAt: new Date().toISOString(),
+    seller: {
+      id: "seller1",
+      name: "Seller Name",
+      avatar: "https://i.pravatar.cc/150?img=1",
+      joinedDate: "Jan 2023"
+    },
+    category: "electronics"
   },
   {
     id: "rp2",
     title: "Related Product 2",
+    description: "Another related product description",
     price: 79.99,
-    imageUrl: "https://via.placeholder.com/200x200?text=Related+2",
+    image: "https://via.placeholder.com/200x200?text=Related+2",
+    images: ["https://via.placeholder.com/200x200?text=Related+2"],
+    location: "Abu Dhabi",
+    timeAgo: "3 days ago",
+    createdAt: new Date().toISOString(),
+    seller: {
+      id: "seller2",
+      name: "Another Seller",
+      avatar: "https://i.pravatar.cc/150?img=2",
+      joinedDate: "Feb 2023"
+    },
+    category: "electronics"
   },
   {
     id: "rp3",
     title: "Related Product 3",
+    description: "A third related product description",
     price: 29.99,
-    imageUrl: "https://via.placeholder.com/200x200?text=Related+3",
+    image: "https://via.placeholder.com/200x200?text=Related+3",
+    images: ["https://via.placeholder.com/200x200?text=Related+3"],
+    location: "Sharjah",
+    timeAgo: "1 week ago",
+    createdAt: new Date().toISOString(),
+    seller: {
+      id: "seller3",
+      name: "Third Seller",
+      avatar: "https://i.pravatar.cc/150?img=3",
+      joinedDate: "Mar 2023"
+    },
+    category: "electronics"
   },
 ];
 

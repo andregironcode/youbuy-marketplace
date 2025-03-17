@@ -1,3 +1,4 @@
+
 import { ProductType } from "@/types/product";
 
 export const products: ProductType[] = [
@@ -184,3 +185,8 @@ export const products: ProductType[] = [
     category: "clothing"
   }
 ];
+
+// Add the missing getProductById function
+export const getProductById = (id: string): ProductType | undefined => {
+  return products.find(product => product.id === id);
+};
