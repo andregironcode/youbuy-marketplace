@@ -36,6 +36,33 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_stages: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order: number
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       favorite_sellers: {
         Row: {
           created_at: string
@@ -141,17 +168,69 @@ export type Database = {
         }
         Relationships: []
       }
+      order_status_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_tracking"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number
           buyer_id: string
           created_at: string
+          current_stage: string | null
           delivery_confirmed_at: string | null
           delivery_details: Json
           dispute_deadline: string | null
           dispute_reason: string | null
           dispute_status: string | null
+          estimated_delivery: string | null
           id: string
+          last_status_change: string | null
+          last_updated_by: string | null
           payment_status: string | null
           product_id: string
           seller_id: string
@@ -164,12 +243,16 @@ export type Database = {
           amount: number
           buyer_id: string
           created_at?: string
+          current_stage?: string | null
           delivery_confirmed_at?: string | null
           delivery_details: Json
           dispute_deadline?: string | null
           dispute_reason?: string | null
           dispute_status?: string | null
+          estimated_delivery?: string | null
           id?: string
+          last_status_change?: string | null
+          last_updated_by?: string | null
           payment_status?: string | null
           product_id: string
           seller_id: string
@@ -182,12 +265,16 @@ export type Database = {
           amount?: number
           buyer_id?: string
           created_at?: string
+          current_stage?: string | null
           delivery_confirmed_at?: string | null
           delivery_details?: Json
           dispute_deadline?: string | null
           dispute_reason?: string | null
           dispute_status?: string | null
+          estimated_delivery?: string | null
           id?: string
+          last_status_change?: string | null
+          last_updated_by?: string | null
           payment_status?: string | null
           product_id?: string
           seller_id?: string
@@ -328,6 +415,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_tracking"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "products_order_id_fkey"
@@ -534,7 +628,37 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      order_tracking: {
+        Row: {
+          buyer_id: string | null
+          buyer_name: string | null
+          current_stage: string | null
+          delivery_details: Json | null
+          display_order: number | null
+          estimated_delivery: string | null
+          last_status_change: string | null
+          order_date: string | null
+          order_id: string | null
+          product_id: string | null
+          product_images: string[] | null
+          product_title: string | null
+          seller_id: string | null
+          seller_name: string | null
+          stage_description: string | null
+          stage_name: string | null
+          status: string | null
+          status_history: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       assign_admin_role: {
@@ -563,11 +687,27 @@ export type Database = {
         }
         Returns: string
       }
+      get_next_delivery_stage: {
+        Args: {
+          p_current_stage: string
+        }
+        Returns: string
+      }
       is_admin: {
         Args: {
           user_uuid?: string
         }
         Returns: boolean
+      }
+      update_order_status: {
+        Args: {
+          p_order_id: string
+          p_status: string
+          p_notes?: string
+          p_location_lat?: number
+          p_location_lng?: number
+        }
+        Returns: string
       }
     }
     Enums: {

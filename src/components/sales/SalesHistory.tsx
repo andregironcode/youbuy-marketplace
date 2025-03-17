@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OrderTracker } from "../purchases/OrderTracker";
+import { TrackingUpdate } from "./TrackingUpdate";
 
 type OrderStatus = "pending" | "paid" | "processing" | "out_for_delivery" | "delivered" | "cancelled";
 
@@ -44,16 +46,23 @@ interface Order {
     phone: string;
     deliveryTime: "morning" | "afternoon" | "evening";
     instructions?: string;
+    formattedAddress?: string;
+    latitude?: number;
+    longitude?: number;
   };
   product?: ProductType;
+  estimated_delivery?: string | null;
+  current_stage?: string;
+  last_status_change?: string;
 }
 
 export const SalesHistory = () => {
   const { user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<"active" | "completed" | "cancelled">("active");
+  const [selectedDetailTab, setSelectedDetailTab] = useState<"details" | "tracking" | "update">("details");
 
-  const { data: orders, isLoading, error } = useQuery({
+  const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ["sales", user?.id, activeTab],
     queryFn: async () => {
       if (!user) return [];
@@ -85,7 +94,10 @@ export const SalesHistory = () => {
           created_at, 
           updated_at, 
           buyer_id,
-          delivery_details
+          delivery_details,
+          estimated_delivery,
+          current_stage,
+          last_status_change
         `)
         .eq("seller_id", user.id)
         .in("status", statusFilter)
@@ -189,6 +201,11 @@ export const SalesHistory = () => {
       default:
         return time;
     }
+  };
+  
+  const handleOrderUpdateSuccess = () => {
+    refetch();
+    setSelectedDetailTab("tracking");
   };
 
   if (isLoading) {
@@ -301,13 +318,30 @@ export const SalesHistory = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              View Details
-                            </Button>
+                            <div className="flex gap-2 justify-end">
+                              {activeTab === "active" && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setSelectedDetailTab("update");
+                                  }}
+                                >
+                                  Update
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setSelectedDetailTab("details");
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -320,129 +354,173 @@ export const SalesHistory = () => {
         </>
       ) : (
         <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            onClick={() => setSelectedOrder(null)}
-            className="mb-4"
-          >
-            Back to all orders
-          </Button>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Order details */}
-            <div className="md:col-span-2">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-medium text-lg">Order Details</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Placed on {format(new Date(selectedOrder.created_at), "PPP")}
-                      </p>
-                    </div>
-                    <Badge className={getStatusBadgeColor(selectedOrder.status)}>
-                      {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace("_", " ")}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Delivery Information</h4>
-                      <div className="text-sm">
-                        <p className="font-medium">{selectedOrder.delivery_details.fullName}</p>
-                        <p>{selectedOrder.delivery_details.address}</p>
-                        <p>{selectedOrder.delivery_details.city}, {selectedOrder.delivery_details.postalCode}</p>
-                        <p>Phone: {selectedOrder.delivery_details.phone}</p>
-                        <p>Delivery Time: {formatDeliveryTime(selectedOrder.delivery_details.deliveryTime)}</p>
-                        {selectedOrder.delivery_details.instructions && (
-                          <p className="mt-2">
-                            <span className="font-medium">Instructions:</span> {selectedOrder.delivery_details.instructions}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2">Buyer Information</h4>
-                      <div className="text-sm">
-                        {selectedOrder.buyer ? (
-                          <div className="flex items-center gap-2 mb-3">
-                            {selectedOrder.buyer.avatar_url && (
-                              <div className="h-10 w-10 rounded-full overflow-hidden">
-                                <img 
-                                  src={selectedOrder.buyer.avatar_url} 
-                                  alt={selectedOrder.buyer?.full_name || selectedOrder.buyer?.username || "Buyer"} 
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium">{selectedOrder.buyer.full_name || selectedOrder.buyer.username || "Anonymous"}</p>
-                              {selectedOrder.buyer.username && selectedOrder.buyer.full_name && (
-                                <p className="text-muted-foreground text-xs">@{selectedOrder.buyer.username}</p>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <p>No buyer information available</p>
-                        )}
-                        
-                        <div className="mt-4">
-                          <h5 className="font-medium mb-1">Order Summary</h5>
-                          <div className="flex justify-between mb-1">
-                            <span>Product Price:</span>
-                            <span>AED {selectedOrder.product?.price.toFixed(2) || selectedOrder.amount.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between mb-1">
-                            <span>Your Earnings:</span>
-                            <span className="text-green-600 font-medium">AED {(selectedOrder.amount * 0.95).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between mb-1 text-xs text-muted-foreground">
-                            <span>Platform Fee (5%):</span>
-                            <span>AED {(selectedOrder.amount * 0.05).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="flex justify-between items-center mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedOrder(null)}
+            >
+              Back to all orders
+            </Button>
             
-            {/* Product info */}
-            {selectedOrder.product && (
-              <div>
+            <Tabs
+              value={selectedDetailTab}
+              onValueChange={(value) => setSelectedDetailTab(value as "details" | "tracking" | "update")}
+            >
+              <TabsList>
+                <TabsTrigger value="details">Order Details</TabsTrigger>
+                <TabsTrigger value="tracking">Track Order</TabsTrigger>
+                {activeTab === "active" && (
+                  <TabsTrigger value="update">Update Status</TabsTrigger>
+                )}
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <TabsContent value="details" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Order details */}
+              <div className="md:col-span-2">
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-medium mb-3">Product</h3>
-                    <div className="flex gap-3">
-                      <div className="h-20 w-20 rounded-md overflow-hidden flex-shrink-0">
-                        <img 
-                          src={selectedOrder.product.image || selectedOrder.product.images?.[0]} 
-                          alt={selectedOrder.product.title} 
-                          className="h-full w-full object-cover"
-                        />
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-medium text-lg">Order Details</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Placed on {format(new Date(selectedOrder.created_at), "PPP")}
+                        </p>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium line-clamp-2">{selectedOrder.product.title}</h4>
-                        <p className="font-medium mt-1">AED {selectedOrder.product.price.toFixed(2)}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2" 
-                          asChild
-                        >
-                          <Link to={`/product/${selectedOrder.product.id}`}>
-                            View Product
-                          </Link>
-                        </Button>
+                      <Badge className={getStatusBadgeColor(selectedOrder.status)}>
+                        {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace("_", " ")}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Delivery Information</h4>
+                        <div className="text-sm">
+                          <p className="font-medium">{selectedOrder.delivery_details.fullName}</p>
+                          <p>{selectedOrder.delivery_details.formattedAddress || selectedOrder.delivery_details.address}</p>
+                          {!selectedOrder.delivery_details.formattedAddress && (
+                            <p>{selectedOrder.delivery_details.city}, {selectedOrder.delivery_details.postalCode}</p>
+                          )}
+                          <p>Phone: {selectedOrder.delivery_details.phone}</p>
+                          <p>Delivery Time: {formatDeliveryTime(selectedOrder.delivery_details.deliveryTime)}</p>
+                          {selectedOrder.delivery_details.instructions && (
+                            <p className="mt-2">
+                              <span className="font-medium">Instructions:</span> {selectedOrder.delivery_details.instructions}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium mb-2">Buyer Information</h4>
+                        <div className="text-sm">
+                          {selectedOrder.buyer ? (
+                            <div className="flex items-center gap-2 mb-3">
+                              {selectedOrder.buyer.avatar_url && (
+                                <div className="h-10 w-10 rounded-full overflow-hidden">
+                                  <img 
+                                    src={selectedOrder.buyer.avatar_url} 
+                                    alt={selectedOrder.buyer?.full_name || selectedOrder.buyer?.username || "Buyer"} 
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium">{selectedOrder.buyer.full_name || selectedOrder.buyer.username || "Anonymous"}</p>
+                                {selectedOrder.buyer.username && selectedOrder.buyer.full_name && (
+                                  <p className="text-muted-foreground text-xs">@{selectedOrder.buyer.username}</p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <p>No buyer information available</p>
+                          )}
+                          
+                          <div className="mt-4">
+                            <h5 className="font-medium mb-1">Order Summary</h5>
+                            <div className="flex justify-between mb-1">
+                              <span>Product Price:</span>
+                              <span>AED {selectedOrder.product?.price.toFixed(2) || selectedOrder.amount.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between mb-1">
+                              <span>Your Earnings:</span>
+                              <span className="text-green-600 font-medium">AED {(selectedOrder.amount * 0.95).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between mb-1 text-xs text-muted-foreground">
+                              <span>Platform Fee (5%):</span>
+                              <span>AED {(selectedOrder.amount * 0.05).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
+              
+              {/* Product info */}
+              {selectedOrder.product && (
+                <div>
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="font-medium mb-3">Product</h3>
+                      <div className="flex gap-3">
+                        <div className="h-20 w-20 rounded-md overflow-hidden flex-shrink-0">
+                          <img 
+                            src={selectedOrder.product.image || selectedOrder.product.images?.[0]} 
+                            alt={selectedOrder.product.title} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium line-clamp-2">{selectedOrder.product.title}</h4>
+                          <p className="font-medium mt-1">AED {selectedOrder.product.price.toFixed(2)}</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2" 
+                            asChild
+                          >
+                            <Link to={`/product/${selectedOrder.product.id}`}>
+                              View Product
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tracking" className="mt-0">
+            <Card>
+              <CardContent className="p-6">
+                <OrderTracker 
+                  orderId={selectedOrder.id}
+                  currentStatus={selectedOrder.current_stage || selectedOrder.status}
+                  orderDate={selectedOrder.created_at}
+                  estimatedDelivery={selectedOrder.estimated_delivery}
+                  orderAddress={selectedOrder.delivery_details}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="update" className="mt-0">
+            <Card>
+              <CardContent className="p-6">
+                <TrackingUpdate 
+                  orderId={selectedOrder.id}
+                  currentStatus={selectedOrder.current_stage || selectedOrder.status}
+                  onUpdateSuccess={handleOrderUpdateSuccess}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
       )}
     </div>

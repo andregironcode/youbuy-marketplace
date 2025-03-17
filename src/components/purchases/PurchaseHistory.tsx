@@ -18,6 +18,8 @@ import { Loader2, Package, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { Link } from "react-router-dom";
+import { OrderTracker } from "./OrderTracker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type OrderStatus = "pending" | "paid" | "processing" | "out_for_delivery" | "delivered" | "cancelled";
 
@@ -36,13 +38,20 @@ interface Order {
     phone: string;
     deliveryTime: "morning" | "afternoon" | "evening";
     instructions?: string;
+    formattedAddress?: string;
+    latitude?: number;
+    longitude?: number;
   };
   product?: ProductType;
+  estimated_delivery?: string | null;
+  current_stage?: string;
+  last_status_change?: string;
 }
 
 export const PurchaseHistory = () => {
   const { user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [activeTab, setActiveTab] = useState<"orders" | "tracking">("orders");
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ["orders", user?.id],
@@ -59,7 +68,10 @@ export const PurchaseHistory = () => {
           status, 
           created_at, 
           updated_at, 
-          delivery_details
+          delivery_details,
+          estimated_delivery,
+          current_stage,
+          last_status_change
         `)
         .eq("buyer_id", user.id)
         .order("created_at", { ascending: false });
@@ -189,105 +201,134 @@ export const PurchaseHistory = () => {
 
       {selectedOrder ? (
         <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            onClick={() => setSelectedOrder(null)}
-            className="mb-4"
-          >
-            Back to all orders
-          </Button>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Order details */}
-            <div className="md:col-span-2">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-medium text-lg">Order Details</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Placed on {format(new Date(selectedOrder.created_at), "PPP")}
-                      </p>
-                    </div>
-                    <Badge className={getStatusBadgeColor(selectedOrder.status)}>
-                      {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace("_", " ")}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Delivery Information</h4>
-                      <div className="text-sm">
-                        <p className="font-medium">{selectedOrder.delivery_details.fullName}</p>
-                        <p>{selectedOrder.delivery_details.address}</p>
-                        <p>{selectedOrder.delivery_details.city}, {selectedOrder.delivery_details.postalCode}</p>
-                        <p>Phone: {selectedOrder.delivery_details.phone}</p>
-                        <p>Delivery Time: {formatDeliveryTime(selectedOrder.delivery_details.deliveryTime)}</p>
-                        {selectedOrder.delivery_details.instructions && (
-                          <p className="mt-2">
-                            <span className="font-medium">Instructions:</span> {selectedOrder.delivery_details.instructions}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2">Order Summary</h4>
-                      <div className="text-sm">
-                        <div className="flex justify-between mb-1">
-                          <span>Product Price:</span>
-                          <span>AED {selectedOrder.product?.price.toFixed(2) || selectedOrder.amount.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                          <span>Delivery Fee:</span>
-                          <span>AED {(selectedOrder.amount - (selectedOrder.product?.price || 0)).toFixed(2)}</span>
-                        </div>
-                        <div className="border-t pt-1 mt-1 font-medium flex justify-between">
-                          <span>Total:</span>
-                          <span>AED {selectedOrder.amount.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="flex justify-between items-center mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedOrder(null)}
+            >
+              Back to all orders
+            </Button>
             
-            {/* Product info */}
-            {selectedOrder.product && (
-              <div>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as "orders" | "tracking")}
+            >
+              <TabsList>
+                <TabsTrigger value="orders">Order Details</TabsTrigger>
+                <TabsTrigger value="tracking">Track Order</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <TabsContent value="orders" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Order details */}
+              <div className="md:col-span-2">
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-medium mb-3">Product</h3>
-                    <div className="flex gap-3">
-                      <div className="h-20 w-20 rounded-md overflow-hidden flex-shrink-0">
-                        <img 
-                          src={selectedOrder.product.image || selectedOrder.product.images?.[0]} 
-                          alt={selectedOrder.product.title} 
-                          className="h-full w-full object-cover"
-                        />
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-medium text-lg">Order Details</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Placed on {format(new Date(selectedOrder.created_at), "PPP")}
+                        </p>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium line-clamp-2">{selectedOrder.product.title}</h4>
-                        <p className="text-sm text-muted-foreground">Seller: {selectedOrder.product.seller.name}</p>
-                        <p className="font-medium mt-1">AED {selectedOrder.product.price.toFixed(2)}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2" 
-                          asChild
-                        >
-                          <Link to={`/product/${selectedOrder.product.id}`}>
-                            View Product
-                          </Link>
-                        </Button>
+                      <Badge className={getStatusBadgeColor(selectedOrder.status)}>
+                        {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace("_", " ")}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Delivery Information</h4>
+                        <div className="text-sm">
+                          <p className="font-medium">{selectedOrder.delivery_details.fullName}</p>
+                          <p>{selectedOrder.delivery_details.formattedAddress || selectedOrder.delivery_details.address}</p>
+                          {!selectedOrder.delivery_details.formattedAddress && (
+                            <p>{selectedOrder.delivery_details.city}, {selectedOrder.delivery_details.postalCode}</p>
+                          )}
+                          <p>Phone: {selectedOrder.delivery_details.phone}</p>
+                          <p>Delivery Time: {formatDeliveryTime(selectedOrder.delivery_details.deliveryTime)}</p>
+                          {selectedOrder.delivery_details.instructions && (
+                            <p className="mt-2">
+                              <span className="font-medium">Instructions:</span> {selectedOrder.delivery_details.instructions}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium mb-2">Order Summary</h4>
+                        <div className="text-sm">
+                          <div className="flex justify-between mb-1">
+                            <span>Product Price:</span>
+                            <span>AED {selectedOrder.product?.price.toFixed(2) || selectedOrder.amount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between mb-1">
+                            <span>Delivery Fee:</span>
+                            <span>AED {(selectedOrder.amount - (selectedOrder.product?.price || 0)).toFixed(2)}</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1 font-medium flex justify-between">
+                            <span>Total:</span>
+                            <span>AED {selectedOrder.amount.toFixed(2)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
+              
+              {/* Product info */}
+              {selectedOrder.product && (
+                <div>
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="font-medium mb-3">Product</h3>
+                      <div className="flex gap-3">
+                        <div className="h-20 w-20 rounded-md overflow-hidden flex-shrink-0">
+                          <img 
+                            src={selectedOrder.product.image || selectedOrder.product.images?.[0]} 
+                            alt={selectedOrder.product.title} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium line-clamp-2">{selectedOrder.product.title}</h4>
+                          <p className="text-sm text-muted-foreground">Seller: {selectedOrder.product.seller.name}</p>
+                          <p className="font-medium mt-1">AED {selectedOrder.product.price.toFixed(2)}</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2" 
+                            asChild
+                          >
+                            <Link to={`/product/${selectedOrder.product.id}`}>
+                              View Product
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tracking" className="mt-0">
+            <Card>
+              <CardContent className="p-6">
+                <OrderTracker 
+                  orderId={selectedOrder.id}
+                  currentStatus={selectedOrder.current_stage || selectedOrder.status}
+                  orderDate={selectedOrder.created_at}
+                  estimatedDelivery={selectedOrder.estimated_delivery}
+                  orderAddress={selectedOrder.delivery_details}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
       ) : (
         <Table>
@@ -334,9 +375,12 @@ export const PurchaseHistory = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setSelectedOrder(order)}
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setActiveTab("tracking");
+                    }}
                   >
-                    View Details
+                    Track Order
                   </Button>
                 </TableCell>
               </TableRow>
