@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,10 +65,10 @@ interface OrderWithDetails {
   created_at: string;
   updated_at: string;
   current_stage: string | null;
-  // These can be either objects or arrays with the first element being the object
-  buyer: Profile | Profile[];
-  seller: Profile | Profile[];
-  product: Product | Product[];
+  // Fix the type definitions here to handle both array and object scenarios
+  buyer: Profile | Profile[] | null;
+  seller: Profile | Profile[] | null;
+  product: Product | Product[] | null;
   // Derived properties after processing
   buyer_name: string;
   seller_name: string;
@@ -189,26 +188,34 @@ export const AdminOrders = () => {
         // Extract buyer name with proper type checking
         let buyerName = 'Unknown Buyer';
         if (order.buyer) {
-          // Check if buyer is an array or a single object
-          if (Array.isArray(order.buyer)) {
-            if (order.buyer.length > 0 && order.buyer[0]) {
-              buyerName = order.buyer[0].full_name || order.buyer[0].username || 'Unknown Buyer';
+          // Improved type checking and type guards
+          const buyerData = order.buyer;
+          if (Array.isArray(buyerData)) {
+            if (buyerData.length > 0 && buyerData[0]) {
+              const buyer = buyerData[0] as Profile;
+              buyerName = buyer.full_name || buyer.username || 'Unknown Buyer';
             }
           } else {
-            buyerName = order.buyer.full_name || order.buyer.username || 'Unknown Buyer';
+            // Handle as object
+            const buyer = buyerData as Profile;
+            buyerName = buyer.full_name || buyer.username || 'Unknown Buyer';
           }
         }
         
         // Extract seller name with proper type checking
         let sellerName = 'Unknown Seller';
         if (order.seller) {
-          // Check if seller is an array or a single object
-          if (Array.isArray(order.seller)) {
-            if (order.seller.length > 0 && order.seller[0]) {
-              sellerName = order.seller[0].full_name || order.seller[0].username || 'Unknown Seller';
+          // Improved type checking and type guards
+          const sellerData = order.seller;
+          if (Array.isArray(sellerData)) {
+            if (sellerData.length > 0 && sellerData[0]) {
+              const seller = sellerData[0] as Profile;
+              sellerName = seller.full_name || seller.username || 'Unknown Seller';
             }
           } else {
-            sellerName = order.seller.full_name || order.seller.username || 'Unknown Seller';
+            // Handle as object
+            const seller = sellerData as Profile;
+            sellerName = seller.full_name || seller.username || 'Unknown Seller';
           }
         }
         
@@ -216,15 +223,19 @@ export const AdminOrders = () => {
         let productTitle = 'Unknown Product';
         let productImage = null;
         if (order.product) {
-          // Check if product is an array or a single object
-          if (Array.isArray(order.product)) {
-            if (order.product.length > 0 && order.product[0]) {
-              productTitle = order.product[0].title || 'Unknown Product';
-              productImage = order.product[0].image_urls?.[0] || null;
+          // Improved type checking and type guards
+          const productData = order.product;
+          if (Array.isArray(productData)) {
+            if (productData.length > 0 && productData[0]) {
+              const product = productData[0] as Product;
+              productTitle = product.title || 'Unknown Product';
+              productImage = product.image_urls?.[0] || null;
             }
           } else {
-            productTitle = order.product.title || 'Unknown Product';
-            productImage = order.product.image_urls?.[0] || null;
+            // Handle as object
+            const product = productData as Product;
+            productTitle = product.title || 'Unknown Product';
+            productImage = product.image_urls?.[0] || null;
           }
         }
         
