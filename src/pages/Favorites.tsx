@@ -26,9 +26,9 @@ const Favorites = () => {
   if (!user) return null;
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex">
       <ProfileSidebar />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 ml-60 overflow-auto">
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold">Your favorites</h1>

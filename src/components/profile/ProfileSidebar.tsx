@@ -89,7 +89,7 @@ export const ProfileSidebar = () => {
   ];
   
   return (
-    <aside className="w-60 border-r border-gray-200 bg-white h-screen flex flex-col">
+    <aside className="w-60 border-r border-gray-200 bg-white fixed h-screen flex flex-col">
       {/* Fixed header section that stays visible */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
