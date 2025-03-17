@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import Map from 'react-map-gl';
+import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,27 +66,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const handleMapLoad = () => {
     console.log("Map loaded successfully");
     setLoading(false);
-    
-    // Initialize map reference
-    if (mapRef.current && mapRef.current.getMap) {
-      const map = mapRef.current.getMap();
-      
-      // Add navigation controls (zoom, compass)
-      map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-      
-      // Add geolocate control
-      if (interactive) {
-        map.addControl(
-          new mapboxgl.GeolocateControl({
-            positionOptions: {
-              enableHighAccuracy: true
-            },
-            trackUserLocation: true
-          }),
-          'bottom-left'
-        );
-      }
-    }
   };
 
   const handleMapError = (error: any) => {
@@ -161,6 +140,57 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     }
   };
 
+  // Initialize once the component has mounted
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Set access token
+      mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+      
+      // Create map instance
+      if (mapRef.current && !mapRef.current.getMap) {
+        const map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [center.longitude, center.latitude],
+          zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
+          interactive: interactive
+        });
+        
+        // Store map instance on the ref
+        mapRef.current.getMap = () => map;
+        
+        // Set up event handlers
+        map.on('load', handleMapLoad);
+        map.on('error', handleMapError);
+        
+        if (interactive && onLocationSelect) {
+          map.on('click', handleMapClick);
+        }
+        
+        // Add navigation controls (zoom, compass)
+        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+        
+        // Add geolocate control
+        if (interactive) {
+          map.addControl(
+            new mapboxgl.GeolocateControl({
+              positionOptions: {
+                enableHighAccuracy: true
+              },
+              trackUserLocation: true
+            }),
+            'bottom-left'
+          );
+        }
+        
+        // Clean up
+        return () => {
+          map.remove();
+        };
+      }
+    }
+  }, [mapKey, center.longitude, center.latitude, zoom, interactive, latitude, longitude, onLocationSelect]);
+
   return (
     <div className={`relative ${className}`} style={{ height }}>
       {loading && <Skeleton className="absolute inset-0 z-10" />}
@@ -210,44 +240,3 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     </div>
   );
 };
-
-// Initialize once the component has mounted
-useEffect(() => {
-  if (typeof window !== 'undefined') {
-    import('mapbox-gl').then(mapboxgl => {
-      // Set access token
-      mapboxgl.default.accessToken = MAPBOX_ACCESS_TOKEN;
-      
-      // Create map instance
-      if (mapRef.current && !mapRef.current.getMap) {
-        const map = new mapboxgl.default.Map({
-          container: 'map',
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [center.longitude, center.latitude],
-          zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
-          interactive: interactive
-        });
-        
-        // Store map instance on the ref
-        mapRef.current.getMap = () => map;
-        
-        // Set up event handlers
-        map.on('load', handleMapLoad);
-        map.on('error', handleMapError);
-        
-        if (interactive && onLocationSelect) {
-          map.on('click', handleMapClick);
-        }
-        
-        // Clean up
-        return () => {
-          map.remove();
-        };
-      }
-    }).catch(error => {
-      console.error("Error loading mapbox-gl:", error);
-      setMapError("Failed to load map library. Please check your connection and try again.");
-      setLoading(false);
-    });
-  }
-}, [mapKey, center.longitude, center.latitude, zoom, interactive, latitude, longitude, onLocationSelect]);
