@@ -26,7 +26,7 @@ export const calculateDistance = (
 };
 
 // Using a valid Mapbox public token
-const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NWVuYzAzaDMyeXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA";
+const MAPBOX_TOKEN = "pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2w1Ym0wbHZwMDh2aTNlcGR6YWU3Z3JpbiJ9.qQS0pzU_WF9nbKJR-phJJA";
 
 /**
  * Get the current position of the user
@@ -37,13 +37,14 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by your browser'));
     } else {
+      console.log("Requesting geolocation...");
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log("Position received:", position);
+          console.log("Geolocation success:", position.coords.latitude, position.coords.longitude);
           resolve(position);
         }, 
         (error) => {
-          console.error("Geolocation error:", error);
+          console.error("Geolocation error:", error.code, error.message);
           reject(error);
         },
         { 
@@ -64,23 +65,27 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
 export const geocodeAddress = async (address: string): Promise<{lat: number, lng: number}> => {
   console.log("Geocoding address:", address);
   try {
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}`
-    );
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}`;
+    console.log("Geocoding URL:", url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Geocoding API error:', errorText);
+      console.error('Geocoding API error:', response.status, errorText);
       throw new Error(`Geocoding failed: ${response.status} ${errorText}`);
     }
     
     const data = await response.json();
-    console.log("Geocoding response:", data);
+    console.log("Geocoding success response:", data);
     
     if (data.features && data.features.length > 0) {
       const [lng, lat] = data.features[0].center;
+      console.log("Geocoded coordinates:", lat, lng);
       return { lat, lng };
     } else {
+      console.error("No geocoding results found");
       throw new Error('No results found');
     }
   } catch (error) {
@@ -98,22 +103,24 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   console.log("Reverse geocoding:", lat, lng);
   try {
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
-    );
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`;
+    console.log("Reverse geocoding URL:", url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Reverse geocoding API error:', errorText);
+      console.error('Reverse geocoding API error:', response.status, errorText);
       throw new Error(`Reverse geocoding failed: ${response.status} ${errorText}`);
     }
     
     const data = await response.json();
-    console.log("Reverse geocoding response:", data);
+    console.log("Reverse geocoding success response:", data);
     
     if (data.features && data.features.length > 0) {
       return data.features[0].place_name;
     } else {
+      console.error("No reverse geocoding results found");
       throw new Error('No results found');
     }
   } catch (error) {
@@ -130,9 +137,10 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
  */
 export const getFuzzyLocation = async (lat: number, lng: number): Promise<string> => {
   try {
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=neighborhood,locality,place&access_token=${MAPBOX_TOKEN}`
-    );
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=neighborhood,locality,place&access_token=${MAPBOX_TOKEN}`;
+    console.log("Fuzzy location URL:", url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
       throw new Error('Fuzzy location lookup failed');

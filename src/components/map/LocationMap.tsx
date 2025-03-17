@@ -5,8 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Set Mapbox token to a valid public token
-mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NWVuYzAzaDMyeXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+// Set Mapbox token to the updated valid public token
+mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2w1Ym0wbHZwMDh2aTNlcGR6YWU3Z3JpbiJ9.qQS0pzU_WF9nbKJR-phJJA';
 
 interface LocationMapProps {
   latitude?: number;
@@ -48,10 +48,10 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       
       console.log("Initializing map with coordinates:", latitude, longitude);
       
-      // Default center if no coordinates provided
+      // Default center if no coordinates provided - pointing to Dubai as an example location
       const initialCenter: [number, number] = longitude !== undefined && latitude !== undefined 
         ? [longitude, latitude] 
-        : [0, 0];
+        : [55.2708, 25.2048]; // Dubai coordinates as default
       
       try {
         if (map.current) {
@@ -65,7 +65,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/streets-v12',
           center: initialCenter,
-          zoom: latitude !== undefined && longitude !== undefined ? zoom : 2,
+          zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
           interactive: interactive,
         });
 

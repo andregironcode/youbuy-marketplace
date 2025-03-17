@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, MapPin, AlertCircle } from "lucide-react";
+import { ArrowRight, MapPin, AlertCircle, Info } from "lucide-react";
 import { SellStep } from "@/types/sellForm";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "@/utils/locationUtils";
@@ -36,6 +36,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   const [searchValue, setSearchValue] = useState(location);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapVisible, setMapVisible] = useState(true);
   const { toast } = useToast();
 
   const isLocationValid = location.length >= 3 && coordinates !== null && 
@@ -94,7 +95,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
       
       // Provide more specific error messages based on the error code
       if (error.code === 1) {
-        errorMessage = "Location access was denied. Please check your browser permissions.";
+        errorMessage = "Location access was denied. Please check your browser permissions and ensure location is enabled.";
       } else if (error.code === 2) {
         errorMessage = "Your location is currently unavailable. Please try again later or enter manually.";
       } else if (error.code === 3) {
@@ -161,6 +162,12 @@ export const LocationStep: React.FC<LocationStepProps> = ({
     });
   };
 
+  // Force map re-initialization
+  const handleReloadMap = () => {
+    setMapVisible(false);
+    setTimeout(() => setMapVisible(true), 100);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -215,20 +222,37 @@ export const LocationStep: React.FC<LocationStepProps> = ({
           </div>
           
           <div className="rounded-md overflow-hidden border">
-            <LocationMap 
-              latitude={coordinates?.latitude}
-              longitude={coordinates?.longitude}
-              height="300px"
-              zoom={coordinates?.latitude && coordinates?.longitude ? 14 : 2}
-              onLocationSelect={handleLocationSelect}
-              showMarker={!!(coordinates?.latitude && coordinates?.longitude)}
-            />
+            {mapVisible && (
+              <LocationMap 
+                latitude={coordinates?.latitude}
+                longitude={coordinates?.longitude}
+                height="300px"
+                zoom={coordinates?.latitude && coordinates?.longitude ? 14 : 6}
+                onLocationSelect={handleLocationSelect}
+                showMarker={!!(coordinates?.latitude && coordinates?.longitude)}
+              />
+            )}
+
+            <div className="p-2 flex justify-end">
+              <Button 
+                type="button" 
+                size="sm" 
+                variant="outline" 
+                onClick={handleReloadMap}
+                className="text-xs"
+              >
+                Reload Map
+              </Button>
+            </div>
           </div>
           
-          <p className="text-sm text-muted-foreground">
-            This is the spot where your profile is located. We will show all your products here.
-            For privacy, buyers will only see an approximate area.
-          </p>
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              This is the spot where your profile is located. We will show all your products here.
+              For privacy, buyers will only see an approximate area.
+            </AlertDescription>
+          </Alert>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
