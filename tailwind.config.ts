@@ -64,19 +64,19 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				youbuy: {
-					DEFAULT: '#25AFEF',
+					DEFAULT: '#0BA896', /* Teal */
 					foreground: '#ffffff',
-					light: '#e6f6fd',
-					dark: '#1589c0',
-					muted: '#e0f3fb',
+					light: '#E6F7F5',
+					dark: '#08867A',
+					muted: '#E0F5F3',
 				},
 				cta: {
-					DEFAULT: '#FF7A00',
-					hover: '#E56C00',
+					DEFAULT: '#D946EF', /* Magenta */
+					hover: '#C026D3',
 					foreground: '#ffffff',
 				},
 				price: {
-					DEFAULT: '#2563EB',
+					DEFAULT: '#0BA896', /* Teal */
 					foreground: '#ffffff',
 				}
 			},

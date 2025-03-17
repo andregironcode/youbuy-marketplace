@@ -67,7 +67,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             onClick={handleFavoriteClick}
             disabled={isAdding || isRemoving}
           >
-            <Heart className={`h-4 w-4 ${productIsFavorite ? 'fill-youbuy text-youbuy' : 'text-muted-foreground'}`} />
+            <Heart className={`h-4 w-4 ${productIsFavorite ? 'fill-cta text-cta' : 'text-muted-foreground'}`} />
           </Button>
         </div>
       </Link>
@@ -78,7 +78,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </Link>
         </div>
         <div className="mt-1">
-          <p className="text-xl font-bold text-youbuy-dark">AED {product.price.toFixed(2)}</p>
+          <p className="text-xl font-bold text-price">AED {product.price.toFixed(2)}</p>
         </div>
         <div className="mt-1 text-sm text-muted-foreground flex items-center">
           <span>{product.location}</span>
