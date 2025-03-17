@@ -42,20 +42,21 @@ import { format } from "date-fns";
 import { TrackingUpdate } from "@/components/sales/TrackingUpdate";
 
 // Define types for better type safety
-type Profile = {
+interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
   username: string | null;
-};
+}
 
-type Product = {
+interface Product {
   id: string;
   title: string;
   image_urls?: string[] | null;
-};
+}
 
-type OrderWithDetails = {
+// Interface for order with joined data
+interface OrderWithDetails {
   id: string;
   buyer_id: string;
   seller_id: string;
@@ -65,18 +66,18 @@ type OrderWithDetails = {
   created_at: string;
   updated_at: string;
   current_stage: string | null;
-  // These will be populated with either objects or arrays
+  // These can be either objects or arrays with the first element being the object
   buyer: Profile | Profile[];
   seller: Profile | Profile[];
   product: Product | Product[];
-  // These are derived properties
+  // Derived properties after processing
   buyer_name: string;
   seller_name: string;
   product_title: string;
   product_image: string | null;
-};
+}
 
-type OrderDetails = {
+interface OrderDetails {
   order_id: string;
   buyer_name?: string;
   seller_name?: string;
@@ -87,7 +88,8 @@ type OrderDetails = {
   stage_name?: string;
   order_date?: string;
   estimated_delivery?: string;
-};
+  product_id?: string;
+}
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -157,7 +159,8 @@ export const AdminOrders = () => {
     
     try {
       console.log("Fetching orders data...");
-      // Get orders data with better error handling
+      
+      // Get orders data with detailed joins
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -175,40 +178,37 @@ export const AdminOrders = () => {
 
       console.log("Fetched orders data:", data);
 
-      if (!data) {
+      if (!data || data.length === 0) {
         setOrders([]);
+        setIsLoading(false);
         return;
       }
 
-      // Process the data with proper type safety
-      const processedOrders = data.map((order: any) => {
+      // Process the data with proper type handling
+      const processedOrders: OrderWithDetails[] = data.map((order: any) => {
         // Extract buyer name with proper type checking
         let buyerName = 'Unknown Buyer';
         if (order.buyer) {
-          // Check if buyer is an array
+          // Check if buyer is an array or a single object
           if (Array.isArray(order.buyer)) {
-            // Array case - take first item if it exists
-            if (order.buyer.length > 0) {
-              buyerName = order.buyer[0]?.full_name || 'Unknown Buyer';
+            if (order.buyer.length > 0 && order.buyer[0]) {
+              buyerName = order.buyer[0].full_name || order.buyer[0].username || 'Unknown Buyer';
             }
           } else {
-            // Object case - access directly
-            buyerName = order.buyer.full_name || 'Unknown Buyer';
+            buyerName = order.buyer.full_name || order.buyer.username || 'Unknown Buyer';
           }
         }
         
         // Extract seller name with proper type checking
         let sellerName = 'Unknown Seller';
         if (order.seller) {
-          // Check if seller is an array
+          // Check if seller is an array or a single object
           if (Array.isArray(order.seller)) {
-            // Array case - take first item if it exists
-            if (order.seller.length > 0) {
-              sellerName = order.seller[0]?.full_name || 'Unknown Seller';
+            if (order.seller.length > 0 && order.seller[0]) {
+              sellerName = order.seller[0].full_name || order.seller[0].username || 'Unknown Seller';
             }
           } else {
-            // Object case - access directly
-            sellerName = order.seller.full_name || 'Unknown Seller';
+            sellerName = order.seller.full_name || order.seller.username || 'Unknown Seller';
           }
         }
         
@@ -216,15 +216,13 @@ export const AdminOrders = () => {
         let productTitle = 'Unknown Product';
         let productImage = null;
         if (order.product) {
-          // Check if product is an array
+          // Check if product is an array or a single object
           if (Array.isArray(order.product)) {
-            // Array case - take first item if it exists
-            if (order.product.length > 0) {
-              productTitle = order.product[0]?.title || 'Unknown Product';
-              productImage = order.product[0]?.image_urls?.[0] || null;
+            if (order.product.length > 0 && order.product[0]) {
+              productTitle = order.product[0].title || 'Unknown Product';
+              productImage = order.product[0].image_urls?.[0] || null;
             }
           } else {
-            // Object case - access directly
             productTitle = order.product.title || 'Unknown Product';
             productImage = order.product.image_urls?.[0] || null;
           }
@@ -232,11 +230,14 @@ export const AdminOrders = () => {
         
         return {
           ...order,
+          buyer: order.buyer,
+          seller: order.seller,
+          product: order.product,
           buyer_name: buyerName,
           seller_name: sellerName,
           product_title: productTitle,
           product_image: productImage
-        } as OrderWithDetails;
+        };
       });
       
       console.log("Processed orders data:", processedOrders);
@@ -264,10 +265,10 @@ export const AdminOrders = () => {
         .from('order_tracking')
         .select(`*`)
         .eq('order_id', orderId)
-        .single();
+        .maybeSingle(); // using maybeSingle instead of single for better error handling
       
-      if (orderError) {
-        console.error("Error fetching order details:", orderError);
+      if (orderError || !orderData) {
+        console.error("Error fetching order details or no data found:", orderError);
         
         // Fallback to getting from orders table directly
         console.log("Attempting fallback to orders table for order ID:", orderId);
@@ -289,55 +290,61 @@ export const AdminOrders = () => {
         
         console.log("Fallback data:", fallbackData);
         
-        // Process fallback data with proper type safety
+        // Process fallback data safely
         let buyerName = 'Unknown';
         let sellerName = 'Unknown';
         let productTitle = 'Unknown Product';
         let productImages: string[] = [];
+        let productId = fallbackData.product_id;
         
         // Process buyer data safely
         if (fallbackData.buyer) {
           if (Array.isArray(fallbackData.buyer)) {
-            if (fallbackData.buyer.length > 0) {
-              buyerName = fallbackData.buyer[0]?.full_name || 'Unknown';
+            if (fallbackData.buyer.length > 0 && fallbackData.buyer[0]) {
+              buyerName = fallbackData.buyer[0].full_name || fallbackData.buyer[0].username || 'Unknown';
             }
           } else {
-            buyerName = fallbackData.buyer.full_name || 'Unknown';
+            buyerName = fallbackData.buyer.full_name || fallbackData.buyer.username || 'Unknown';
           }
         }
         
         // Process seller data safely
         if (fallbackData.seller) {
           if (Array.isArray(fallbackData.seller)) {
-            if (fallbackData.seller.length > 0) {
-              sellerName = fallbackData.seller[0]?.full_name || 'Unknown';
+            if (fallbackData.seller.length > 0 && fallbackData.seller[0]) {
+              sellerName = fallbackData.seller[0].full_name || fallbackData.seller[0].username || 'Unknown';
             }
           } else {
-            sellerName = fallbackData.seller.full_name || 'Unknown';
+            sellerName = fallbackData.seller.full_name || fallbackData.seller.username || 'Unknown';
           }
         }
         
         // Process product data safely
         if (fallbackData.product) {
           if (Array.isArray(fallbackData.product)) {
-            if (fallbackData.product.length > 0) {
-              productTitle = fallbackData.product[0]?.title || 'Unknown Product';
-              productImages = fallbackData.product[0]?.image_urls || [];
+            if (fallbackData.product.length > 0 && fallbackData.product[0]) {
+              productTitle = fallbackData.product[0].title || 'Unknown Product';
+              productImages = fallbackData.product[0].image_urls || [];
+              productId = fallbackData.product[0].id;
             }
           } else {
             productTitle = fallbackData.product.title || 'Unknown Product';
             productImages = fallbackData.product.image_urls || [];
+            productId = fallbackData.product.id;
           }
         }
         
-        const formattedData = {
-          ...fallbackData,
+        const formattedData: OrderDetails = {
+          order_id: fallbackData.id,
           buyer_name: buyerName,
           seller_name: sellerName,
           product_title: productTitle,
           product_images: productImages,
+          product_id: productId,
           current_stage: fallbackData.status || 'pending',
-          order_id: fallbackData.id
+          status: fallbackData.status,
+          order_date: fallbackData.created_at,
+          estimated_delivery: fallbackData.estimated_delivery
         };
         
         console.log("Using fallback order data:", formattedData);
