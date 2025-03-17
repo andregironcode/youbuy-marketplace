@@ -1,12 +1,70 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
-// Set Mapbox token to the updated valid public token
-mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2w1Ym0wbHZwMDh2aTNlcGR6YWU3Z3JpbiJ9.qQS0pzU_WF9nbKJR-phJJA';
+// Fix Leaflet icon issue
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+// Component to update map center and zoom when props change
+const MapUpdater = ({ center, zoom }: { center: [number, number], zoom: number }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  
+  return null;
+};
+
+// Component to handle map clicks
+const MapClickHandler = ({ 
+  onLocationSelect 
+}: { 
+  onLocationSelect: (lat: number, lng: number, address: string) => void 
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const handleClick = async (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      console.log("Map clicked at:", lat, lng);
+      
+      try {
+        // Get address from coordinates
+        const address = await reverseGeocode(lat, lng);
+        console.log("Reverse geocoded address:", address);
+        onLocationSelect(lat, lng, address);
+      } catch (error) {
+        console.error('Error in reverse geocoding:', error);
+        onLocationSelect(lat, lng, "Unknown location");
+      }
+    };
+
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onLocationSelect]);
+  
+  return null;
+};
 
 interface LocationMapProps {
   latitude?: number;
@@ -31,174 +89,99 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   approximate = false,
   className = '',
 }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mapInitialized, setMapInitialized] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapKey, setMapKey] = useState(Date.now()); // For map reloading
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Default center if no coordinates provided - Dubai as an example location
+  const center: [number, number] = longitude !== undefined && latitude !== undefined 
+    ? [latitude, longitude] 
+    : [25.2048, 55.2708];
 
-    const initializeMap = async () => {
-      setLoading(true);
-      setMapError(null);
-      
-      console.log("Initializing map with coordinates:", latitude, longitude);
-      
-      // Default center if no coordinates provided - pointing to Dubai as an example location
-      const initialCenter: [number, number] = longitude !== undefined && latitude !== undefined 
-        ? [longitude, latitude] 
-        : [55.2708, 25.2048]; // Dubai coordinates as default
-      
-      try {
-        if (map.current) {
-          map.current.remove();
-          map.current = null;
-        }
-        
-        console.log("Creating new map with center:", initialCenter);
-        
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: initialCenter,
-          zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
-          interactive: interactive,
-        });
+  const handleMapLoad = () => {
+    console.log("Map loaded successfully");
+    setLoading(false);
+  };
 
-        // Add navigation controls if interactive
-        if (interactive) {
-          map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        }
+  const handleMapError = (error: Error) => {
+    console.error("Map error:", error);
+    setMapError("Failed to load map. Please try again.");
+    setLoading(false);
+  };
 
-        // Wait for map to load
-        map.current.on('load', () => {
-          console.log("Map loaded successfully");
-          setLoading(false);
-          setMapInitialized(true);
-          
-          if (latitude !== undefined && longitude !== undefined) {
-            console.log("Setting map center to:", longitude, latitude);
-            // Center map on provided coordinates
-            map.current?.setCenter([longitude, latitude]);
-            map.current?.setZoom(zoom);
-            
-            // Add marker if coordinates are provided
-            if (showMarker) {
-              if (!approximate) {
-                // Regular marker for exact location
-                if (marker.current) {
-                  marker.current.setLngLat([longitude, latitude]);
-                } else {
-                  marker.current = new mapboxgl.Marker({ color: '#ff385c' })
-                    .setLngLat([longitude, latitude])
-                    .addTo(map.current!);
-                }
-              } else {
-                // Add a circle for approximate location
-                if (map.current?.getSource('radius-source')) {
-                  (map.current.getSource('radius-source') as mapboxgl.GeoJSONSource).setData({
-                    type: 'Feature',
-                    geometry: {
-                      type: 'Point',
-                      coordinates: [longitude, latitude],
-                    },
-                    properties: {},
-                  });
-                } else {
-                  map.current?.addSource('radius-source', {
-                    type: 'geojson',
-                    data: {
-                      type: 'Feature',
-                      geometry: {
-                        type: 'Point',
-                        coordinates: [longitude, latitude],
-                      },
-                      properties: {},
-                    },
-                  });
-
-                  map.current?.addLayer({
-                    id: 'radius-circle',
-                    type: 'circle',
-                    source: 'radius-source',
-                    paint: {
-                      'circle-radius': 100, // Size of the circle in pixels
-                      'circle-color': '#ff385c',
-                      'circle-opacity': 0.3,
-                      'circle-stroke-width': 2,
-                      'circle-stroke-color': '#ff385c',
-                    },
-                  });
-                }
-              }
-            }
-          }
-        });
-
-        // Error handling for map
-        map.current.on('error', (e) => {
-          console.error("Map error:", e);
-          setMapError("Failed to load map. Please try again.");
-          setLoading(false);
-        });
-
-        // Set up click handler if interactive and onLocationSelect provided
-        if (interactive && onLocationSelect) {
-          map.current.on('click', async (e) => {
-            const { lng, lat } = e.lngLat;
-            console.log("Map clicked at:", lat, lng);
-            
-            // Update marker position
-            if (marker.current) {
-              marker.current.setLngLat([lng, lat]);
-            } else {
-              marker.current = new mapboxgl.Marker({ color: '#ff385c' })
-                .setLngLat([lng, lat])
-                .addTo(map.current!);
-            }
-            
-            try {
-              // Get address from coordinates
-              const address = await reverseGeocode(lat, lng);
-              console.log("Reverse geocoded address:", address);
-              onLocationSelect(lat, lng, address);
-            } catch (error) {
-              console.error('Error in reverse geocoding:', error);
-              onLocationSelect(lat, lng, "Unknown location");
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Error initializing map:", error);
-        setMapError("Failed to initialize map. Please try again.");
-        setLoading(false);
-      }
-    };
-
-    initializeMap();
-
-    // Cleanup
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, [latitude, longitude, zoom, interactive, onLocationSelect, showMarker, approximate]);
+  const handleReloadMap = () => {
+    setLoading(true);
+    setMapError(null);
+    setMapKey(Date.now()); // Force re-render of map
+  };
 
   return (
     <div className={`relative ${className}`} style={{ height }}>
       {loading && <Skeleton className="absolute inset-0 z-10" />}
+      
       {mapError && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-100 rounded-md">
-          <p className="text-red-500">{mapError}</p>
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-100 rounded-md">
+          <p className="text-red-500 mb-4">{mapError}</p>
+          <Button onClick={handleReloadMap} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reload Map
+          </Button>
         </div>
       )}
-      <div ref={mapContainer} className="w-full h-full rounded-md overflow-hidden" />
+      
+      <div className="w-full h-full rounded-md overflow-hidden" key={mapKey}>
+        <MapContainer
+          center={center}
+          zoom={latitude !== undefined && longitude !== undefined ? zoom : 6}
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={interactive}
+          dragging={interactive}
+          touchZoom={interactive}
+          doubleClickZoom={interactive}
+          scrollWheelZoom={interactive}
+          attributionControl={true}
+          whenReady={handleMapLoad}
+          className="z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            onError={handleMapError}
+          />
+          
+          <MapUpdater center={center} zoom={zoom} />
+          
+          {interactive && onLocationSelect && (
+            <MapClickHandler onLocationSelect={onLocationSelect} />
+          )}
+          
+          {showMarker && latitude !== undefined && longitude !== undefined && (
+            approximate ? (
+              <Circle 
+                center={[latitude, longitude]} 
+                radius={500} 
+                pathOptions={{ 
+                  fillColor: '#ff385c', 
+                  fillOpacity: 0.2,
+                  color: '#ff385c',
+                  weight: 2
+                }} 
+              />
+            ) : (
+              <Marker position={[latitude, longitude]} />
+            )
+          )}
+        </MapContainer>
+      </div>
+      
+      {interactive && (
+        <div className="absolute bottom-2 right-2 z-10">
+          <Button onClick={handleReloadMap} variant="outline" size="sm" className="bg-white">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reload Map
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

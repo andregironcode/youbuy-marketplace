@@ -1,4 +1,3 @@
-
 /**
  * Calculate the distance between two geographic coordinates using the Haversine formula
  * @param lat1 Latitude of first point in degrees
@@ -24,9 +23,6 @@ export const calculateDistance = (
   const distance = R * c; // Distance in km
   return distance;
 };
-
-// Using a valid Mapbox public token
-const MAPBOX_TOKEN = "pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2w1Ym0wbHZwMDh2aTNlcGR6YWU3Z3JpbiJ9.qQS0pzU_WF9nbKJR-phJJA";
 
 /**
  * Get the current position of the user
@@ -58,7 +54,7 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
 };
 
 /**
- * Geocode an address to get coordinates
+ * Geocode an address to get coordinates using OpenStreetMap's Nominatim API
  * @param address Address to geocode
  * @returns Promise that resolves to coordinates or rejects with an error
  */
@@ -66,10 +62,15 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
   console.log("Geocoding address:", address);
   try {
     const encodedAddress = encodeURIComponent(address);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${MAPBOX_TOKEN}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`;
     console.log("Geocoding URL:", url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'YouBuy Marketplace Application' // Required by Nominatim's usage policy
+      }
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -80,8 +81,9 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
     const data = await response.json();
     console.log("Geocoding success response:", data);
     
-    if (data.features && data.features.length > 0) {
-      const [lng, lat] = data.features[0].center;
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
       console.log("Geocoded coordinates:", lat, lng);
       return { lat, lng };
     } else {
@@ -95,7 +97,7 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
 };
 
 /**
- * Reverse geocode coordinates to get address
+ * Reverse geocode coordinates to get address using OpenStreetMap's Nominatim API
  * @param lat Latitude
  * @param lng Longitude
  * @returns Promise that resolves to address or rejects with an error
@@ -103,10 +105,15 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   console.log("Reverse geocoding:", lat, lng);
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
     console.log("Reverse geocoding URL:", url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'YouBuy Marketplace Application' // Required by Nominatim's usage policy
+      }
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -117,8 +124,8 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
     const data = await response.json();
     console.log("Reverse geocoding success response:", data);
     
-    if (data.features && data.features.length > 0) {
-      return data.features[0].place_name;
+    if (data && data.display_name) {
+      return data.display_name;
     } else {
       console.error("No reverse geocoding results found");
       throw new Error('No results found');
@@ -130,17 +137,22 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
 };
 
 /**
- * Get a fuzzy location for display (approx location with 500m radius)
+ * Get a fuzzy location for display (approx location)
  * @param lat Precise latitude
  * @param lng Precise longitude
  * @returns Promise that resolves to a neighborhood or area name
  */
 export const getFuzzyLocation = async (lat: number, lng: number): Promise<string> => {
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=neighborhood,locality,place&access_token=${MAPBOX_TOKEN}`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`;
     console.log("Fuzzy location URL:", url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'YouBuy Marketplace Application' // Required by Nominatim's usage policy
+      }
+    });
     
     if (!response.ok) {
       throw new Error('Fuzzy location lookup failed');
@@ -148,9 +160,14 @@ export const getFuzzyLocation = async (lat: number, lng: number): Promise<string
     
     const data = await response.json();
     
-    if (data.features && data.features.length > 0) {
-      // Return the neighborhood or locality name
-      return data.features[0].text;
+    if (data && data.address) {
+      // Use neighborhood, suburb, district, or city in descending order of preference
+      return data.address.neighbourhood || 
+             data.address.suburb || 
+             data.address.district || 
+             data.address.city || 
+             data.address.town || 
+             "Nearby location";
     } else {
       // Fallback to regular reverse geocoding
       return await reverseGeocode(lat, lng);
