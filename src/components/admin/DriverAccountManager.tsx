@@ -63,7 +63,10 @@ export const DriverAccountManager = () => {
       
       const token = sessionData.session.access_token;
       
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-driver-account`, {
+      // Get the Supabase URL from the client config
+      const supabaseUrl = process.env.SUPABASE_URL || "https://epkpqlkvhuqnfepfpscd.supabase.co";
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-driver-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

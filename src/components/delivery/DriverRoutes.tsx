@@ -42,6 +42,16 @@ type RouteStop = {
   completed?: boolean;
 };
 
+type DeliveryRoute = {
+  id: string;
+  date: string;
+  time_slot: 'morning' | 'afternoon';
+  pickup_route: RouteStop[];
+  delivery_route: RouteStop[];
+  status: string;
+  created_at: string;
+};
+
 export const DriverRoutes = () => {
   const [currentDate] = useState<Date>(new Date());
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
@@ -60,58 +70,58 @@ export const DriverRoutes = () => {
       // Format the date for the query
       const formattedDate = format(currentDate, 'yyyy-MM-dd');
       
-      // Fetch the latest optimized route for the current date and time slot
-      const { data: routes, error } = await supabase
-        .from('delivery_routes')
-        .select('*')
-        .eq('date', formattedDate)
-        .eq('time_slot', timeSlot)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Use RPC function instead of direct table access
+      const { data: routes, error } = await supabase.rpc(
+        'get_delivery_route_by_date_time',
+        {
+          p_date: formattedDate,
+          p_time_slot: timeSlot
+        }
+      );
       
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No routes found
-          toast({
-            title: "No routes available",
-            description: `No routes found for ${format(currentDate, 'MMMM d, yyyy')} (${timeSlot} shift)`,
-            variant: "destructive"
-          });
-          setStops([]);
-        } else {
-          throw error;
-        }
-      } else if (routes) {
-        console.log("Fetched optimized routes:", routes);
-        
-        // Extract the appropriate route based on the selected type
-        const routeData = routeType === 'pickups' 
-          ? routes.pickup_route 
-          : routes.delivery_route;
-          
-        // Get completed orders to mark them in the route
-        const { data: completedOrders } = await supabase
-          .from('orders')
-          .select('id, status')
-          .in('status', ['delivered', 'completed'])
-          .in('id', routeData.map((stop: RouteStop) => stop.orderId));
-          
-        // Create a set of completed order IDs for faster lookup
-        const completedOrderIds = new Set(
-          (completedOrders || []).map((order: any) => order.id)
-        );
-        
-        // Mark completed stops
-        const routeWithCompletionStatus = routeData.map((stop: RouteStop) => ({
-          ...stop,
-          completed: completedOrderIds.has(stop.orderId)
-        }));
-        
-        setStops(routeWithCompletionStatus);
-        setLastUpdated(new Date(routes.created_at));
+        throw error;
       }
+      
+      if (!routes || routes.length === 0) {
+        toast({
+          title: "No routes available",
+          description: `No routes found for ${format(currentDate, 'MMMM d, yyyy')} (${timeSlot} shift)`,
+          variant: "destructive"
+        });
+        setStops([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const route = routes[0] as DeliveryRoute;
+      console.log("Fetched optimized routes:", route);
+      
+      // Extract the appropriate route based on the selected type
+      const routeData = routeType === 'pickups' 
+        ? route.pickup_route 
+        : route.delivery_route;
+        
+      // Get completed orders to mark them in the route
+      const { data: completedOrders } = await supabase
+        .from('orders')
+        .select('id, status')
+        .in('status', ['delivered', 'completed'])
+        .in('id', routeData.map((stop: RouteStop) => stop.orderId));
+        
+      // Create a set of completed order IDs for faster lookup
+      const completedOrderIds = new Set(
+        (completedOrders || []).map((order: any) => order.id)
+      );
+      
+      // Mark completed stops
+      const routeWithCompletionStatus = routeData.map((stop: RouteStop) => ({
+        ...stop,
+        completed: completedOrderIds.has(stop.orderId)
+      }));
+      
+      setStops(routeWithCompletionStatus);
+      setLastUpdated(new Date(route.created_at));
     } catch (error) {
       console.error("Error fetching routes:", error);
       toast({
@@ -306,7 +316,7 @@ export const DriverRoutes = () => {
                           <div>
                             <p className="font-medium">Status</p>
                             <Badge 
-                              variant={stop.completed ? 'success' : 'outline'}
+                              variant={stop.completed ? "default" : "outline"}
                               className="mt-1"
                             >
                               {stop.completed ? 'Completed' : 'Pending'}

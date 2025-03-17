@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,13 +26,24 @@ import { cn } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 import { CalendarIcon, Check, Clock, Play, RefreshCw, Route, Settings, Truck } from "lucide-react";
 
+type DeliveryRoute = {
+  id: string;
+  date: string;
+  time_slot: 'morning' | 'afternoon';
+  pickup_route: any[];
+  delivery_route: any[];
+  status: string;
+  created_at: string;
+  updated_at?: string;
+};
+
 export const RouteOptimization = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [timeSlot, setTimeSlot] = useState<'morning' | 'afternoon'>('morning');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRunningScheduleTest, setIsRunningScheduleTest] = useState(false);
   const [autoOptimizationEnabled, setAutoOptimizationEnabled] = useState(true);
-  const [recentRoutes, setRecentRoutes] = useState<any[]>([]);
+  const [recentRoutes, setRecentRoutes] = useState<DeliveryRoute[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,11 +52,9 @@ export const RouteOptimization = () => {
 
   const fetchRecentRoutes = async () => {
     try {
-      const { data, error } = await supabase
-        .from('delivery_routes')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { data, error } = await supabase.rpc('get_recent_delivery_routes', {
+        limit_count: 5
+      });
 
       if (error) throw error;
       setRecentRoutes(data || []);
@@ -65,7 +73,6 @@ export const RouteOptimization = () => {
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
       
-      // Call the route optimization edge function
       const response = await supabase.functions.invoke('route-optimization', {
         method: 'POST',
         body: {
@@ -97,7 +104,6 @@ export const RouteOptimization = () => {
   const runSchedulerTest = async () => {
     setIsRunningScheduleTest(true);
     try {
-      // Call the route scheduler edge function
       const response = await supabase.functions.invoke('route-scheduler', {
         method: 'GET'
       });
@@ -122,7 +128,7 @@ export const RouteOptimization = () => {
     }
   };
 
-  const getRouteStatusBadge = (route: any) => {
+  const getRouteStatusBadge = (route: DeliveryRoute) => {
     const pickupCount = route.pickup_route?.length || 0;
     const deliveryCount = route.delivery_route?.length || 0;
     
