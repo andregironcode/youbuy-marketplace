@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +31,6 @@ const placeholderImages = [
   "https://via.placeholder.com/400x400?text=Another+Image",
 ];
 
-// Updated relatedProducts to match ProductType interface
 const relatedProducts: ProductType[] = [
   {
     id: "rp1",
@@ -107,7 +105,6 @@ export default function ProductDetail() {
   const location = window.location;
 
   useEffect(() => {
-    // Simulate fetching favorite status from local storage or API
     const storedFavorite = localStorage.getItem(`favorite-${productId}`);
     setIsFavorite(storedFavorite === 'true');
   }, [productId]);
@@ -155,18 +152,23 @@ export default function ProductDetail() {
     error 
   } = useQuery({
     queryKey: ['product', productId],
-    queryFn: () => {
-      if (!productId) return Promise.reject(new Error('Product ID is undefined'));
-      return getProductById(productId);
+    queryFn: async () => {
+      if (!productId) throw new Error('Product ID is undefined');
+      console.log("Fetching product with ID:", productId);
+      const result = await getProductById(productId);
+      console.log("Query result:", result);
+      if (!result) throw new Error('Product not found');
+      return result;
     },
-    enabled: !!productId,
-    retry: 2
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   useEffect(() => {
-    // Update current image when product changes
     if (product?.images && product.images.length > 0) {
       setCurrentImage(product.images[0]);
+    } else if (product?.image) {
+      setCurrentImage(product.image);
     }
   }, [product]);
 
@@ -181,11 +183,12 @@ export default function ProductDetail() {
   }
 
   if (error || !product) {
+    console.error("Error loading product:", error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <p className="text-xl font-semibold text-red-500 mb-2">Error: Could not load product details</p>
-          <p className="text-muted-foreground mb-4">The product you're looking for might not exist or there was an issue loading it.</p>
+          <p className="text-muted-foreground mb-4">The product you're looking for might not exist or there was an issue loading it. ProductID: {productId}</p>
           <Button onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
