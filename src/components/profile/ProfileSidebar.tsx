@@ -115,28 +115,26 @@ export const ProfileSidebar = () => {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <nav className="py-4">
-          <ul className="space-y-1 px-2">
-            {items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
-                    item.active
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </ScrollArea>
+      <nav className="flex-1 py-4 overflow-y-auto no-scrollbar">
+        <ul className="space-y-1 px-2">
+          {items.map((item) => (
+            <li key={item.href}>
+              <Link
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
+                  item.active
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </aside>
   );
 };
