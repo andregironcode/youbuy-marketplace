@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Map, Source, Layer, Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
+import Map from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ZoomIn, ZoomOut, Navigation } from 'lucide-react';
 
 // Mapbox access token - in a real app, this should be in an environment variable
 const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
@@ -54,6 +54,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapKey, setMapKey] = useState(Date.now()); // For map reloading
+  const [currentZoom, setCurrentZoom] = useState(zoom);
   const mapRef = useRef<any>(null);
 
   // Default center if no coordinates provided - Dubai as an example location
@@ -65,6 +66,27 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const handleMapLoad = () => {
     console.log("Map loaded successfully");
     setLoading(false);
+    
+    // Initialize map reference
+    if (mapRef.current && mapRef.current.getMap) {
+      const map = mapRef.current.getMap();
+      
+      // Add navigation controls (zoom, compass)
+      map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      
+      // Add geolocate control
+      if (interactive) {
+        map.addControl(
+          new mapboxgl.GeolocateControl({
+            positionOptions: {
+              enableHighAccuracy: true
+            },
+            trackUserLocation: true
+          }),
+          'bottom-left'
+        );
+      }
+    }
   };
 
   const handleMapError = (error: any) => {
@@ -99,13 +121,44 @@ export const LocationMap: React.FC<LocationMapProps> = ({
     }
   };
 
-  const geojsonData = {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [longitude || 0, latitude || 0]
-    },
-    properties: {}
+  const handleZoomIn = () => {
+    if (mapRef.current && mapRef.current.getMap) {
+      const map = mapRef.current.getMap();
+      const newZoom = Math.min((map.getZoom() || currentZoom) + 1, 20);
+      map.zoomTo(newZoom);
+      setCurrentZoom(newZoom);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef.current && mapRef.current.getMap) {
+      const map = mapRef.current.getMap();
+      const newZoom = Math.max((map.getZoom() || currentZoom) - 1, 1);
+      map.zoomTo(newZoom);
+      setCurrentZoom(newZoom);
+    }
+  };
+
+  // Create a marker element for showing the location
+  const renderMarker = () => {
+    if (!showMarker || latitude === undefined || longitude === undefined) return null;
+    
+    if (approximate) {
+      // For approximate location, use a circle on the map
+      return (
+        <div className="rounded-full w-14 h-14 bg-red-400/20 border-2 border-red-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+      );
+    } else {
+      // For exact location, use a marker
+      return (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full">
+          <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+          </div>
+          <div className="w-2 h-2 bg-red-500 rotate-45 transform origin-top absolute left-1/2 -ml-1"></div>
+        </div>
+      );
+    }
   };
 
   return (
@@ -123,54 +176,78 @@ export const LocationMap: React.FC<LocationMapProps> = ({
       )}
       
       <div className="w-full h-full rounded-md overflow-hidden" key={mapKey}>
-        <Map
-          ref={mapRef}
-          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{
-            longitude: center.longitude,
-            latitude: center.latitude,
-            zoom: latitude !== undefined && longitude !== undefined ? zoom : 6
-          }}
-          style={{ width: '100%', height: '100%' }}
-          mapStyle="mapbox://styles/mapbox/streets-v12"
-          onClick={handleMapClick}
-          onLoad={handleMapLoad}
-          onError={handleMapError}
-          interactive={interactive}
-          attributionControl={true}
-        >
-          {/* Navigation controls (zoom, etc.) */}
-          {interactive && <NavigationControl position="bottom-left" />}
-          
-          {/* Geolocation control */}
-          {interactive && <GeolocateControl position="bottom-right" />}
-          
-          {/* Show marker or circle */}
-          {showMarker && latitude !== undefined && longitude !== undefined && (
-            approximate ? (
-              <Source id="circle-source" type="geojson" data={geojsonData}>
-                <Layer {...circleLayer} />
-              </Source>
-            ) : (
-              <Marker
-                longitude={longitude}
-                latitude={latitude}
-                anchor="bottom"
-                style={markerStyle}
-              />
-            )
-          )}
-        </Map>
+        <div className="relative w-full h-full">
+          <div 
+            ref={mapRef} 
+            id="map"
+            className="w-full h-full" 
+          />
+          {renderMarker()}
+        </div>
       </div>
       
       {interactive && (
-        <div className="absolute bottom-2 right-2 z-10">
-          <Button onClick={handleReloadMap} variant="outline" size="sm" className="bg-white">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reload Map
-          </Button>
-        </div>
+        <>
+          {/* Custom zoom controls */}
+          <div className="absolute bottom-16 right-2 z-10 flex flex-col space-y-2">
+            <Button onClick={handleZoomIn} variant="outline" size="icon" className="bg-white h-8 w-8">
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleZoomOut} variant="outline" size="icon" className="bg-white h-8 w-8">
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Reload button */}
+          <div className="absolute bottom-2 right-2 z-10">
+            <Button onClick={handleReloadMap} variant="outline" size="sm" className="bg-white">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reload Map
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
 };
+
+// Initialize once the component has mounted
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    import('mapbox-gl').then(mapboxgl => {
+      // Set access token
+      mapboxgl.default.accessToken = MAPBOX_ACCESS_TOKEN;
+      
+      // Create map instance
+      if (mapRef.current && !mapRef.current.getMap) {
+        const map = new mapboxgl.default.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [center.longitude, center.latitude],
+          zoom: latitude !== undefined && longitude !== undefined ? zoom : 6,
+          interactive: interactive
+        });
+        
+        // Store map instance on the ref
+        mapRef.current.getMap = () => map;
+        
+        // Set up event handlers
+        map.on('load', handleMapLoad);
+        map.on('error', handleMapError);
+        
+        if (interactive && onLocationSelect) {
+          map.on('click', handleMapClick);
+        }
+        
+        // Clean up
+        return () => {
+          map.remove();
+        };
+      }
+    }).catch(error => {
+      console.error("Error loading mapbox-gl:", error);
+      setMapError("Failed to load map library. Please check your connection and try again.");
+      setLoading(false);
+    });
+  }
+}, [mapKey, center.longitude, center.latitude, zoom, interactive, latitude, longitude, onLocationSelect]);
