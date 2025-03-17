@@ -10,7 +10,9 @@ import {
   Flag, 
   Box,
   Home,
-  HelpCircle
+  HelpCircle,
+  Truck,
+  Route
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +29,8 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: ShoppingBag, label: "Products", path: "/admin/products" },
   { icon: Box, label: "Orders", path: "/admin/orders" },
+  { icon: Truck, label: "Delivery Routes", path: "/admin/delivery-routes" },
+  { icon: Route, label: "Route Optimization", path: "/admin/route-optimization" },
   { icon: Flag, label: "Reports", path: "/admin/reports" },
   { icon: HelpCircle, label: "Support", path: "/admin/support" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },

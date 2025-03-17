@@ -10,6 +10,7 @@ import { AdminSettings } from "@/components/admin/pages/AdminSettings";
 import { AdminSupport } from "@/components/admin/pages/AdminSupport";
 import { DeliveryRoutes } from "@/components/admin/pages/DeliveryRoutes";
 import { DriverPanel } from "@/components/delivery/DriverPanel";
+import { RouteOptimization } from "@/components/admin/pages/RouteOptimization";
 
 const AdminPage = () => {
   return (
@@ -24,6 +25,7 @@ const AdminPage = () => {
         <Route path="/settings" element={<AdminSettings />} />
         <Route path="/support" element={<AdminSupport />} />
         <Route path="/delivery-routes" element={<DeliveryRoutes />} />
+        <Route path="/route-optimization" element={<RouteOptimization />} />
         <Route path="/driver-panel" element={<DriverPanel />} />
       </Routes>
     </AdminLayout>
