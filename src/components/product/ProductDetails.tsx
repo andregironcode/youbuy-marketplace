@@ -310,7 +310,8 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
       
       <Button 
         className="w-full mt-4"
-        variant="action"
+        variant="default"
+        style={{ backgroundColor: "#4CD137" }}
         disabled={
           product.status === 'sold' || 
           product.status === 'reserved' || 
