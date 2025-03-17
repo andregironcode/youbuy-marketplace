@@ -109,7 +109,8 @@ export const PromoteDialog: React.FC<PromoteDialogProps> = ({
           </Button>
           <Button 
             onClick={onComplete}
-            className="bg-youbuy hover:bg-youbuy-dark"
+            className="bg-cta hover:bg-cta-hover text-white"
+            variant="action"
           >
             {promotionLevel === 'none' ? 'Publish Without Promotion' : 'Confirm & Pay'}
           </Button>

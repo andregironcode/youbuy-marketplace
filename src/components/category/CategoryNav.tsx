@@ -29,7 +29,7 @@ export const CategoryNav = ({ selectedCategory, setSelectedCategory }: CategoryN
   };
   
   return (
-    <div className="border-b">
+    <div className="border-b bg-white">
       <div className="container py-4">
         <div className="flex flex-wrap items-center gap-2 max-w-full overflow-hidden">
           <Button

@@ -59,7 +59,8 @@ export function PaymentForm({ onSuccess }: PaymentFormProps) {
       
       <Button 
         type="submit" 
-        className="w-full" 
+        className="w-full"
+        variant="action"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (

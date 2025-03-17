@@ -124,7 +124,7 @@ export const Navbar = () => {
   }, [user]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white/95">
       <div className="container flex h-16 items-center">
         <div className="mr-2 md:mr-4 flex">
           <Link to="/" className="flex items-center space-x-2">
@@ -189,7 +189,7 @@ export const Navbar = () => {
                 </Link>
               )}
               <Link to="/sell">
-                <Button className="bg-youbuy hover:bg-youbuy-dark h-9 text-sm">
+                <Button className="bg-cta hover:bg-cta-hover text-white h-9 text-sm">
                   <PlusCircle className="mr-1 h-4 w-4" />
                   Sell
                 </Button>

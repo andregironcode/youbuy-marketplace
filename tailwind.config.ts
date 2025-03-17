@@ -69,6 +69,15 @@ export default {
 					light: '#e6f6fd',
 					dark: '#1589c0',
 					muted: '#e0f3fb',
+				},
+				cta: {
+					DEFAULT: '#FF7A00',
+					hover: '#E56C00',
+					foreground: '#ffffff',
+				},
+				price: {
+					DEFAULT: '#2563EB',
+					foreground: '#ffffff',
 				}
 			},
 			borderRadius: {

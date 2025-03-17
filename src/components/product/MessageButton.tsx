@@ -161,7 +161,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
             />
             <div>
               <p className="font-medium">{product.title}</p>
-              <p className="text-youbuy font-bold">AED {product.price.toFixed(2)}</p>
+              <p className="text-price font-bold">AED {product.price.toFixed(2)}</p>
             </div>
           </div>
           <Textarea

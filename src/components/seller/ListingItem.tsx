@@ -24,7 +24,7 @@ export const ListingItem = ({ product }: ListingItemProps) => {
       <div className="flex-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-youbuy font-bold">€{product.price.toFixed(2)}</p>
+            <p className="text-price font-bold">€{product.price.toFixed(2)}</p>
             <h3 className="font-medium text-sm">{product.title}</h3>
           </div>
           <div className="mt-2 sm:mt-0 text-xs text-muted-foreground">

@@ -21,7 +21,6 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate('/');
@@ -132,7 +131,7 @@ const Auth = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-youbuy hover:bg-youbuy-dark"
+                  className="w-full bg-cta hover:bg-cta-hover text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -183,7 +182,7 @@ const Auth = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-youbuy hover:bg-youbuy-dark"
+                  className="w-full bg-cta hover:bg-cta-hover text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? (
