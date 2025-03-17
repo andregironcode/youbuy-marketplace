@@ -1,31 +1,60 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
-import { searchProducts } from "@/utils/searchUtils";
+import { searchProducts, getAllCategories, countActiveFilters } from "@/utils/searchUtils";
 import { ProductType } from "@/types/product";
 import { Loader2, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { FilterSidebar } from "@/components/filters/FilterSidebar";
+import { FilterToggle } from "@/components/filters/FilterToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const category = searchParams.get("category") || "";
+  const isMobile = useIsMobile();
+  
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!query && !category) {
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
+      
+      // Get all filters from URL params
+      const minPrice = searchParams.get("min_price") ? Number(searchParams.get("min_price")) : undefined;
+      const maxPrice = searchParams.get("max_price") ? Number(searchParams.get("max_price")) : undefined;
+      const sortBy = searchParams.get("sort") || "recent";
+      const distance = searchParams.get("distance") ? Number(searchParams.get("distance")) : undefined;
+      const onlyAvailable = searchParams.get("available") === "true";
+      
       try {
-        const results = await searchProducts(query, 50, category);
+        // Fetch products with filters
+        const results = await searchProducts({
+          query,
+          category,
+          minPrice,
+          maxPrice,
+          sortBy,
+          distance,
+          onlyAvailable,
+        });
+        
         setProducts(results);
+        
+        // Fetch all categories for filter options if not already loaded
+        if (categories.length === 0) {
+          const allCategories = await getAllCategories();
+          setCategories(allCategories);
+        }
+        
+        // Count active filters
+        setActiveFiltersCount(countActiveFilters(searchParams));
       } catch (error) {
         console.error("Error searching products:", error);
       } finally {
@@ -34,7 +63,7 @@ const SearchPage = () => {
     };
 
     fetchResults();
-  }, [query, category]);
+  }, [searchParams, query, category, categories.length]);
 
   const getSearchTitle = () => {
     if (category && query) {
@@ -51,21 +80,80 @@ const SearchPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Search Results</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-muted-foreground">
-              {products.length > 0
-                ? `Showing ${products.length} results for ${getSearchTitle()}`
-                : `No results found for ${getSearchTitle()}`}
-            </p>
-            {category && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Tag className="h-3 w-3" />
-                {category}
-              </Badge>
-            )}
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-3xl font-bold">Search Results</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-muted-foreground">
+                  {products.length > 0
+                    ? `Showing ${products.length} results for ${getSearchTitle()}`
+                    : `No results found for ${getSearchTitle()}`}
+                </p>
+                {category && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    {category}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <FilterToggle 
+              onClick={() => setIsFilterOpen(true)} 
+              activeFiltersCount={activeFiltersCount}
+            />
           </div>
+          
+          {/* Active filters display */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {searchParams.get("min_price") && (
+                <Badge variant="secondary" className="rounded-full">
+                  Min: AED {searchParams.get("min_price")}
+                </Badge>
+              )}
+              {searchParams.get("max_price") && (
+                <Badge variant="secondary" className="rounded-full">
+                  Max: AED {searchParams.get("max_price")}
+                </Badge>
+              )}
+              {searchParams.get("sort") && searchParams.get("sort") !== "recent" && (
+                <Badge variant="secondary" className="rounded-full">
+                  {searchParams.get("sort") === "price_asc" 
+                    ? "Lowest Price" 
+                    : searchParams.get("sort") === "price_desc" 
+                      ? "Highest Price" 
+                      : "Most Popular"}
+                </Badge>
+              )}
+              {searchParams.get("distance") && searchParams.get("distance") !== "50" && (
+                <Badge variant="secondary" className="rounded-full">
+                  Within {searchParams.get("distance")} km
+                </Badge>
+              )}
+              {searchParams.get("available") === "true" && (
+                <Badge variant="secondary" className="rounded-full">
+                  Available only
+                </Badge>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  // Keep only search query and category params
+                  const newParams = new URLSearchParams();
+                  if (query) newParams.set("q", query);
+                  if (category) newParams.set("category", category);
+                  window.location.search = newParams.toString();
+                }}
+              >
+                Clear all filters
+              </Button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -89,10 +177,21 @@ const SearchPage = () => {
                     ? `We couldn't find any products matching "${query}" in the "${category}" category` 
                     : `We couldn't find any products matching "${query}"`}
                 </p>
+                <p className="text-muted-foreground">
+                  Try adjusting your filters or search criteria
+                </p>
               </div>
             )}
           </>
         )}
+        
+        {/* Filter sidebar */}
+        <FilterSidebar 
+          isOpen={isFilterOpen} 
+          onClose={() => setIsFilterOpen(false)}
+          categories={categories}
+          totalResults={products.length}
+        />
       </main>
     </div>
   );

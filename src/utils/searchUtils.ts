@@ -2,19 +2,37 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
 
+interface SearchFilters {
+  query?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: string;
+  distance?: number;
+  onlyAvailable?: boolean;
+  limit?: number;
+}
+
 /**
- * Search for products based on query text
- * @param query Search query text
- * @param limit Maximum number of results to return
- * @param category Optional category to filter by
+ * Search for products based on query text and filters
+ * @param filters Search filters
  * @returns Array of matching products
  */
 export const searchProducts = async (
-  query: string, 
-  limit = 10, 
-  category?: string
+  filters: SearchFilters
 ): Promise<ProductType[]> => {
-  if (!query && !category) {
+  const { 
+    query = "", 
+    category,
+    minPrice,
+    maxPrice,
+    sortBy = "recent",
+    distance,
+    onlyAvailable = false,
+    limit = 50 
+  } = filters;
+
+  if (!query && !category && !minPrice && !maxPrice && !onlyAvailable) {
     return [];
   }
 
@@ -29,12 +47,25 @@ export const searchProducts = async (
           avatar_url
         )
       `)
-      .order('like_count', { ascending: false })
       .limit(limit);
 
     // Apply category filter if provided
     if (category) {
       searchQuery = searchQuery.eq('category', category);
+    }
+
+    // Apply price filters if provided
+    if (minPrice) {
+      searchQuery = searchQuery.gte('price', minPrice.toString());
+    }
+    
+    if (maxPrice) {
+      searchQuery = searchQuery.lte('price', maxPrice.toString());
+    }
+    
+    // Apply availability filter
+    if (onlyAvailable) {
+      searchQuery = searchQuery.eq('product_status', 'available');
     }
 
     // Apply text search if provided
@@ -51,6 +82,23 @@ export const searchProducts = async (
       }
     }
 
+    // Apply sorting
+    switch (sortBy) {
+      case "price_asc":
+        searchQuery = searchQuery.order('price', { ascending: true });
+        break;
+      case "price_desc":
+        searchQuery = searchQuery.order('price', { ascending: false });
+        break;
+      case "popular":
+        searchQuery = searchQuery.order('like_count', { ascending: false });
+        break;
+      case "recent":
+      default:
+        searchQuery = searchQuery.order('created_at', { ascending: false });
+        break;
+    }
+
     const { data, error } = await searchQuery;
 
     if (error) {
@@ -58,9 +106,42 @@ export const searchProducts = async (
       return [];
     }
 
-    return data.map(item => convertToProductType(item));
+    // For distance filtering, we'll do it client-side
+    // since we need the user's location which isn't available server-side
+    let filteredData = data;
+    
+    if (distance && navigator.geolocation) {
+      // This will be handled in the component after fetching
+      // as we need the user's current location
+    }
+
+    return filteredData.map(item => convertToProductType(item));
   } catch (err) {
     console.error('Error in search function:', err);
+    return [];
+  }
+};
+
+/**
+ * Get all available categories from products
+ * @returns Array of unique categories
+ */
+export const getAllCategories = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .order('category');
+
+    if (error) {
+      console.error('Error getting categories:', error);
+      return [];
+    }
+
+    // Return unique categories
+    return [...new Set(data.map(item => item.category))];
+  } catch (err) {
+    console.error('Error in get categories function:', err);
     return [];
   }
 };
@@ -135,4 +216,18 @@ export const searchByCategory = async (
     console.error('Error in category search function:', err);
     return [];
   }
+};
+
+/**
+ * Count active filters from search params
+ * @param searchParams URL search params
+ * @returns Number of active filters
+ */
+export const countActiveFilters = (searchParams: URLSearchParams): number => {
+  let count = 0;
+  if (searchParams.get("min_price") || searchParams.get("max_price")) count++;
+  if (searchParams.get("sort") && searchParams.get("sort") !== "recent") count++;
+  if (searchParams.get("available") === "true") count++;
+  if (searchParams.get("distance") && searchParams.get("distance") !== "50") count++;
+  return count;
 };

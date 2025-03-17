@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
 import { categories } from "@/data/categories";
 import { ProductType } from "@/types/product";
@@ -8,14 +8,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { convertToProductType } from "@/types/product";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
 import { Button } from "@/components/ui/button";
+import { FilterSidebar } from "@/components/filters/FilterSidebar";
+import { FilterToggle } from "@/components/filters/FilterToggle";
+import { Badge } from "@/components/ui/badge";
+import { countActiveFilters } from "@/utils/searchUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CategoryPage = () => {
   const { categoryId, subcategoryId, subSubcategoryId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCategories, setShowCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   useEffect(() => {
     const handleToggleCategories = () => {
@@ -41,6 +51,11 @@ const CategoryPage = () => {
       setLoading(true);
       
       try {
+        const minPrice = searchParams.get("min_price");
+        const maxPrice = searchParams.get("max_price");
+        const sortBy = searchParams.get("sort") || "recent";
+        const onlyAvailable = searchParams.get("available") === "true";
+        
         let query = supabase
           .from('products')
           .select(`
@@ -50,8 +65,7 @@ const CategoryPage = () => {
               full_name,
               avatar_url
             )
-          `)
-          .order('created_at', { ascending: false });
+          `);
           
         if (categoryId && categoryId !== "all") {
           query = query.eq('category', categoryId);
@@ -65,6 +79,34 @@ const CategoryPage = () => {
           }
         }
         
+        if (minPrice) {
+          query = query.gte('price', minPrice);
+        }
+        
+        if (maxPrice) {
+          query = query.lte('price', maxPrice);
+        }
+        
+        if (onlyAvailable) {
+          query = query.eq('product_status', 'available');
+        }
+        
+        switch (sortBy) {
+          case "price_asc":
+            query = query.order('price', { ascending: true });
+            break;
+          case "price_desc":
+            query = query.order('price', { ascending: false });
+            break;
+          case "popular":
+            query = query.order('like_count', { ascending: false });
+            break;
+          case "recent":
+          default:
+            query = query.order('created_at', { ascending: false });
+            break;
+        }
+        
         const { data, error } = await query.limit(50);
         
         if (error) throw error;
@@ -73,6 +115,8 @@ const CategoryPage = () => {
           const mappedProducts = data.map(item => convertToProductType(item));
           setProducts(mappedProducts);
         }
+        
+        setActiveFiltersCount(countActiveFilters(searchParams));
       } catch (err) {
         console.error('Error fetching category products:', err);
       } finally {
@@ -81,7 +125,7 @@ const CategoryPage = () => {
     };
     
     fetchProducts();
-  }, [categoryId, subcategoryId, subSubcategoryId]);
+  }, [categoryId, subcategoryId, subSubcategoryId, searchParams]);
 
   const getCategoryName = () => {
     if (!categoryId || categoryId === "all") return "All Categories";
@@ -149,15 +193,71 @@ const CategoryPage = () => {
           <Link to="/categories" className="inline-flex items-center text-sm text-muted-foreground hover:text-youbuy mb-2">
             <ArrowLeft className="mr-1 h-3 w-3" /> Back to all categories
           </Link>
-          <h1 className="text-3xl font-bold">{getCategoryName()}</h1>
-          <p className="text-muted-foreground">
-            {products.length} {products.length === 1 ? 'item' : 'items'} available
-          </p>
+          
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{getCategoryName()}</h1>
+              <p className="text-muted-foreground">
+                {products.length} {products.length === 1 ? 'item' : 'items'} available
+              </p>
+            </div>
+            
+            <FilterToggle 
+              onClick={() => setIsFilterOpen(true)} 
+              activeFiltersCount={activeFiltersCount}
+            />
+          </div>
+          
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {searchParams.get("min_price") && (
+                <Badge variant="secondary" className="rounded-full">
+                  Min: AED {searchParams.get("min_price")}
+                </Badge>
+              )}
+              {searchParams.get("max_price") && (
+                <Badge variant="secondary" className="rounded-full">
+                  Max: AED {searchParams.get("max_price")}
+                </Badge>
+              )}
+              {searchParams.get("sort") && searchParams.get("sort") !== "recent" && (
+                <Badge variant="secondary" className="rounded-full">
+                  {searchParams.get("sort") === "price_asc" 
+                    ? "Lowest Price" 
+                    : searchParams.get("sort") === "price_desc" 
+                      ? "Highest Price" 
+                      : "Most Popular"}
+                </Badge>
+              )}
+              {searchParams.get("distance") && searchParams.get("distance") !== "50" && (
+                <Badge variant="secondary" className="rounded-full">
+                  Within {searchParams.get("distance")} km
+                </Badge>
+              )}
+              {searchParams.get("available") === "true" && (
+                <Badge variant="secondary" className="rounded-full">
+                  Available only
+                </Badge>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  const newParams = new URLSearchParams();
+                  window.location.search = newParams.toString();
+                }}
+              >
+                Clear all filters
+              </Button>
+            </div>
+          )}
         </div>
         
         {currentCategory && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {currentCategory.subCategories.slice(0, 6).map((subcat) => (
+          <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto no-scrollbar">
+            {currentCategory.subCategories.slice(0, isMobile ? 3 : 6).map((subcat) => (
               <Button
                 key={subcat.id}
                 variant={subcategoryId === subcat.id ? "default" : "outline"}
@@ -168,6 +268,15 @@ const CategoryPage = () => {
                 {subcat.name}
               </Button>
             ))}
+            {currentCategory.subCategories.length > (isMobile ? 3 : 6) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCategories(true)}
+              >
+                More...
+              </Button>
+            )}
           </div>
         )}
         
@@ -188,12 +297,27 @@ const CategoryPage = () => {
               <div className="text-center py-12 bg-muted/30 rounded-lg border">
                 <p className="text-xl font-medium mb-2">No products found</p>
                 <p className="text-muted-foreground mb-6">
-                  We couldn't find any products in this category
+                  We couldn't find any products in this category with the selected filters
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    window.location.search = "";
+                  }}
+                >
+                  Clear filters
+                </Button>
               </div>
             )}
           </>
         )}
+        
+        <FilterSidebar 
+          isOpen={isFilterOpen} 
+          onClose={() => setIsFilterOpen(false)}
+          totalResults={products.length}
+        />
       </main>
     </div>
   );
