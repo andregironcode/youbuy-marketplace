@@ -232,18 +232,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
                 showMarker={!!(coordinates?.latitude && coordinates?.longitude)}
               />
             )}
-
-            <div className="p-2 flex justify-end">
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="outline" 
-                onClick={handleReloadMap}
-                className="text-xs"
-              >
-                Reload Map
-              </Button>
-            </div>
           </div>
           
           <Alert className="bg-blue-50 border-blue-200">

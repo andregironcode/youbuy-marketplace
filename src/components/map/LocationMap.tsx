@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 
 // Fix Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -30,6 +30,40 @@ const MapUpdater = ({ center, zoom }: { center: [number, number], zoom: number }
   }, [center, zoom, map]);
   
   return null;
+};
+
+// Custom zoom controls
+const ZoomControls = () => {
+  const map = useMap();
+  
+  const handleZoomIn = () => {
+    map.zoomIn();
+  };
+  
+  const handleZoomOut = () => {
+    map.zoomOut();
+  };
+  
+  return (
+    <div className="absolute left-2 bottom-2 z-10 flex flex-col gap-1">
+      <Button 
+        onClick={handleZoomIn} 
+        variant="outline" 
+        size="icon" 
+        className="bg-white shadow-md"
+      >
+        <ZoomIn className="h-4 w-4" />
+      </Button>
+      <Button 
+        onClick={handleZoomOut} 
+        variant="outline" 
+        size="icon" 
+        className="bg-white shadow-md"
+      >
+        <ZoomOut className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 };
 
 // Component to handle map clicks
@@ -150,7 +184,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           center={center}
           zoom={latitude !== undefined && longitude !== undefined ? zoom : 6}
           style={{ height: '100%', width: '100%' }}
-          zoomControl={interactive}
+          zoomControl={false} // We'll add custom zoom controls
           dragging={interactive}
           touchZoom={interactive}
           doubleClickZoom={interactive}
@@ -186,6 +220,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({
               <Marker position={[latitude, longitude]} />
             )
           )}
+          
+          {interactive && <ZoomControls />}
         </MapContainer>
       </div>
       
