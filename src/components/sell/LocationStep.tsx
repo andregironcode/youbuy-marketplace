@@ -11,11 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, AlertCircle } from "lucide-react";
 import { SellStep } from "@/types/sellForm";
 import { LocationMap } from "@/components/map/LocationMap";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "@/utils/locationUtils";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LocationStepProps {
   location: string;
@@ -34,20 +35,26 @@ export const LocationStep: React.FC<LocationStepProps> = ({
 }) => {
   const [searchValue, setSearchValue] = useState(location);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const isLocationValid = location.length >= 3 && coordinates !== null;
+  const isLocationValid = location.length >= 3 && coordinates !== null && 
+    coordinates.latitude !== undefined && coordinates.longitude !== undefined;
 
   // If location already exists but no coordinates, try to geocode it
   useEffect(() => {
     const setCoordinatesFromLocation = async () => {
-      if (location && location.length >= 3 && !coordinates) {
+      if (location && location.length >= 3 && (!coordinates || !coordinates.latitude || !coordinates.longitude)) {
         try {
+          console.log("Trying to geocode existing location:", location);
           setLoadingLocation(true);
+          setLocationError(null);
           const coords = await geocodeAddress(location);
+          console.log("Geocoded coordinates:", coords);
           setCoordinates({ latitude: coords.lat, longitude: coords.lng });
         } catch (error) {
           console.error("Error geocoding existing location:", error);
+          setLocationError("Failed to find this location. Please try a different address or use the map.");
         } finally {
           setLoadingLocation(false);
         }
@@ -60,15 +67,20 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   // Get user's current location
   const handleGetCurrentLocation = async () => {
     setLoadingLocation(true);
+    setLocationError(null);
     try {
+      console.log("Getting current position...");
       const position = await getCurrentPosition();
+      console.log("Current position received:", position);
       const { latitude, longitude } = position.coords;
       
       // Set coordinates
       setCoordinates({ latitude, longitude });
       
       // Reverse geocode to get address
+      console.log("Reverse geocoding coordinates:", latitude, longitude);
       const address = await reverseGeocode(latitude, longitude);
+      console.log("Address from reverse geocoding:", address);
       setSearchValue(address);
       setLocation(address);
       
@@ -76,11 +88,24 @@ export const LocationStep: React.FC<LocationStepProps> = ({
         title: "Location set",
         description: "Your current location has been set."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error getting current location:", error);
+      let errorMessage = "Unable to get your current location. Please enter it manually.";
+      
+      // Provide more specific error messages based on the error code
+      if (error.code === 1) {
+        errorMessage = "Location access was denied. Please check your browser permissions.";
+      } else if (error.code === 2) {
+        errorMessage = "Your location is currently unavailable. Please try again later or enter manually.";
+      } else if (error.code === 3) {
+        errorMessage = "Location request timed out. Please try again or enter manually.";
+      }
+      
+      setLocationError(errorMessage);
+      
       toast({
         title: "Location error",
-        description: "Unable to get your current location. Please enter it manually.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -90,11 +115,17 @@ export const LocationStep: React.FC<LocationStepProps> = ({
 
   // Search for location
   const handleSearch = async () => {
-    if (searchValue.length < 3) return;
+    if (searchValue.length < 3) {
+      setLocationError("Please enter at least 3 characters for the location search.");
+      return;
+    }
     
     setLoadingLocation(true);
+    setLocationError(null);
     try {
+      console.log("Geocoding address:", searchValue);
       const coords = await geocodeAddress(searchValue);
+      console.log("Geocoding results:", coords);
       setCoordinates({ latitude: coords.lat, longitude: coords.lng });
       setLocation(searchValue);
       
@@ -104,6 +135,8 @@ export const LocationStep: React.FC<LocationStepProps> = ({
       });
     } catch (error) {
       console.error("Error geocoding address:", error);
+      setLocationError("Unable to locate this address. Please try a different one or use the map.");
+      
       toast({
         title: "Address error",
         description: "Unable to locate this address. Please try a different one.",
@@ -116,9 +149,11 @@ export const LocationStep: React.FC<LocationStepProps> = ({
 
   // Handle map click
   const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    console.log("Location selected from map:", lat, lng, address);
     setCoordinates({ latitude: lat, longitude: lng });
     setSearchValue(address);
     setLocation(address);
+    setLocationError(null);
     
     toast({
       title: "Location selected",
@@ -167,8 +202,15 @@ export const LocationStep: React.FC<LocationStepProps> = ({
                 My Location
               </Button>
             </div>
-            {searchValue.length > 0 && !isLocationValid && (
+            {searchValue.length > 0 && !isLocationValid && !locationError && (
               <p className="text-xs text-red-500">Please enter a valid location and select a point on the map</p>
+            )}
+            
+            {locationError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{locationError}</AlertDescription>
+              </Alert>
             )}
           </div>
           
@@ -177,9 +219,9 @@ export const LocationStep: React.FC<LocationStepProps> = ({
               latitude={coordinates?.latitude}
               longitude={coordinates?.longitude}
               height="300px"
-              zoom={coordinates ? 14 : 2}
+              zoom={coordinates?.latitude && coordinates?.longitude ? 14 : 2}
               onLocationSelect={handleLocationSelect}
-              showMarker={!!coordinates}
+              showMarker={!!(coordinates?.latitude && coordinates?.longitude)}
             />
           </div>
           

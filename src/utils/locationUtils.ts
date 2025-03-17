@@ -25,8 +25,8 @@ export const calculateDistance = (
   return distance;
 };
 
-// Use a valid public token for Mapbox
-const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA";
+// Using a valid Mapbox public token
+const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NWVuYzAzaDMyeXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA";
 
 /**
  * Get the current position of the user
@@ -37,7 +37,21 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by your browser'));
     } else {
-      navigator.geolocation.getCurrentPosition(resolve, reject);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("Position received:", position);
+          resolve(position);
+        }, 
+        (error) => {
+          console.error("Geolocation error:", error);
+          reject(error);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 0 
+        }
+      );
     }
   });
 };
@@ -48,16 +62,20 @@ export const getCurrentPosition = (): Promise<GeolocationPosition> => {
  * @returns Promise that resolves to coordinates or rejects with an error
  */
 export const geocodeAddress = async (address: string): Promise<{lat: number, lng: number}> => {
+  console.log("Geocoding address:", address);
   try {
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}`
     );
     
     if (!response.ok) {
-      throw new Error('Geocoding failed');
+      const errorText = await response.text();
+      console.error('Geocoding API error:', errorText);
+      throw new Error(`Geocoding failed: ${response.status} ${errorText}`);
     }
     
     const data = await response.json();
+    console.log("Geocoding response:", data);
     
     if (data.features && data.features.length > 0) {
       const [lng, lat] = data.features[0].center;
@@ -78,16 +96,20 @@ export const geocodeAddress = async (address: string): Promise<{lat: number, lng
  * @returns Promise that resolves to address or rejects with an error
  */
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+  console.log("Reverse geocoding:", lat, lng);
   try {
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
     );
     
     if (!response.ok) {
-      throw new Error('Reverse geocoding failed');
+      const errorText = await response.text();
+      console.error('Reverse geocoding API error:', errorText);
+      throw new Error(`Reverse geocoding failed: ${response.status} ${errorText}`);
     }
     
     const data = await response.json();
+    console.log("Reverse geocoding response:", data);
     
     if (data.features && data.features.length > 0) {
       return data.features[0].place_name;

@@ -6,7 +6,7 @@ import { reverseGeocode } from '@/utils/locationUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Set Mapbox token to a valid public token
-mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NWVuYzAzaDMyeXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
 interface LocationMapProps {
   latitude?: number;
@@ -36,6 +36,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const marker = useRef<mapboxgl.Marker | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapInitialized, setMapInitialized] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -43,16 +44,28 @@ export const LocationMap: React.FC<LocationMapProps> = ({
 
     const initializeMap = async () => {
       setLoading(true);
+      setMapError(null);
+      
+      console.log("Initializing map with coordinates:", latitude, longitude);
       
       // Default center if no coordinates provided
-      const initialCenter: [number, number] = [longitude || 0, latitude || 0];
+      const initialCenter: [number, number] = longitude !== undefined && latitude !== undefined 
+        ? [longitude, latitude] 
+        : [0, 0];
       
       try {
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
+        }
+        
+        console.log("Creating new map with center:", initialCenter);
+        
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/streets-v12',
           center: initialCenter,
-          zoom: latitude && longitude ? zoom : 2,
+          zoom: latitude !== undefined && longitude !== undefined ? zoom : 2,
           interactive: interactive,
         });
 
@@ -63,10 +76,12 @@ export const LocationMap: React.FC<LocationMapProps> = ({
 
         // Wait for map to load
         map.current.on('load', () => {
+          console.log("Map loaded successfully");
           setLoading(false);
           setMapInitialized(true);
           
-          if (latitude && longitude) {
+          if (latitude !== undefined && longitude !== undefined) {
+            console.log("Setting map center to:", longitude, latitude);
             // Center map on provided coordinates
             map.current?.setCenter([longitude, latitude]);
             map.current?.setZoom(zoom);
@@ -124,10 +139,18 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           }
         });
 
+        // Error handling for map
+        map.current.on('error', (e) => {
+          console.error("Map error:", e);
+          setMapError("Failed to load map. Please try again.");
+          setLoading(false);
+        });
+
         // Set up click handler if interactive and onLocationSelect provided
         if (interactive && onLocationSelect) {
           map.current.on('click', async (e) => {
             const { lng, lat } = e.lngLat;
+            console.log("Map clicked at:", lat, lng);
             
             // Update marker position
             if (marker.current) {
@@ -141,6 +164,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
             try {
               // Get address from coordinates
               const address = await reverseGeocode(lat, lng);
+              console.log("Reverse geocoded address:", address);
               onLocationSelect(lat, lng, address);
             } catch (error) {
               console.error('Error in reverse geocoding:', error);
@@ -150,6 +174,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         }
       } catch (error) {
         console.error("Error initializing map:", error);
+        setMapError("Failed to initialize map. Please try again.");
         setLoading(false);
       }
     };
@@ -168,6 +193,11 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   return (
     <div className={`relative ${className}`} style={{ height }}>
       {loading && <Skeleton className="absolute inset-0 z-10" />}
+      {mapError && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-100 rounded-md">
+          <p className="text-red-500">{mapError}</p>
+        </div>
+      )}
       <div ref={mapContainer} className="w-full h-full rounded-md overflow-hidden" />
     </div>
   );
