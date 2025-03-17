@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -143,11 +143,11 @@ export const Navbar = () => {
           <span className="text-xs md:text-sm">Categories</span>
         </Button>
 
-        <div className="flex-1 mx-1 md:mx-2">
+        <div className="flex-1 mx-1 md:mx-2 max-w-[50%]">
           <SearchBar />
         </div>
 
-        <div className="flex items-center justify-end space-x-1 md:space-x-2">
+        <div className="flex items-center justify-end space-x-1 md:space-x-2 ml-2">
           {isMobile ? (
             <>
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleMobileMenu}>
@@ -163,24 +163,28 @@ export const Navbar = () => {
                 </Button>
               </Link>
               {user ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <Link to="/messages">
                     <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Messages">
                       <MessageCircle className="h-5 w-5" />
                       <UnreadBadge count={unreadCount} />
                     </Button>
                   </Link>
-                  <Link to="/profile">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url} />
-                      <AvatarFallback>{getInitials()}</AvatarFallback>
-                    </Avatar>
+                  <Link to="/profile" className="flex items-center">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarFallback>{getInitials()}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium">Profile</span>
+                    </Button>
                   </Link>
                 </div>
               ) : (
                 <Link to="/auth">
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <User className="h-5 w-5" />
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    <span>Login/Sign-up</span>
                   </Button>
                 </Link>
               )}
@@ -198,6 +202,12 @@ export const Navbar = () => {
       {isMobile && showMobileMenu && (
         <div className="container py-4 border-t">
           <nav className="flex flex-col space-y-3">
+            {!user && (
+              <Link to="/auth" className="flex items-center py-2 px-3 hover:bg-muted rounded-md">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login/Sign-up
+              </Link>
+            )}
             <Link to="/sell" className="py-2 px-3 hover:bg-muted rounded-md">
               Sell an item
             </Link>
@@ -225,11 +235,7 @@ export const Navbar = () => {
                   Sign out
                 </button>
               </>
-            ) : (
-              <Link to="/auth" className="py-2 px-3 hover:bg-muted rounded-md">
-                Sign in / Register
-              </Link>
-            )}
+            ) : null}
           </nav>
         </div>
       )}
