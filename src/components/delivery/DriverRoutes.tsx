@@ -63,15 +63,15 @@ export function DriverRoutes() {
       
       // Call the stored function to get driver routes
       const { data, error } = await supabase
-        .rpc('get_driver_routes', { 
-          driver_id: user?.id,
-          route_date: dateFilter
-        });
+        .from('driver_routes')
+        .select('*')
+        .eq('driver_id', user?.id)
+        .eq('date', dateFilter);
       
       if (error) throw error;
       
       // Transform the data to match the DeliveryRoute type
-      const transformedRoutes: DeliveryRoute[] = data.map((route: DeliveryRouteResponse) => {
+      const transformedRoutes: DeliveryRoute[] = data.map((route: any) => {
         return {
           ...route,
           pickup_route: Array.isArray(route.pickup_route) 
@@ -125,14 +125,14 @@ export function DriverRoutes() {
     try {
       if (!selectedRoute) return;
       
-      // Call the stored function to update stop status
+      // Call the API to update stop status
       const { data, error } = await supabase
-        .rpc('update_route_stop_status', {
-          route_id: routeId,
-          stop_id: stopId,
-          stop_type: stopType,
-          new_status: 'completed'
-        });
+        .from('route_stops')
+        .update({ status: 'completed' })
+        .eq('id', stopId)
+        .eq('route_id', routeId)
+        .eq('stop_type', stopType)
+        .select();
       
       if (error) throw error;
       
@@ -168,12 +168,12 @@ export function DriverRoutes() {
 
   const markRouteAsCompleted = async (routeId: string) => {
     try {
-      // Call the stored function to update route status
+      // Call the API to update route status
       const { data, error } = await supabase
-        .rpc('update_route_status', {
-          route_id: routeId,
-          new_status: 'completed'
-        });
+        .from('delivery_routes')
+        .update({ status: 'completed' })
+        .eq('id', routeId)
+        .select();
       
       if (error) throw error;
       
@@ -287,7 +287,7 @@ export function DriverRoutes() {
                             ? 'default' 
                             : route.status === 'pending' 
                               ? 'outline' 
-                              : 'success'
+                              : 'secondary'
                         }>
                           {route.status.replace('_', ' ')}
                         </Badge>
@@ -335,7 +335,7 @@ export function DriverRoutes() {
                             {getTimeSlotLabel(route.time_slot)}
                           </div>
                         </div>
-                        <Badge variant="success">
+                        <Badge variant="secondary">
                           Completed
                         </Badge>
                       </div>
@@ -364,10 +364,11 @@ export function DriverRoutes() {
                   </CardTitle>
                   {selectedRoute.status !== 'completed' && (
                     <Button
-                      variant="success"
-                      size={isMobile ? "full" : "default"}
+                      variant="default"
+                      size={isMobile ? "default" : "default"}
                       onClick={() => markRouteAsCompleted(selectedRoute.id)}
                       disabled={!isRouteCompletable(selectedRoute)}
+                      className="bg-green-500 hover:bg-green-600"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       {isRouteCompletable(selectedRoute) 
@@ -413,7 +414,8 @@ export function DriverRoutes() {
                             {selectedRoute.status !== 'completed' && selectedStop.status !== 'completed' && (
                               <Button
                                 size="sm"
-                                variant="success"
+                                variant="default"
+                                className="bg-green-500 hover:bg-green-600"
                                 onClick={() => markStopAsCompleted(
                                   selectedStop.id, 
                                   selectedRoute.id, 
@@ -460,7 +462,7 @@ export function DriverRoutes() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <Badge variant={stop.status === 'completed' ? 'success' : 'outline'}>
+                                <Badge variant={stop.status === 'completed' ? 'default' : 'outline'}>
                                   {stop.status}
                                 </Badge>
                                 {selectedRoute.status !== 'completed' && stop.status !== 'completed' && (
@@ -513,7 +515,7 @@ export function DriverRoutes() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <Badge variant={stop.status === 'completed' ? 'success' : 'outline'}>
+                                <Badge variant={stop.status === 'completed' ? 'default' : 'outline'}>
                                   {stop.status}
                                 </Badge>
                                 {selectedRoute.status !== 'completed' && stop.status !== 'completed' && (

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
 import { calculateDistance, getCurrentPosition } from "@/utils/locationUtils";
@@ -113,12 +114,12 @@ export const searchProducts = async (
     
     if (distance && userLocation && userLocation.lat && userLocation.lng) {
       filteredData = data.filter(product => {
-        if (product.location_lat && product.location_lng) {
+        if (product.latitude && product.longitude) {
           const productDistance = calculateDistance(
             userLocation.lat,
             userLocation.lng,
-            product.location_lat,
-            product.location_lng
+            product.latitude,
+            product.longitude
           );
           return productDistance <= distance;
         }

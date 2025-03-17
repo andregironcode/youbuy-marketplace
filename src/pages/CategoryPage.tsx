@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -51,7 +50,6 @@ const CategoryPage = () => {
     }
   }, [categoryId]);
 
-  // Get user location when distance filter is applied
   useEffect(() => {
     const distanceParam = searchParams.get("distance");
     
@@ -146,12 +144,12 @@ const CategoryPage = () => {
           // Filter by distance if user location is available
           if (distance && userLocation && userLocation.lat && userLocation.lng) {
             mappedProducts = mappedProducts.filter(product => {
-              if (product.location_lat && product.location_lng) {
+              if (product.coordinates && product.coordinates.latitude && product.coordinates.longitude) {
                 const productDistance = calculateDistance(
                   userLocation.lat,
                   userLocation.lng,
-                  product.location_lat,
-                  product.location_lng
+                  product.coordinates.latitude,
+                  product.coordinates.longitude
                 );
                 return productDistance <= distance;
               }
