@@ -16,7 +16,7 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
   const { user } = useAuth();
   
   // Determine if this product belongs to the current user
-  const isOwnProduct = user?.id === product.seller?.id || user?.id === product.sellerId;
+  const isOwnProduct = user?.id === product.seller?.id;
 
   return (
     <div className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
