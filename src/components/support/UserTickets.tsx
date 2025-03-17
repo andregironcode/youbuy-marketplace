@@ -72,17 +72,20 @@ export const UserTickets = () => {
       const { data, error } = await supabase
         .from("support_tickets")
         .select("*")
-        .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching tickets:", error);
+        throw error;
+      }
 
+      console.log("Fetched tickets:", data);
       setTickets(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching tickets:", error);
       toast({
         title: "Error",
-        description: "Failed to load your support tickets",
+        description: "Failed to load your support tickets: " + error.message,
         variant: "destructive",
       });
     } finally {
@@ -96,12 +99,17 @@ export const UserTickets = () => {
         .from("ticket_replies")
         .select(`
           *,
-          profile:profiles!ticket_replies_user_id_fkey(full_name, avatar_url)
+          profile:profiles(full_name, avatar_url)
         `)
         .eq("ticket_id", ticketId)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching replies:", error);
+        throw error;
+      }
+
+      console.log("Fetched replies:", data);
 
       // Transform the data to match our TicketReply type
       const transformedData = data.map((reply: any) => ({
@@ -110,11 +118,11 @@ export const UserTickets = () => {
       })) as TicketReply[];
 
       setReplies(transformedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching replies:", error);
       toast({
         title: "Error",
-        description: "Failed to load ticket replies",
+        description: "Failed to load ticket replies: " + error.message,
         variant: "destructive",
       });
     }
@@ -145,11 +153,11 @@ export const UserTickets = () => {
         title: "Reply sent",
         description: "Your message has been sent successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending reply:", error);
       toast({
         title: "Error",
-        description: "Failed to send your reply",
+        description: "Failed to send your reply: " + error.message,
         variant: "destructive",
       });
     }
@@ -181,7 +189,7 @@ export const UserTickets = () => {
 
     return (
       <Badge className={`${color} text-white`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
       </Badge>
     );
   };
@@ -301,11 +309,11 @@ export const UserTickets = () => {
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={reply.profile.avatar_url} />
                               <AvatarFallback>
-                                {reply.profile.full_name.charAt(0)}
+                                {reply.profile.full_name ? reply.profile.full_name.charAt(0) : 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-sm font-medium">
-                              {reply.profile.full_name} {reply.is_admin && "(Support Team)"}
+                              {reply.profile.full_name || "User"} {reply.is_admin && "(Support Team)"}
                             </span>
                             <span className="text-xs">
                               {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}

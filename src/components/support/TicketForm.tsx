@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -66,14 +66,25 @@ export const TicketForm = ({ onSuccess }: TicketFormProps) => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("support_tickets").insert({
-        user_id: user.id,
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-      });
+      console.log("Creating ticket with data:", { ...data, user_id: user.id });
+      
+      const { data: ticketData, error } = await supabase
+        .from("support_tickets")
+        .insert({
+          user_id: user.id,
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          status: "open",
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Ticket created:", ticketData);
 
       toast({
         title: "Ticket created",
@@ -82,12 +93,12 @@ export const TicketForm = ({ onSuccess }: TicketFormProps) => {
 
       form.reset();
       if (onSuccess) onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating ticket:", error);
       toast({
         variant: "destructive",
         title: "Failed to create ticket",
-        description: "There was an error submitting your support ticket. Please try again.",
+        description: "There was an error submitting your support ticket: " + error.message,
       });
     } finally {
       setIsSubmitting(false);
