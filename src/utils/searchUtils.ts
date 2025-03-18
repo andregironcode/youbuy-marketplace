@@ -112,18 +112,7 @@ export const searchProducts = async (
     let filteredData = data;
     
     if (distance && userLocation && userLocation.lat && userLocation.lng) {
-      filteredData = data.filter(product => {
-        if (product.latitude && product.longitude) {
-          const productDistance = calculateDistance(
-            userLocation.lat,
-            userLocation.lng,
-            product.latitude,
-            product.longitude
-          );
-          return productDistance <= distance;
-        }
-        return false;
-      });
+      filteredData = filterByDistance(data, distance, userLocation.lat, userLocation.lng);
     }
 
     return filteredData.map(item => convertToProductType(item));
@@ -258,4 +247,25 @@ export const getUserLocation = async (): Promise<{ lat: number; lng: number } | 
     console.error("Error getting user location:", error);
     return null;
   }
+};
+
+const filterByDistance = (products: any[], maxDistance: number, userLat: number, userLng: number) => {
+  if (!maxDistance || maxDistance <= 0 || !userLat || !userLng) {
+    return products;
+  }
+
+  return products.filter(product => {
+    if (!product.latitude || !product.longitude) {
+      return false;
+    }
+
+    const distance = calculateDistance(
+      userLat,
+      userLng,
+      product.latitude,
+      product.longitude
+    );
+
+    return distance <= maxDistance;
+  });
 };

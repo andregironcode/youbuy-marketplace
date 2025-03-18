@@ -78,8 +78,14 @@ export const useImageUpload = () => {
     const uploadedUrls: string[] = [];
     
     try {
-      // Ensure product-images bucket exists by creating it if needed
-      const { data: buckets } = await supabase.storage.listBuckets();
+      // Ensure product-images bucket exists by checking if it exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+        throw bucketsError;
+      }
+      
       const bucketExists = buckets?.some(bucket => bucket.name === 'product-images');
       
       // Create bucket if it doesn't exist
@@ -97,15 +103,14 @@ export const useImageUpload = () => {
         }
       }
       
-      // Create bucket policy to allow public access if it doesn't exist
-      try {
-        await supabase.storage.from('product-images').getPublicUrl('test');
-      } catch {
-        const { error: policyError } = await supabase.storage.from('product-images').createSignedUrl('test', 1);
-        if (policyError) {
-          console.log('Setting public policy for product-images');
-          await supabase.storage.setBucketPublic('product-images', true);
-        }
+      // Set bucket to public if needed - using updateBucket instead of setBucketPublic
+      const { error: updateError } = await supabase.storage.updateBucket('product-images', {
+        public: true
+      });
+      
+      if (updateError) {
+        console.error('Error updating bucket publicity:', updateError);
+        // Continue anyway as this is not critical
       }
       
       for (let i = 0; i < images.length; i++) {
