@@ -26,6 +26,11 @@ export const calculateDistance = (
 };
 
 /**
+ * Alias for calculateDistance for compatibility
+ */
+export const getDistance = calculateDistance;
+
+/**
  * Get the current position of the user
  * @returns Promise that resolves to the user's coordinates or rejects with an error
  */

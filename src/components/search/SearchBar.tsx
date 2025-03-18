@@ -9,12 +9,14 @@ interface SearchBarProps {
   className?: string;
   placeholder?: string;
   size?: "default" | "lg";
+  onSearch?: (query: string) => void;
 }
 
 export const SearchBar = ({ 
   className, 
   placeholder = "Search products...",
-  size = "default" 
+  size = "default",
+  onSearch
 }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -32,8 +34,15 @@ export const SearchBar = ({
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    if (e.target.value.length >= 2) {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    
+    // Call the onSearch callback if provided
+    if (onSearch) {
+      onSearch(newQuery);
+    }
+    
+    if (newQuery.length >= 2) {
       setIsOpen(true);
     } else {
       setIsOpen(false);
@@ -49,11 +58,23 @@ export const SearchBar = ({
   const handleClear = () => {
     setQuery("");
     setIsOpen(false);
+    
+    // Call the onSearch callback with empty string if provided
+    if (onSearch) {
+      onSearch("");
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSearch && query.trim()) {
+      onSearch(query);
+    }
   };
 
   return (
     <div className={`relative ${className}`} ref={searchRef}>
-      <div className="relative">
+      <form onSubmit={handleSubmit} className="relative">
         <Search className={`absolute left-2.5 ${size === 'lg' ? 'top-3.5 h-5 w-5' : 'top-2.5 h-4 w-4'} text-muted-foreground`} />
         <Input
           type="search"
@@ -65,6 +86,7 @@ export const SearchBar = ({
         />
         {query && (
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             className={`absolute right-0 top-0 ${size === 'lg' ? 'h-12 w-12' : 'h-10 w-10'} text-muted-foreground hover:text-foreground`}
@@ -73,7 +95,7 @@ export const SearchBar = ({
             <X className={`${size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'}`} />
           </Button>
         )}
-      </div>
+      </form>
       {isOpen && (
         <SearchResults query={query} onSelectResult={() => setIsOpen(false)} />
       )}
