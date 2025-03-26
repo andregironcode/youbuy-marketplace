@@ -278,6 +278,9 @@ export function ProfileSettings() {
                             icon={<User className="h-4 w-4 text-muted-foreground" />}
                           />
                         </FormControl>
+                        <FormDescription>
+                          To verify identity
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -292,7 +295,7 @@ export function ProfileSettings() {
                         <FormLabel>Username</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="username" 
+                            placeholder="Username" 
                             {...field}
                           />
                         </FormControl>
@@ -380,9 +383,6 @@ export function ProfileSettings() {
                           className="min-h-[100px]"
                         />
                       </FormControl>
-                      <FormDescription>
-                        Write a short description about yourself
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
