@@ -1,6 +1,7 @@
 # 🛠 To-Do List
 
 ## 🎨 UI/UX Issues
+
 - [x] Fix the **full-screen message section** overlapping with the sidebar.
 - [ ] Ensure the **"message sent" notification** disappears after being read.
 - [x] Adjust the **Username** capitalization in the account section.
@@ -16,6 +17,7 @@
   - [ ] Display a **"Popular Categories"** sub-header for suggested categories.
 
 ## 🔍 Filtering & Search Functionality
+
 - [ ] Fix the **"View all nearby items"** page showing incorrect locations.
 - [ ] Fix the issue where clicking **"Clear all filters"** results in an incorrect message.
 - [ ] Add an accessible section for **favorited items**.
@@ -28,6 +30,7 @@
 - [ ] Improve the **progress indicator bar** (change to a **hollow box filling up** as progress is made).
 
 ## 📦 Product Upload & Editing
+
 - [ ] Improve **error handling**:
   - [ ] Provide an option to **return to the original screen** when an error occurs.
 - [ ] Fix issue where users **cannot upload a selected picture**:
@@ -37,8 +40,10 @@
   - [ ] The user **navigates away** (homepage, categories, profile, etc.).
 
 ## 🛒 Checkout & Account Improvements
+
 - [ ] Add an option to **show/hide password** on login forms.
 - [ ] Enable **auto-fill for name, phone number, and address** when placing an order (if the user is signed in).
 
 ## APIS
+
 - [ ] add an api to fetch realworld exchange rates
