@@ -9,13 +9,14 @@ import { MessageButton } from "./MessageButton";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface ProductCardProps {
   product: ProductType;
 }
-
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
+  const { convertPrice } = useCurrency();
   const productIsFavorite = isFavorite(product.id);
   const [likes, setLikes] = useState(product.likeCount || 0);
   const navigate = useNavigate();

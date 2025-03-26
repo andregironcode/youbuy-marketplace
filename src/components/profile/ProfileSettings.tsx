@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const ProfileFormSchema = z.object({
   avatar_url: z.string().optional(),
   email: z.string().email("Please enter a valid email").optional(),
   phone: z.string().optional(),
+  currency: z.string().min(1, "Please select a currency"),
 });
 
 type ProfileFormValues = z.infer<typeof ProfileFormSchema>;
@@ -358,11 +360,37 @@ export function ProfileSettings() {
                       <FormItem>
                         <FormLabel>Location</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Dubai, UAE" 
+                          <Input
+                            placeholder="Dubai, UAE"
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Currency */}
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="AED">AED (United Arab Emirates Dirham)</SelectItem>
+                            <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                            <SelectItem value="GBP">GBP (British Pound)</SelectItem>
+                            <SelectItem value="INR">INR (Indian Rupee)</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -410,3 +438,4 @@ export function ProfileSettings() {
     </div>
   );
 }
+
