@@ -45,10 +45,10 @@ const Messages = () => {
   }, [chatId, chats, loadingChats, navigate]);
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex">
       <ProfileSidebar />
-      <main className="flex-1 py-4 px-6 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 h-full">
+      <main className="flex-1 py-4 px-6 ml-[280px] overflow-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-w-[calc(100vw-280px)]">
           {/* Chat List - Always visible on desktop, hidden on mobile when showing a chat */}
           <div className={`border rounded-lg overflow-hidden h-full ${chatId ? 'hidden md:block' : 'block'}`}>
             <div className="p-4 border-b bg-gray-50">
