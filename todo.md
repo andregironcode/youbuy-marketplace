@@ -39,3 +39,6 @@
 ## 🛒 Checkout & Account Improvements
 - [ ] Add an option to **show/hide password** on login forms.
 - [ ] Enable **auto-fill for name, phone number, and address** when placing an order (if the user is signed in).
+
+## APIS
+- [ ] add an api to fetch realworld exchange rates
