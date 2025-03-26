@@ -1,10 +1,10 @@
 # 🛠 To-Do List
 
 ## 🎨 UI/UX Issues
-- [ ] Fix the **full-screen message section** overlapping with the sidebar.
+- [x] Fix the **full-screen message section** overlapping with the sidebar.
 - [ ] Ensure the **"message sent" notification** disappears after being read.
-- [ ] Adjust the **Username** capitalization in the account section.
-- [ ] Remove **redundant text** in the Bio description box.
+- [x] Adjust the **Username** capitalization in the account section.
+- [x] Remove **redundant text** in the Bio description box.
 - [ ] Standardize **currency display** (ensure consistency between Euros and Dhs).
 - [ ] Clarify if uploading **four photos** is **mandatory or just recommended**.
 - [ ] Fix pages that are **clipped off and cannot be scrolled**.
