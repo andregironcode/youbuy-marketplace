@@ -108,7 +108,7 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-weight: 450; /* Slightly heavier font weight for better readability */
+    font-weight: 500; /* Medium font weight */
   }
   
   h1, h2, h3, h4, h5, h6 {
