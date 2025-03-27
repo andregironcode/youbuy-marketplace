@@ -33,16 +33,13 @@ const Messages = () => {
       chatId, 
       hasCurrentChat: !!currentChat, 
       loadingMessages,
-      messagesCount: messages.length,
-      chatsCount: chats.length,
-      loadingChats
+      messagesCount: messages.length
     });
-  }, [chatId, currentChat, loadingMessages, messages, chats, loadingChats]);
+  }, [chatId, currentChat, loadingMessages, messages]);
 
   // If no valid chatId but chats are loaded, redirect to the first chat
   useEffect(() => {
     if (!chatId && chats.length > 0 && !loadingChats) {
-      console.log("Redirecting to first chat:", chats[0].id);
       navigate(`/messages/${chats[0].id}`);
     }
   }, [chatId, chats, loadingChats, navigate]);

@@ -38,8 +38,6 @@ const Index = () => {
       setLoading(true);
       
       try {
-        console.log("Fetching products for homepage...");
-        
         // Fetch regular products
         const { data, error } = await supabase
           .from('products')
@@ -61,7 +59,6 @@ const Index = () => {
         }
         
         if (data) {
-          console.log(`Fetched ${data.length} products`);
           const mappedProducts = data.map(item => convertToProductType(item));
           setProducts(mappedProducts);
         }
@@ -83,7 +80,6 @@ const Index = () => {
         if (trendingError) {
           console.error('Error fetching trending products:', trendingError);
         } else if (trendingData) {
-          console.log(`Fetched ${trendingData.length} trending products`);
           const mappedTrending = trendingData.map(item => convertToProductType(item));
           setTrendingProducts(mappedTrending);
         }
@@ -113,24 +109,8 @@ const Index = () => {
     setShowCategories(false);
   };
 
-  // Helper function to check if any content is available
-  const hasContent = !loading && (products.length > 0 || trendingProducts.length > 0);
-  
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Debug info - will be removed in production */}
-      {!hasContent && !loading && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded m-4">
-          <p className="font-bold">Debug Info</p>
-          <p>No products found to display. This may be because:</p>
-          <ul className="list-disc ml-5">
-            <li>The database hasn't been seeded with initial data</li>
-            <li>There's an issue connecting to the database</li>
-            <li>The query is not returning the expected results</li>
-          </ul>
-        </div>
-      )}
-      
       <main className="flex-1">
         {/* CategoryBrowser component */}
         <CategoryBrowser 
