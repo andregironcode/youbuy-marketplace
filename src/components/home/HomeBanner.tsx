@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -6,39 +5,44 @@ import { SearchBar } from "@/components/search/SearchBar";
 
 export const HomeBanner = () => {
   return (
-    <div className="relative bg-gradient-to-r from-violet-50 to-blue-50 overflow-hidden">
-      <div className="container relative z-10 py-12 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
-              Buy & sell <span className="text-youbuy">anything</span> near you
+    <div className="relative bg-gradient-to-br from-emerald-500 via-[#4CD137] to-emerald-600 overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/youbuy-homeimg.jpg')] opacity-5 blur-xl bg-cover bg-center"></div>
+      <div className="container relative z-10 py-16 md:py-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="relative">
+            <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-tight">
+              Buy & sell <span className="text-white/90">anything</span> near you
             </h1>
-            <p className="text-lg text-gray-700 mb-6">
+            <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed">
               Join the marketplace where thousands of people buy and sell unique items every day
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 max-w-xl mx-auto sm:mx-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mt-6 max-w-xl mx-auto sm:mx-0">
               <div className="flex-1 w-full">
                 <SearchBar 
-                  className="w-full" 
+                  className="w-full bg-white/95 shadow-xl backdrop-blur-sm rounded-xl" 
                   placeholder="What are you looking for?" 
                   size="lg"
                 />
               </div>
               <Link to="/sell" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full h-12">
+                <Button 
+                  size="lg" 
+                  className="w-full h-12 bg-white text-emerald-600 hover:bg-white/90 shadow-xl font-semibold transition-all duration-300 hover:scale-105"
+                >
                   Start Selling
                 </Button>
               </Link>
             </div>
             
-            <div className="mt-8 flex flex-wrap gap-3">
-              <span className="text-sm font-medium text-gray-500">Popular:</span>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <span className="text-sm font-medium text-white/80">Popular:</span>
               {["Furniture", "Electronics", "Fashion", "Cars", "Property"].map((category) => (
                 <Link 
                   key={category} 
                   to={`/search?q=${category}`}
-                  className="text-sm text-gray-700 hover:text-youbuy hover:underline"
+                  className="text-sm text-white/90 hover:text-white hover:underline transition-colors"
                 >
                   {category}
                 </Link>
@@ -47,31 +51,22 @@ export const HomeBanner = () => {
           </div>
           
           <div className="relative hidden md:block">
-            <div className="relative h-[400px] w-full overflow-hidden rounded-lg shadow-lg">
+            <div className="absolute -top-20 -right-20 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl"></div>
+            <div className="relative h-[600px] w-full">
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/20 to-transparent rounded-3xl"></div>
               <img 
-                src="https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80" 
-                alt="People shopping and selling items" 
-                className="w-full h-full object-cover"
+                src="/youbuy-homeimg.jpg" 
+                alt="Digital marketplace illustration showing devices and shopping" 
+                className="w-full h-full object-contain drop-shadow-2xl transform hover:scale-[1.02] transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30"></div>
-            </div>
-            
-            <div className="absolute -bottom-4 -left-4 bg-white rounded-lg shadow-lg p-4 max-w-[240px]">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 rounded-full bg-youbuy/10 flex items-center justify-center">
-                  <Search className="h-4 w-4 text-youbuy" />
-                </div>
-                <span className="font-medium">Why Choose Us?</span>
-              </div>
-              <p className="text-sm text-gray-500">Buy and sell with ease, secure payments, and verified sellers</p>
             </div>
           </div>
         </div>
       </div>
       
       {/* Background design elements */}
-      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 w-1/3 h-1/2 bg-gradient-radial from-blue-200/30 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-1/4 w-1/2 h-1/3 bg-gradient-radial from-violet-200/30 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 w-1/2 h-2/3 bg-gradient-radial from-emerald-400/20 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-1/4 w-1/2 h-1/2 bg-gradient-radial from-emerald-400/20 to-transparent rounded-full blur-3xl"></div>
     </div>
   );
 };

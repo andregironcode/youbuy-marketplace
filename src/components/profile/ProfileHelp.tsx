@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   ShoppingBag, 
@@ -473,7 +472,7 @@ export function ProfileHelp() {
                 <TabsContent key={category.id} value={category.id} className="space-y-6">
                   <div className="flex items-center mb-4">
                     <CategoryIcon className="h-6 w-6 mr-2 text-primary" />
-                    <h2 className="text-2xl font-bold">{category.title}</h2>
+                    <h2 className="text-2xl font-bold break-words">{category.title}</h2>
                   </div>
                   <p className="text-muted-foreground mb-6">{category.description}</p>
                   
