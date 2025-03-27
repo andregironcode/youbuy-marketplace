@@ -1,146 +1,65 @@
 
 import { Link } from "react-router-dom";
+import { ProductCard } from "@/components/product/ProductCard";
 import { ProductType } from "@/types/product";
-import { ProductCard } from "./ProductCard";
-import { ChevronRight, ChevronLeft } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductSectionProps {
   title: string;
   products: ProductType[];
   link?: string;
   linkText?: string;
-  emptyMessage?: string;
   isLoading?: boolean;
+  emptyMessage?: string;
 }
 
-export const ProductSection = ({ 
-  title, 
-  products, 
-  link, 
+export const ProductSection = ({
+  title,
+  products,
+  link,
   linkText,
-  emptyMessage = "No products found",
-  isLoading = false
+  isLoading = false,
+  emptyMessage = "No products found"
 }: ProductSectionProps) => {
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  
-  const updateScrollButtons = () => {
-    if (!carouselRef.current) return;
-    
-    const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5); // 5px buffer for rounding errors
-  };
-  
-  useEffect(() => {
-    const carousel = carouselRef.current;
-    if (!carousel) return;
-    
-    updateScrollButtons();
-    carousel.addEventListener('scroll', updateScrollButtons);
-    window.addEventListener('resize', updateScrollButtons);
-    
-    return () => {
-      carousel.removeEventListener('scroll', updateScrollButtons);
-      window.removeEventListener('resize', updateScrollButtons);
-    };
-  }, []);
-  
-  const scrollPrev = () => {
-    if (!carouselRef.current) return;
-    
-    const containerWidth = carouselRef.current.clientWidth;
-    carouselRef.current.scrollBy({
-      left: -containerWidth * 0.75,
-      behavior: 'smooth',
-    });
-  };
-  
-  const scrollNext = () => {
-    if (!carouselRef.current) return;
-    
-    const containerWidth = carouselRef.current.clientWidth;
-    carouselRef.current.scrollBy({
-      left: containerWidth * 0.75,
-      behavior: 'smooth',
-    });
+  // Render loading skeletons
+  const renderSkeletons = () => {
+    return Array.from({ length: 4 }).map((_, i) => (
+      <div key={i} className="space-y-3">
+        <Skeleton className="h-40 w-full rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    ));
   };
 
   return (
-    <section className="mb-10 relative">
+    <section className="mb-10">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">{title}</h2>
-        {link && (
-          <Link 
-            to={link} 
-            className="text-youbuy text-sm font-medium flex items-center hover:underline"
-          >
-            {linkText || "View all"}
-            <ChevronRight className="h-4 w-4 ml-1" />
+        {link && linkText && (
+          <Link to={link} className="text-primary text-sm font-medium hover:underline">
+            {linkText}
           </Link>
         )}
       </div>
-      
-      <div className="relative">
-        {/* Carousel Navigation Buttons */}
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full border border-gray-200 bg-white/80 shadow-sm -ml-4",
-            !canScrollLeft && "opacity-0 pointer-events-none"
-          )}
-          onClick={scrollPrev}
-          disabled={!canScrollLeft}
-        >
-          <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Previous</span>
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full border border-gray-200 bg-white/80 shadow-sm -mr-4",
-            !canScrollRight && "opacity-0 pointer-events-none"
-          )}
-          onClick={scrollNext}
-          disabled={!canScrollRight}
-        >
-          <ChevronRight className="h-5 w-5" />
-          <span className="sr-only">Next</span>
-        </Button>
-        
-        {/* Carousel Container */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-youbuy"></div>
-          </div>
-        ) : products.length > 0 ? (
-          <div 
-            ref={carouselRef}
-            className="flex items-start overflow-x-auto pb-4 pt-2 px-1 -mx-1 snap-x scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {products.map(product => (
-              <div 
-                key={product.id} 
-                className="flex-none px-2 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start"
-              >
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">{emptyMessage}</p>
-          </div>
-        )}
-      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {renderSkeletons()}
+        </div>
+      ) : products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-100 rounded-lg p-6 text-center">
+          <p className="text-gray-500">{emptyMessage}</p>
+        </div>
+      )}
     </section>
   );
 };
