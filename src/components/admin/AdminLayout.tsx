@@ -160,7 +160,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   // Render admin content when verification successful
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex">
       <AdminSidebar />
       <main className="flex-1 overflow-auto bg-gray-100">
         <div className="p-6">
