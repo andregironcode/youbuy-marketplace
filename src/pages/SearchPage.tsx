@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -59,6 +58,7 @@ const SearchPage = () => {
       const sortBy = searchParams.get("sort") || "recent";
       const distance = searchParams.get("distance") ? Number(searchParams.get("distance")) : undefined;
       const onlyAvailable = searchParams.get("available") === "true";
+      const time = searchParams.get("time");
       
       try {
         // Fetch products with filters
@@ -70,7 +70,8 @@ const SearchPage = () => {
           sortBy,
           distance,
           onlyAvailable,
-          userLocation
+          userLocation,
+          time
         });
         
         setProducts(results);
