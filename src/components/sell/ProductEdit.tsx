@@ -728,6 +728,7 @@ export const ProductEdit = () => {
                           accept="image/*" 
                           className="hidden" 
                           onChange={handleImageUpload}
+                          aria-label="Upload product photos"
                         />
                       </div>
                     )}

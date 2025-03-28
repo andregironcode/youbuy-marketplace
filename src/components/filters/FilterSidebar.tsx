@@ -135,7 +135,7 @@ export const FilterSidebar = ({
   };
   
   const sidebarClass = cn(
-    "fixed inset-y-0 right-0 w-80 max-w-full bg-white z-40 border-l shadow-lg transition-transform duration-300 transform",
+    "fixed inset-y-0 right-0 w-80 max-w-full bg-white z-[101] border-l shadow-lg transition-transform duration-300 transform",
     {
       "translate-x-0": isOpen,
       "translate-x-full": !isOpen
@@ -147,7 +147,7 @@ export const FilterSidebar = ({
       {/* Overlay */}
       {isOpen && isMobile && (
         <div 
-          className="fixed inset-0 bg-black/30 z-30" 
+          className="fixed inset-0 bg-black/30 z-[100]" 
           onClick={onClose}
           aria-hidden="true"
         />
