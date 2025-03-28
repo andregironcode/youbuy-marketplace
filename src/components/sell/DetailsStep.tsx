@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -19,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductFields } from "@/components/product/ProductFields";
 import { ProductVariation, ProductSpecifications } from "@/types/product";
 import { SellStep } from "@/types/sellForm";
+import { useSellForm } from "@/context/SellFormContext";
 
 interface DetailsStepProps {
   price: string;
@@ -61,6 +61,27 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   setBulkQuantity,
   setCurrentStep,
 }) => {
+  const { updateFormData } = useSellForm();
+
+  // Update form data whenever specifications change
+  useEffect(() => {
+    updateFormData({ specifications });
+  }, [specifications, updateFormData]);
+
+  // Update form data whenever variations change
+  useEffect(() => {
+    updateFormData({ variations });
+  }, [variations, updateFormData]);
+
+  // Update form data whenever bulk listing settings change
+  useEffect(() => {
+    updateFormData({ 
+      isBulkListing,
+      bulkQuantity,
+      showBulkListing
+    });
+  }, [isBulkListing, bulkQuantity, showBulkListing, updateFormData]);
+
   const isPriceValid = parseFloat(price) > 0;
 
   return (

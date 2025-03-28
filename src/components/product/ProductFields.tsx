@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -361,238 +360,240 @@ export const ProductFields = ({
       </div>
       
       {/* Specifications Section */}
-      <div className="space-y-4 pt-4 border-t">
-        <h3 className="text-lg font-medium">Specifications</h3>
-        
-        {/* Brand selector for appropriate categories */}
-        {renderBrandSelector()}
-        
-        {/* Televisions specific fields */}
-        {category === "electronics" && subcategory === "televisions" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="screenSize">Screen Size (inches)</Label>
-              <Input 
-                id="screenSize" 
-                type="number" 
-                placeholder="e.g., 55" 
-                value={specifications.screenSize || ""}
-                onChange={(e) => updateSpecification("screenSize", e.target.value ? parseFloat(e.target.value) : undefined)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="resolution">Resolution</Label>
-              <Select 
-                value={specifications.resolution || ""} 
-                onValueChange={(value: any) => updateSpecification("resolution", value)}
-              >
-                <SelectTrigger id="resolution">
-                  <SelectValue placeholder="Select resolution" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hd">HD (720p)</SelectItem>
-                  <SelectItem value="fullhd">Full HD (1080p)</SelectItem>
-                  <SelectItem value="4k">4K Ultra HD</SelectItem>
-                  <SelectItem value="8k">8K</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smartTv">Smart TV Features</Label>
-              <Select 
-                value={specifications.smartTv || ""} 
-                onValueChange={(value: any) => updateSpecification("smartTv", value)}
-              >
-                <SelectTrigger id="smartTv">
-                  <SelectValue placeholder="Select smart TV features" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (Regular TV)</SelectItem>
-                  <SelectItem value="basic">Basic Smart Features</SelectItem>
-                  <SelectItem value="full">Full Smart TV</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-        
-        {/* Computer specific fields */}
-        {category === "electronics" && (subcategory === "computers" || subcategory === "laptops") && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="computerType">Computer Type</Label>
-              <Select 
-                value={specifications.computerType || ""} 
-                onValueChange={(value: any) => updateSpecification("computerType", value)}
-              >
-                <SelectTrigger id="computerType">
-                  <SelectValue placeholder="Select computer type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desktop">Desktop</SelectItem>
-                  <SelectItem value="laptop">Laptop</SelectItem>
-                  <SelectItem value="tablet">Tablet</SelectItem>
-                  <SelectItem value="all-in-one">All-in-One</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Input 
-                id="model" 
-                placeholder="e.g., MacBook Pro, Inspiron 15" 
-                value={specifications.model || ""}
-                onChange={(e) => updateSpecification("model", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="processor">Processor</Label>
-              <Input 
-                id="processor" 
-                placeholder="e.g., Intel i7, AMD Ryzen 5" 
-                value={specifications.processor || ""}
-                onChange={(e) => updateSpecification("processor", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ram">RAM</Label>
-              <Input 
-                id="ram" 
-                placeholder="e.g., 16GB" 
-                value={specifications.ram || ""}
-                onChange={(e) => updateSpecification("ram", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="storage">Storage</Label>
-              <Input 
-                id="storage" 
-                placeholder="e.g., 512GB SSD" 
-                value={specifications.storage || ""}
-                onChange={(e) => updateSpecification("storage", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="graphics">Graphics</Label>
-              <Input 
-                id="graphics" 
-                placeholder="e.g., NVIDIA RTX 3080, Intel Iris" 
-                value={specifications.graphics || ""}
-                onChange={(e) => updateSpecification("graphics", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="operatingSystem">Operating System</Label>
-              <Input 
-                id="operatingSystem" 
-                placeholder="e.g., Windows 11, macOS, Linux" 
-                value={specifications.operatingSystem || ""}
-                onChange={(e) => updateSpecification("operatingSystem", e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Mobile phones & tablets fields */}
-        {category === "mobile" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Input 
-                id="model" 
-                placeholder="e.g., iPhone 13, Galaxy S21" 
-                value={specifications.model || ""}
-                onChange={(e) => updateSpecification("model", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="storage">Storage Capacity</Label>
-              <Select 
-                value={specifications.storage || ""} 
-                onValueChange={(value) => updateSpecification("storage", value)}
-              >
-                <SelectTrigger id="storage">
-                  <SelectValue placeholder="Select storage capacity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="16GB">16GB</SelectItem>
-                  <SelectItem value="32GB">32GB</SelectItem>
-                  <SelectItem value="64GB">64GB</SelectItem>
-                  <SelectItem value="128GB">128GB</SelectItem>
-                  <SelectItem value="256GB">256GB</SelectItem>
-                  <SelectItem value="512GB">512GB</SelectItem>
-                  <SelectItem value="1TB">1TB</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="camera">Camera</Label>
-              <Input 
-                id="camera" 
-                placeholder="e.g., 12MP dual camera" 
-                value={specifications.camera || ""}
-                onChange={(e) => updateSpecification("camera", e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Furniture fields */}
-        {category === "furniture" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="material">Material</Label>
-              <Input 
-                id="material" 
-                placeholder="e.g., Wood, Glass, Metal" 
-                value={specifications.material || ""}
-                onChange={(e) => updateSpecification("material", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dimensions">Dimensions (cm)</Label>
-              <div className="grid grid-cols-3 gap-2">
+      {(category === "electronics" || category === "mobile" || category === "furniture") && (
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="text-lg font-medium">Specifications</h3>
+          
+          {/* Brand selector for appropriate categories */}
+          {renderBrandSelector()}
+          
+          {/* Televisions specific fields */}
+          {category === "electronics" && subcategory === "televisions" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="screenSize">Screen Size (inches)</Label>
                 <Input 
-                  id="length" 
-                  placeholder="Length" 
-                  value={specifications.dimensions?.length || ""}
-                  onChange={(e) => {
-                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
-                    updateSpecification("dimensions", {
-                      ...currentDimensions,
-                      length: e.target.value ? parseFloat(e.target.value) : 0
-                    });
-                  }}
+                  id="screenSize" 
+                  type="number" 
+                  placeholder="e.g., 55" 
+                  value={specifications.screenSize || ""}
+                  onChange={(e) => updateSpecification("screenSize", e.target.value ? parseFloat(e.target.value) : undefined)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resolution">Resolution</Label>
+                <Select 
+                  value={specifications.resolution || ""} 
+                  onValueChange={(value: any) => updateSpecification("resolution", value)}
+                >
+                  <SelectTrigger id="resolution">
+                    <SelectValue placeholder="Select resolution" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hd">HD (720p)</SelectItem>
+                    <SelectItem value="fullhd">Full HD (1080p)</SelectItem>
+                    <SelectItem value="4k">4K Ultra HD</SelectItem>
+                    <SelectItem value="8k">8K</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="smartTv">Smart TV Features</Label>
+                <Select 
+                  value={specifications.smartTv || ""} 
+                  onValueChange={(value: any) => updateSpecification("smartTv", value)}
+                >
+                  <SelectTrigger id="smartTv">
+                    <SelectValue placeholder="Select smart TV features" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (Regular TV)</SelectItem>
+                    <SelectItem value="basic">Basic Smart Features</SelectItem>
+                    <SelectItem value="full">Full Smart TV</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          {/* Computer specific fields */}
+          {category === "electronics" && (subcategory === "computers" || subcategory === "laptops") && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="computerType">Computer Type</Label>
+                <Select 
+                  value={specifications.computerType || ""} 
+                  onValueChange={(value: any) => updateSpecification("computerType", value)}
+                >
+                  <SelectTrigger id="computerType">
+                    <SelectValue placeholder="Select computer type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="desktop">Desktop</SelectItem>
+                    <SelectItem value="laptop">Laptop</SelectItem>
+                    <SelectItem value="tablet">Tablet</SelectItem>
+                    <SelectItem value="all-in-one">All-in-One</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">Model</Label>
                 <Input 
-                  id="width" 
-                  placeholder="Width" 
-                  value={specifications.dimensions?.width || ""}
-                  onChange={(e) => {
-                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
-                    updateSpecification("dimensions", {
-                      ...currentDimensions,
-                      width: e.target.value ? parseFloat(e.target.value) : 0
-                    });
-                  }}
+                  id="model" 
+                  placeholder="e.g., MacBook Pro, Inspiron 15" 
+                  value={specifications.model || ""}
+                  onChange={(e) => updateSpecification("model", e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="processor">Processor</Label>
                 <Input 
-                  id="height" 
-                  placeholder="Height" 
-                  value={specifications.dimensions?.height || ""}
-                  onChange={(e) => {
-                    const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
-                    updateSpecification("dimensions", {
-                      ...currentDimensions,
-                      height: e.target.value ? parseFloat(e.target.value) : 0
-                    });
-                  }}
+                  id="processor" 
+                  placeholder="e.g., Intel i7, AMD Ryzen 5" 
+                  value={specifications.processor || ""}
+                  onChange={(e) => updateSpecification("processor", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ram">RAM</Label>
+                <Input 
+                  id="ram" 
+                  placeholder="e.g., 16GB" 
+                  value={specifications.ram || ""}
+                  onChange={(e) => updateSpecification("ram", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="storage">Storage</Label>
+                <Input 
+                  id="storage" 
+                  placeholder="e.g., 512GB SSD" 
+                  value={specifications.storage || ""}
+                  onChange={(e) => updateSpecification("storage", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="graphics">Graphics</Label>
+                <Input 
+                  id="graphics" 
+                  placeholder="e.g., NVIDIA RTX 3080, Intel Iris" 
+                  value={specifications.graphics || ""}
+                  onChange={(e) => updateSpecification("graphics", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="operatingSystem">Operating System</Label>
+                <Input 
+                  id="operatingSystem" 
+                  placeholder="e.g., Windows 11, macOS, Linux" 
+                  value={specifications.operatingSystem || ""}
+                  onChange={(e) => updateSpecification("operatingSystem", e.target.value)}
                 />
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          
+          {/* Mobile phones & tablets fields */}
+          {category === "mobile" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="model">Model</Label>
+                <Input 
+                  id="model" 
+                  placeholder="e.g., iPhone 13, Galaxy S21" 
+                  value={specifications.model || ""}
+                  onChange={(e) => updateSpecification("model", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="storage">Storage Capacity</Label>
+                <Select 
+                  value={specifications.storage || ""} 
+                  onValueChange={(value) => updateSpecification("storage", value)}
+                >
+                  <SelectTrigger id="storage">
+                    <SelectValue placeholder="Select storage capacity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="16GB">16GB</SelectItem>
+                    <SelectItem value="32GB">32GB</SelectItem>
+                    <SelectItem value="64GB">64GB</SelectItem>
+                    <SelectItem value="128GB">128GB</SelectItem>
+                    <SelectItem value="256GB">256GB</SelectItem>
+                    <SelectItem value="512GB">512GB</SelectItem>
+                    <SelectItem value="1TB">1TB</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="camera">Camera</Label>
+                <Input 
+                  id="camera" 
+                  placeholder="e.g., 12MP dual camera" 
+                  value={specifications.camera || ""}
+                  onChange={(e) => updateSpecification("camera", e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Furniture fields */}
+          {category === "furniture" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="material">Material</Label>
+                <Input 
+                  id="material" 
+                  placeholder="e.g., Wood, Glass, Metal" 
+                  value={specifications.material || ""}
+                  onChange={(e) => updateSpecification("material", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dimensions">Dimensions (cm)</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input 
+                    id="length" 
+                    placeholder="Length" 
+                    value={specifications.dimensions?.length || ""}
+                    onChange={(e) => {
+                      const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                      updateSpecification("dimensions", {
+                        ...currentDimensions,
+                        length: e.target.value ? parseFloat(e.target.value) : 0
+                      });
+                    }}
+                  />
+                  <Input 
+                    id="width" 
+                    placeholder="Width" 
+                    value={specifications.dimensions?.width || ""}
+                    onChange={(e) => {
+                      const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                      updateSpecification("dimensions", {
+                        ...currentDimensions,
+                        width: e.target.value ? parseFloat(e.target.value) : 0
+                      });
+                    }}
+                  />
+                  <Input 
+                    id="height" 
+                    placeholder="Height" 
+                    value={specifications.dimensions?.height || ""}
+                    onChange={(e) => {
+                      const currentDimensions = specifications.dimensions || { length: 0, width: 0, height: 0 };
+                      updateSpecification("dimensions", {
+                        ...currentDimensions,
+                        height: e.target.value ? parseFloat(e.target.value) : 0
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Variations Section */}
       <div className="pt-4 border-t">

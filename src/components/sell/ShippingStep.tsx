@@ -110,10 +110,10 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-gray-500" />
-              <Label>Package Dimensions (cm)</Label>
+              <Label>Product Dimensions (cm)</Label>
             </div>
             <p className="text-sm text-muted-foreground pl-7">
-              Enter the approximate dimensions of your packaged item
+              Enter the approximate dimensions of your item
             </p>
             <div className="grid grid-cols-3 gap-3 pl-7">
               <div className="space-y-2">

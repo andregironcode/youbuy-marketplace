@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -204,7 +203,7 @@ const SellContent = () => {
               <h1 className="text-2xl font-bold">Sell an Item</h1>
               <span className="text-sm text-muted-foreground">{getStepProgress()}% complete</span>
             </div>
-            <Progress value={getStepProgress()} className="h-2" />
+            <Progress value={getStepProgress()} className="h-2 bg-gray-100" />
           </div>
           
           <SellFormSteps

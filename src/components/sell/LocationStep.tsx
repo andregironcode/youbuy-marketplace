@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -25,6 +24,8 @@ interface LocationStepProps {
   coordinates: { latitude?: number; longitude?: number } | null;
   setCoordinates: (coords: { latitude: number; longitude: number } | null) => void;
   setCurrentStep: (step: SellStep) => void;
+  locationDetails?: LocationDetails;
+  setLocationDetails?: (details: LocationDetails) => void;
 }
 
 type LocationType = "house" | "apartment";
@@ -44,6 +45,8 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   coordinates,
   setCoordinates,
   setCurrentStep,
+  locationDetails: initialLocationDetails,
+  setLocationDetails: setLocationDetailsProp,
 }) => {
   const [searchValue, setSearchValue] = useState(location);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -51,10 +54,21 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   const [mapVisible, setMapVisible] = useState(true);
   const { toast } = useToast();
   
-  // New state for location details
-  const [locationDetails, setLocationDetails] = useState<LocationDetails>({
+  const [locationDetails, setLocationDetails] = useState<LocationDetails>(initialLocationDetails || {
     type: "house",
+    houseNumber: "",
+    buildingName: "",
+    apartmentNumber: "",
+    floor: "",
+    additionalInfo: ""
   });
+
+  // Update parent component when location details change
+  useEffect(() => {
+    if (setLocationDetailsProp) {
+      setLocationDetailsProp(locationDetails);
+    }
+  }, [locationDetails, setLocationDetailsProp]);
 
   const isLocationValid = location.length >= 3 && coordinates !== null && 
     coordinates.latitude !== undefined && coordinates.longitude !== undefined;
