@@ -80,8 +80,8 @@ export function ProfileSettings() {
             phone: profile.phone || "",
           });
 
-          // Set avatar URL
-          setAvatarUrl(profile.avatar_url);
+          // Set avatar URL with timestamp to prevent caching
+          setAvatarUrl(profile.avatar_url ? `${profile.avatar_url}?t=${Date.now()}` : null);
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -175,11 +175,50 @@ export function ProfileSettings() {
         throw new Error('Failed to get public URL for uploaded image');
       }
 
-      console.log('Upload successful, URL:', data.publicUrl);
+      // Add a timestamp to force image refresh
+      const publicUrlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+      console.log('Upload successful, URL:', publicUrlWithTimestamp);
 
-      // Update the avatar URL in the form
+      // Update the avatar URL in the form and state
       form.setValue('avatar_url', data.publicUrl);
-      setAvatarUrl(data.publicUrl);
+      setAvatarUrl(publicUrlWithTimestamp);
+      
+      // Update the profile in the database with the new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: data.publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user!.id);
+
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        throw new Error('Failed to update profile with new avatar');
+      }
+
+      // Update user metadata with the new avatar URL
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: { 
+          avatar_url: data.publicUrl,
+          updated_at: new Date().toISOString()
+        }
+      });
+
+      if (metadataError) {
+        console.error('Error updating user metadata:', metadataError);
+        // Don't throw error here as the profile update was successful
+      }
+
+      // Refresh the auth state to ensure the new avatar is available immediately
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        const { data: { user: refreshedUser }, error: refreshError } = await supabase.auth.getUser();
+        if (!refreshError && refreshedUser) {
+          // The auth context will automatically update with the new user data
+          console.log('User data refreshed with new avatar');
+        }
+      }
       
       toast({
         title: "Avatar updated",
@@ -292,10 +331,12 @@ export function ProfileSettings() {
                 {/* Avatar Section */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <div className="flex-shrink-0">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={avatarUrl || undefined} alt="Profile" />
-                      <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
-                    </Avatar>
+                    <div className="h-24 w-24 rounded-full overflow-hidden">
+                      <Avatar className="h-full w-full">
+                        <AvatarImage src={avatarUrl || undefined} alt="Profile" className="object-cover" />
+                        <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+                      </Avatar>
+                    </div>
                   </div>
                   <div className="flex-grow space-y-2">
                     <h3 className="text-lg font-medium">Profile Picture</h3>

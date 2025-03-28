@@ -170,7 +170,10 @@ export const Navbar = () => {
                   <Link to="/profile" className="flex items-center">
                     <Button variant="outline" size="sm" className="gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarImage 
+                          src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
+                          className="object-cover"
+                        />
                         <AvatarFallback>{getInitials()}</AvatarFallback>
                       </Avatar>
                       <span className="text-xs font-medium">Profile</span>

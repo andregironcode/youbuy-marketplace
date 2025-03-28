@@ -34,6 +34,17 @@ export const ProfileSidebar = () => {
     return location.pathname.includes(path);
   };
 
+  // Get avatar URL from either profile or user metadata
+  const getAvatarUrl = () => {
+    if (extendedUser?.profile?.avatar_url) {
+      return `${extendedUser.profile.avatar_url}?t=${Date.now()}`;
+    }
+    if (user?.user_metadata?.avatar_url) {
+      return `${user.user_metadata.avatar_url}?t=${Date.now()}`;
+    }
+    return null;
+  };
+
   const items = [
     {
       icon: User,
@@ -95,14 +106,16 @@ export const ProfileSidebar = () => {
     <aside className="w-60 border-r border-gray-200 bg-white fixed h-screen flex flex-col">
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          {extendedUser?.profile?.avatar_url ? (
-            <img
-              src={extendedUser.profile.avatar_url}
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover"
-            />
+          {getAvatarUrl() ? (
+            <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+              <img
+                src={getAvatarUrl()}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            </div>
           ) : (
-            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
               <User className="h-4 w-4 text-gray-500" />
             </div>
           )}
