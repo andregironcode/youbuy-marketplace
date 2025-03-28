@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Mail, Save } from "lucide-react";
+import { initializeStorage } from "@/integrations/supabase/storage";
 
 // Define the form schema for validation
 const ProfileFormSchema = z.object({
@@ -101,6 +101,7 @@ export function ProfileSettings() {
   // Handle avatar upload
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
+      console.log('Starting avatar upload...');
       setUploadingAvatar(true);
       
       if (!event.target.files || event.target.files.length === 0) {
@@ -108,38 +109,77 @@ export function ProfileSettings() {
       }
       
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user!.id}-${Math.random()}.${fileExt}`;
-
-      // Check if the user-uploaded-avatars bucket exists, if not create it
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'user-uploaded-avatars');
+      console.log('File selected:', file.name, 'Type:', file.type, 'Size:', file.size);
       
-      if (!bucketExists) {
-        // Create the bucket
-        await supabase.storage.createBucket('user-uploaded-avatars', {
-          public: true,
-        });
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please upload an image file');
       }
-      
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size should be less than 5MB');
+      }
+
+      // Ensure storage is initialized
+      console.log('Initializing storage...');
+      const storageInitialized = await initializeStorage();
+      if (!storageInitialized) {
+        throw new Error('Storage service is not available. Please check your Supabase configuration.');
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user!.id}/avatar.${fileExt}`;
+      console.log('Uploading to path:', filePath);
+
+      // Delete old avatar if exists
+      if (avatarUrl) {
+        console.log('Deleting old avatar:', avatarUrl);
+        const oldPath = avatarUrl.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from('user-uploaded-avatars')
+            .remove([oldPath])
+            .catch(console.error); // Ignore errors for old file deletion
+        }
+      }
+
       // Upload the file
+      console.log('Uploading file...');
       const { error: uploadError } = await supabase.storage
         .from('user-uploaded-avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Allow overwriting existing files
+        });
 
       if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        if (uploadError.message.includes('File size limit exceeded')) {
+          throw new Error('File size is too large. Maximum size is 5MB.');
+        } else if (uploadError.message.includes('permission denied')) {
+          throw new Error('You do not have permission to upload files. Please try logging in again.');
+        } else if (uploadError.message.includes('bucket not found')) {
+          throw new Error('Storage bucket not found. Please check your Supabase configuration.');
+        }
         throw uploadError;
       }
 
       // Get the public URL
+      console.log('Getting public URL...');
       const { data } = supabase.storage
         .from('user-uploaded-avatars')
         .getPublicUrl(filePath);
 
+      if (!data.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded image');
+      }
+
+      console.log('Upload successful, URL:', data.publicUrl);
+
       // Update the avatar URL in the form
-      const newAvatarUrl = data.publicUrl;
-      form.setValue('avatar_url', newAvatarUrl);
-      setAvatarUrl(newAvatarUrl);
+      form.setValue('avatar_url', data.publicUrl);
+      setAvatarUrl(data.publicUrl);
       
       toast({
         title: "Avatar updated",
@@ -147,9 +187,19 @@ export function ProfileSettings() {
       });
     } catch (error) {
       console.error("Error uploading avatar:", error);
+      let errorMessage = "There was an error uploading your avatar";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase error object
+        const supabaseError = error as { message?: string; error?: string };
+        errorMessage = supabaseError.message || supabaseError.error || errorMessage;
+      }
+      
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your avatar",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
