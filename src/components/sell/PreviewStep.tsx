@@ -11,7 +11,15 @@ import { Button } from "@/components/ui/button";
 import { SellStep } from "@/types/sellForm";
 import { ProductSpecifications } from "@/types/product";
 import { LocationMap } from "@/components/map/LocationMap";
-import { MapPin, Home, Building, Package, Info } from "lucide-react";
+
+interface LocationDetails {
+  type: "house" | "apartment";
+  houseNumber?: string;
+  buildingName?: string;
+  apartmentNumber?: string;
+  floor?: string;
+  additionalInfo?: string;
+}
 
 interface PreviewStepProps {
   title: string;
@@ -19,17 +27,10 @@ interface PreviewStepProps {
   description: string;
   location: string;
   imagePreviewUrls: string[];
-  specifications: ProductSpecifications;
+  specifications: any;
   weight: string;
-  coordinates: { latitude: number; longitude: number } | null;
-  locationDetails?: {
-    type: "house" | "apartment";
-    houseNumber?: string;
-    buildingName?: string;
-    apartmentNumber?: string;
-    floor?: string;
-    additionalInfo?: string;
-  };
+  coordinates: { latitude: number; longitude: number };
+  locationDetails: LocationDetails;
   shippingOptions: {
     inPersonMeetup: boolean;
     platformShipping: boolean;
@@ -55,51 +56,6 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
   handleSubmit,
   uploading,
 }) => {
-  // Format location details for display
-  const formatLocationDetails = () => {
-    if (!locationDetails) return location || "Unknown location";
-    
-    const parts = [];
-    
-    // First, add the specific location details
-    if (locationDetails.type === "house") {
-      if (locationDetails.houseNumber) {
-        parts.push(`House #${locationDetails.houseNumber}`);
-      }
-      if (locationDetails.additionalInfo) {
-        parts.push(locationDetails.additionalInfo);
-      }
-    } else {
-      if (locationDetails.buildingName) {
-        parts.push(locationDetails.buildingName);
-      }
-      if (locationDetails.floor) {
-        parts.push(`Floor ${locationDetails.floor}`);
-      }
-      if (locationDetails.apartmentNumber) {
-        parts.push(`Apt #${locationDetails.apartmentNumber}`);
-      }
-      if (locationDetails.additionalInfo) {
-        parts.push(locationDetails.additionalInfo);
-      }
-    }
-    
-    // Add the location address, but only if it's not already included in the parts
-    if (location) {
-      // Check if any part of the location is already in our parts
-      const locationParts = location.split(", ");
-      const isLocationIncluded = locationParts.some(part => 
-        parts.some(existingPart => existingPart.includes(part))
-      );
-      
-      if (!isLocationIncluded) {
-        parts.push(location);
-      }
-    }
-    
-    return parts.length > 0 ? parts.join(", ") : "Unknown location";
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -109,10 +65,9 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-8">
-          {/* Product Images */}
-          {imagePreviewUrls.length > 0 && (
-            <div className="border rounded-lg overflow-hidden">
+        <div className="space-y-6">
+          <div className="border rounded-lg overflow-hidden">
+            {imagePreviewUrls.length > 0 && (
               <div className="aspect-video relative">
                 <img 
                   src={imagePreviewUrls[0]} 
@@ -120,104 +75,76 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                   className="w-full h-full object-cover"
                 />
               </div>
-            </div>
-          )}
-
-          {/* Product Details Section */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-semibold">{title}</h3>
-              <span className="text-2xl font-bold text-youbuy">{price ? `AED ${price}` : ''}</span>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-
-            {/* Specifications */}
-            {Object.keys(specifications).length > 0 && (
-              <div>
-                <h4 className="font-medium mb-3">Product Specifications</h4>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                  {Object.entries(specifications).map(([key, value]) => {
-                    // Skip empty values
-                    if (!value) return null;
-
-                    // Format dimensions
-                    if (key === 'dimensions' && typeof value === 'object') {
-                      const dims = value as { length: number; width: number; height: number };
-                      return (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Dimensions:</span>
-                          <span className="text-sm font-medium">
-                            {dims.length} × {dims.width} × {dims.height} cm
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    // Format other specifications
-                    return (
-                      <div key={key} className="flex justify-between">
-                        <span className="text-sm text-muted-foreground capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
-                        </span>
-                        <span className="text-sm font-medium">{value}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             )}
-
-            {/* Shipping Information */}
-            <div>
-              <h4 className="font-medium mb-3">Shipping & Delivery</h4>
-              <div className="space-y-2">
-                {shippingOptions.inPersonMeetup && (
-                  <div className="flex items-center text-sm">
-                    <Package className="h-4 w-4 mr-2 text-youbuy" />
-                    <span>In-person meetup available</span>
-                  </div>
-                )}
-                {shippingOptions.platformShipping && (
-                  <div className="flex items-center text-sm">
-                    <Package className="h-4 w-4 mr-2 text-youbuy" />
-                    <span>Platform shipping available</span>
-                  </div>
-                )}
-                {weight && (
-                  <div className="flex items-center text-sm">
-                    <Info className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Weight: {weight} kg</span>
-                  </div>
-                )}
+            
+            <div className="p-4 space-y-4">
+              <h3 className="text-xl font-semibold">{title}</h3>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-xl font-bold">{price ? `AED ${price}` : ''}</span>
+                <span className="text-sm text-muted-foreground">{location}</span>
               </div>
-            </div>
-          </div>
-
-          {/* Location Section */}
-          <div className="space-y-4 pt-6 border-t">
-            <h4 className="font-medium">Location & Pickup</h4>
-            <div className="flex items-start space-x-4">
-              <MapPin className="h-5 w-5 text-youbuy mt-0.5" />
-              <div className="space-y-3 flex-1">
-                <div className="text-sm">
-                  {formatLocationDetails()}
+              
+              {/* Location Map */}
+              {coordinates && (
+                <div className="h-[150px] rounded-md overflow-hidden">
+                  <LocationMap
+                    latitude={coordinates.latitude}
+                    longitude={coordinates.longitude}
+                    height="150px"
+                    interactive={false}
+                    showMarker={true}
+                  />
                 </div>
-                {coordinates && (
-                  <div className="h-[200px] rounded-md overflow-hidden border">
-                    <LocationMap
-                      latitude={coordinates.latitude}
-                      longitude={coordinates.longitude}
-                      height="200px"
-                      interactive={false}
-                      showMarker={true}
-                    />
+              )}
+              
+              <div>
+                <h4 className="font-medium">Description</h4>
+                <p className="text-sm mt-1">{description}</p>
+              </div>
+              
+              {Object.keys(specifications).length > 0 && (
+                <div>
+                  <h4 className="font-medium">Specifications</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-1">
+                    {specifications.brand && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Brand:</span>
+                        <span className="text-sm">{specifications.brand}</span>
+                      </div>
+                    )}
+                    {specifications.condition && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Condition:</span>
+                        <span className="text-sm">{specifications.condition}</span>
+                      </div>
+                    )}
+                    {specifications.model && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Model:</span>
+                        <span className="text-sm">{specifications.model}</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <h3 className="font-medium">Shipping Options</h3>
+                <ul className="space-y-1">
+                  {shippingOptions.inPersonMeetup && (
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-2">✓</span>
+                      In-person meetup
+                    </li>
+                  )}
+                  {shippingOptions.platformShipping && (
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-2">✓</span>
+                      Platform shipping
+                    </li>
+                  )}
+                </ul>
               </div>
             </div>
           </div>
