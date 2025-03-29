@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
@@ -131,7 +130,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   // Show loading state while checking admin status
   if (loading || verificationState === 'pending') {
     return (
-      <div className="h-screen flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="h-12 w-12 animate-spin mb-4 text-red-600" />
         <p className="text-lg font-medium">Verifying admin access...</p>
         {verificationAttempts > 0 && (
@@ -146,7 +145,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   // If verification failed (this should usually not be visible as we navigate away)
   if (verificationState === 'failed') {
     return (
-      <div className="h-screen flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
         <p className="text-lg font-medium text-red-600">Access denied</p>
         <Button 
           className="mt-4" 
@@ -160,9 +159,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   // Render admin content when verification successful
   return (
-    <div className="h-screen flex">
+    <div className="flex">
       <AdminSidebar />
-      <main className="flex-1 overflow-auto bg-gray-100">
+      <main className="flex-1 bg-gray-100">
         <div className="p-6">
           {children}
         </div>

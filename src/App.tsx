@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -38,7 +37,7 @@ function App() {
             <Toaster />
             <NotificationProvider />
             <Router>
-              <div className="flex flex-col min-h-screen w-full">
+              <div className="flex flex-col w-full">
                 <Routes>
                   {/* Admin routes */}
                   <Route path="/admin" element={<AdminAuth />} />
@@ -50,7 +49,7 @@ function App() {
                     element={
                       <>
                         <Navbar />
-                        <div className="flex-1 flex flex-col w-full">
+                        <div className="flex-1 w-full">
                           <Routes>
                             <Route path="/" element={<Index />} />
                             <Route path="/auth" element={<Auth />} />
