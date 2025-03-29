@@ -11,7 +11,9 @@ import {
   Store,
   MessageSquare,
   HeadphonesIcon,
-  LogOut
+  LogOut,
+  MessageCircle,
+  BarChart2
 } from "lucide-react";
 
 interface UserProfile {
@@ -69,6 +71,18 @@ export const ProfileSidebar = () => {
       label: "Sales",
       href: "/profile/sales",
       active: isActive("/sales"),
+    },
+    {
+      icon: MessageCircle,
+      label: "Messages",
+      href: "/messages",
+      active: isActive("/messages"),
+    },
+    {
+      icon: BarChart2,
+      label: "Statistics",
+      href: "/profile/statistics",
+      active: isActive("/statistics"),
     },
     {
       icon: CreditCard,

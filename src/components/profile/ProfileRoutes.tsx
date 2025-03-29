@@ -1,4 +1,3 @@
-
 // This file has imports and structure that we don't want to modify
 // Let's assume we need to add the Support page to existing routes
 
@@ -19,6 +18,7 @@ import {
   SalesRedirect
 } from "./pages/RedirectPages";
 import { SupportPage } from "./pages/SupportPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 
 export const ProfileRoutes = () => {
   return (
@@ -39,6 +39,7 @@ export const ProfileRoutes = () => {
         <Route path="seller/sales" element={<SalesRedirect />} />
         <Route path="seller/purchases" element={<PurchasesRedirect />} />
         <Route path="support" element={<SupportPage />} />
+        <Route path="statistics" element={<StatisticsPage />} />
       </Routes>
     </ProfileLayout>
   );
