@@ -17,60 +17,64 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
   const isOwnProduct = user?.id === product.seller?.id;
 
   return (
-    <div className="flex items-center gap-4 border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-      <Link to={`/product/${product.id}`} className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden flex-shrink-0">
+    <div className="flex items-start gap-4 border rounded-lg p-4 hover:bg-gray-50/50 transition-colors">
+      <Link to={`/product/${product.id}`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
         <img 
           src={product.image} 
           alt={product.title} 
           className="w-full h-full object-cover"
         />
       </Link>
-      <div className="flex-1">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-price font-bold">€{product.price.toFixed(2)}</p>
-            <Link to={`/product/${product.id}`} className="font-medium text-sm hover:text-youbuy transition-colors">
-              {product.title}
-            </Link>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Link to={`/product/${product.id}`} className="font-medium hover:text-youbuy transition-colors line-clamp-1">
+                {product.title}
+              </Link>
+              <p className="text-price font-semibold text-lg">€{product.price.toFixed(2)}</p>
+            </div>
+            <div className="text-xs text-muted-foreground whitespace-nowrap">
+              <p>Listed {product.timeAgo}</p>
+            </div>
           </div>
-          <div className="mt-2 sm:mt-0 text-xs text-muted-foreground">
-            <p>Listed {product.timeAgo}</p>
-          </div>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        {showBuyButtons && !isOwnProduct && (
-          <>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {showBuyButtons && !isOwnProduct && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="success"
+                  onClick={() => navigate(`/checkout/${product.id}`)}
+                  className="flex items-center gap-1.5"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  Buy Now
+                </Button>
+                <MessageButton 
+                  product={product} 
+                  size="sm" 
+                  variant="outline" 
+                />
+              </>
+            )}
             <Button 
               size="sm" 
-              variant="success"
-              onClick={() => navigate(`/checkout/${product.id}`)}
+              variant="outline"
+              onClick={() => navigate(`/product/${product.id}`)}
             >
-              <ShoppingBag className="h-4 w-4" /> Buy
+              View Details
             </Button>
-            <MessageButton 
-              product={product} 
-              size="sm" 
-              variant="outline" 
-            />
-          </>
-        )}
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={() => navigate(`/product/${product.id}`)}
-        >
-          View
-        </Button>
-        {isOwnProduct && (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => navigate(`/profile/edit-product/${product.id}`)}
-          >
-            Edit
-          </Button>
-        )}
+            {isOwnProduct && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate(`/profile/edit-product/${product.id}`)}
+              >
+                Edit Listing
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -119,25 +119,27 @@ export const SellerListings = ({
   const displayProducts = initialProducts.length > 0 ? initialProducts.slice(0, limit) : products.slice(0, limit);
 
   return (
-    <div>
+    <div className="space-y-6">
       {!onTabChange && (
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-2">Products</h2>
-          <p className="text-muted-foreground text-sm">
+        <div className="flex flex-col space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">Products</h2>
+          <p className="text-muted-foreground">
             View this seller's available products
           </p>
         </div>
       )}
 
       {showTabs && (
-        <ListingsTabs 
-          currentActiveTab={currentActiveTab} 
-          onTabChange={handleTabChange} 
-        />
+        <div className="border-b">
+          <ListingsTabs 
+            currentActiveTab={currentActiveTab} 
+            onTabChange={handleTabChange} 
+          />
+        </div>
       )}
 
-      <div className="flex justify-between items-center mb-4">
-        <div className="relative w-full max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
@@ -148,7 +150,7 @@ export const SellerListings = ({
         </div>
         <Button 
           variant="outline" 
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 whitespace-nowrap"
           onClick={() => setIsFilterOpen(true)}
         >
           <Filter className="h-4 w-4" />
@@ -172,7 +174,7 @@ export const SellerListings = ({
               onAddProduct={handleAddProduct} 
             />
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {displayProducts.map((product) => (
                 <ListingItem 
                   key={product.id} 

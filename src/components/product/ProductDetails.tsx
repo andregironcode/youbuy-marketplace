@@ -189,17 +189,19 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
 
     return (
       <div className="mt-4">
-        <h3 className="font-medium flex items-center mb-2">
-          <Info className="h-4 w-4 mr-1" />
+        <h3 className="font-medium flex items-center mb-3">
+          <Info className="h-4 w-4 mr-1.5" />
           Specifications
         </h3>
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {specsToShow.map(([key, value]) => (
-                <div key={key} className="col-span-2 sm:col-span-1 flex">
-                  <span className="font-medium min-w-[120px]">{getSpecificationName(key)}:</span>
-                  <span className="text-muted-foreground">{formatSpecValue(key, value)}</span>
+                <div key={key} className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground mb-1">
+                    {getSpecificationName(key)}
+                  </span>
+                  <span className="text-sm">{formatSpecValue(key, value)}</span>
                 </div>
               ))}
             </div>
@@ -309,25 +311,23 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
       
-      {!isOwnProduct && (
-        <Button 
-          className="w-full mt-4"
-          variant="default"
-          style={{ backgroundColor: "#4CD137" }}
-          disabled={
-            product.status === 'sold' || 
-            product.status === 'reserved' || 
-            !areAllRequiredVariationsSelected()
-          }
-          onClick={handleBuyNow}
-        >
-          {product.status === 'sold' 
-            ? 'Sold Out' 
-            : product.status === 'reserved' 
-              ? 'Reserved' 
-              : <><ShoppingBag className="mr-2 h-5 w-5" />Buy Now</>}
-        </Button>
-      )}
+      <Button 
+        className="w-full mt-4"
+        variant="default"
+        style={{ backgroundColor: "#4CD137" }}
+        disabled={
+          product.status === 'sold' || 
+          product.status === 'reserved' || 
+          !areAllRequiredVariationsSelected()
+        }
+        onClick={handleBuyNow}
+      >
+        {product.status === 'sold' 
+          ? 'Sold Out' 
+          : product.status === 'reserved' 
+            ? 'Reserved' 
+            : <><ShoppingBag className="mr-2 h-5 w-5" />Buy Now</>}
+      </Button>
       
       {product.variations && product.variations.some(v => v.required) && !areAllRequiredVariationsSelected() && (
         <p className="text-xs text-destructive text-center">
