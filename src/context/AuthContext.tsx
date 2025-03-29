@@ -143,7 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log("Performing RPC call to check admin status with session:", currentSession.user.id);
-      const { data, error } = await supabase.rpc('is_admin');
+      const { data, error } = await supabase.rpc('is_admin', {
+        user_uuid: currentSession.user.id
+      });
       
       setIsCheckingAdmin(false);
       
