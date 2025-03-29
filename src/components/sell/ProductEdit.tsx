@@ -27,8 +27,6 @@ const productSchema = z.object({
   width: z.string().optional(),
   depth: z.string().optional(),
   height: z.string().optional(),
-  returnPolicy: z.string().optional(),
-  warranty: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -55,8 +53,6 @@ export const ProductEdit = () => {
   const [images, setImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
-  const [returnPolicy, setReturnPolicy] = useState("");
-  const [warranty, setWarranty] = useState("");
   
   // Item measurements
   const [width, setWidth] = useState("");
@@ -80,8 +76,6 @@ export const ProductEdit = () => {
       width: "",
       depth: "",
       height: "",
-      returnPolicy: "",
-      warranty: "",
     },
   });
 
@@ -180,10 +174,6 @@ export const ProductEdit = () => {
             setDepth(parsedSpecifications.dimensions.length?.toString() || "");
             setHeight(parsedSpecifications.dimensions.height?.toString() || "");
           }
-          
-          // Set return policy and warranty if they exist
-          setReturnPolicy(parsedSpecifications.returnPolicy || "");
-          setWarranty(parsedSpecifications.warranty || "");
         }
 
         // Update form values
@@ -194,9 +184,7 @@ export const ProductEdit = () => {
           condition: parsedSpecifications.condition || "",
           width: parsedSpecifications.dimensions?.width?.toString() || "",
           depth: parsedSpecifications.dimensions?.length?.toString() || "",
-          height: parsedSpecifications.dimensions?.height?.toString() || "",
-          returnPolicy: parsedSpecifications.returnPolicy || "",
-          warranty: parsedSpecifications.warranty || "",
+          height: parsedSpecifications.dimensions?.height?.toString() || ""
         });
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -342,12 +330,10 @@ export const ProductEdit = () => {
       // Combine existing and new images
       const allImageUrls = [...images, ...newUploadedImageUrls];
       
-      // Update specifications with dimensions, return policy, and warranty
+      // Update specifications without policies
       const updatedSpecifications = {
         ...specifications,
         condition: data.condition,
-        returnPolicy: data.returnPolicy,
-        warranty: data.warranty,
         dimensions: {
           width: data.width ? parseFloat(data.width) : undefined,
           length: data.depth ? parseFloat(data.depth) : undefined,
@@ -437,11 +423,10 @@ export const ProductEdit = () => {
 
       <Form {...form}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-3 mb-6">
             <TabsTrigger value="details">Basic Details</TabsTrigger>
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
-            <TabsTrigger value="policies">Policies</TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-4">
@@ -737,87 +722,6 @@ export const ProductEdit = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     You can upload up to 10 images (max 5MB each)
                   </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="policies" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Return Policy & Warranty</CardTitle>
-                <CardDescription>Set your policies to build buyer confidence</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h3 className="font-medium flex items-center">
-                      <ArrowLeft className="h-4 w-4 mr-2 text-youbuy" />
-                      Return and warranty information
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Clear policies help buyers make confident purchase decisions
-                    </p>
-                  </div>
-                
-                  <FormField
-                    control={form.control}
-                    name="returnPolicy"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <ArrowLeft className="h-4 w-4" />
-                          Return Policy
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            rows={3}
-                            placeholder="e.g., Returns accepted within 14 days if item is in original condition"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Describe your return policy including any conditions or timeframes
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="warranty"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Warranty Information
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            rows={3}
-                            placeholder="e.g., 30-day warranty on all electrical components"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          If your item includes a warranty, describe the terms here
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                
-                  <div className="p-3 border border-amber-200 rounded-md bg-amber-50 text-amber-800 text-sm">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Important note:</p>
-                        <p className="mt-1">
-                          Make sure your policies comply with local consumer protection laws. Clear and fair
-                          policies can help you avoid disputes and improve your seller rating.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

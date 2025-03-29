@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { categories } from "@/data/categories";
 
 interface CategoryFilterProps {
   categoryId?: string;
@@ -17,58 +17,13 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   subSubcategoryId,
   onCategoryChange,
 }) => {
-  // Example category structure - in a real app you'd fetch this from your database
-  const categories = [
-    {
-      id: "electronics",
-      name: "Electronics",
-      subcategories: [
-        {
-          id: "smartphones",
-          name: "Smartphones",
-          subSubcategories: [
-            { id: "iphone", name: "iPhone" },
-            { id: "android", name: "Android" },
-          ],
-        },
-        {
-          id: "computers",
-          name: "Computers",
-          subSubcategories: [
-            { id: "laptops", name: "Laptops" },
-            { id: "desktops", name: "Desktops" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "clothing",
-      name: "Clothing",
-      subcategories: [
-        {
-          id: "mens",
-          name: "Men's",
-          subSubcategories: [
-            { id: "shirts", name: "Shirts" },
-            { id: "pants", name: "Pants" },
-          ],
-        },
-        {
-          id: "womens",
-          name: "Women's",
-          subSubcategories: [
-            { id: "dresses", name: "Dresses" },
-            { id: "shoes", name: "Shoes" },
-          ],
-        },
-      ],
-    },
-  ];
-
   // Find the current category, subcategory, and subSubcategory
   const currentCategory = categories.find((cat) => cat.id === categoryId);
-  const currentSubcategory = currentCategory?.subcategories.find(
+  const currentSubcategory = currentCategory?.subCategories.find(
     (subcat) => subcat.id === subcategoryId
+  );
+  const currentSubSubcategory = currentSubcategory?.subSubCategories?.find(
+    (subsubcat) => subsubcat.id === subSubcategoryId
   );
 
   return (
@@ -80,60 +35,60 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
         <Accordion type="single" collapsible defaultValue={categoryId}>
           {categories.map((category) => (
             <AccordionItem key={category.id} value={category.id}>
-              <AccordionTrigger
-                className={`text-sm ${
-                  category.id === categoryId ? "font-bold text-primary" : ""
-                }`}
-                onClick={() => onCategoryChange(category.id)}
-              >
+              <AccordionTrigger className="text-sm">
                 {category.name}
               </AccordionTrigger>
               <AccordionContent>
-                <div className="pl-4 flex flex-col space-y-1">
-                  {category.subcategories.map((subcategory) => (
-                    <div key={subcategory.id}>
-                      <Button
-                        variant={
-                          subcategory.id === subcategoryId && category.id === categoryId
-                            ? "default"
-                            : "ghost"
-                        }
-                        size="sm"
-                        className="w-full justify-start text-sm h-8"
-                        onClick={() =>
-                          onCategoryChange(category.id, subcategory.id)
-                        }
-                      >
-                        {subcategory.name}
-                      </Button>
-                      {subcategory.id === subcategoryId &&
-                        category.id === categoryId && (
-                          <div className="pl-2 flex flex-col space-y-1 mt-1">
-                            {subcategory.subSubcategories.map(
-                              (subSubcategory) => (
-                                <Button
-                                  key={subSubcategory.id}
-                                  variant={
-                                    subSubcategory.id === subSubcategoryId
-                                      ? "outline"
-                                      : "ghost"
-                                  }
-                                  size="sm"
-                                  className="w-full justify-start text-xs h-7"
-                                  onClick={() =>
-                                    onCategoryChange(
-                                      category.id,
-                                      subcategory.id,
-                                      subSubcategory.id
-                                    )
-                                  }
-                                >
-                                  {subSubcategory.name}
-                                </Button>
-                              )
-                            )}
-                          </div>
-                        )}
+                <div className="space-y-2">
+                  {category.subCategories.map((subCategory) => (
+                    <div key={subCategory.id} className="ml-4">
+                      {subCategory.subSubCategories ? (
+                        <Accordion type="single" collapsible defaultValue={subcategoryId}>
+                          <AccordionItem value={subCategory.id} className="border-none">
+                            <AccordionTrigger className="text-sm py-1">
+                              {subCategory.name}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 ml-4">
+                                {subCategory.subSubCategories.map((subSubCategory) => (
+                                  <Button
+                                    key={subSubCategory.id}
+                                    variant="ghost"
+                                    className={`w-full justify-start text-sm ${
+                                      subSubcategoryId === subSubCategory.id
+                                        ? "text-youbuy"
+                                        : "text-muted-foreground"
+                                    }`}
+                                    onClick={() =>
+                                      onCategoryChange(
+                                        category.id,
+                                        subCategory.id,
+                                        subSubCategory.id
+                                      )
+                                    }
+                                  >
+                                    {subSubCategory.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start text-sm ${
+                            subcategoryId === subCategory.id
+                              ? "text-youbuy"
+                              : "text-muted-foreground"
+                          }`}
+                          onClick={() =>
+                            onCategoryChange(category.id, subCategory.id)
+                          }
+                        >
+                          {subCategory.name}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>

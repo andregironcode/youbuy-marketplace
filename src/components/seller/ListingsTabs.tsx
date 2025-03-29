@@ -1,6 +1,3 @@
-
-import { Button } from "../ui/button";
-import { ListFilter } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ListingsTabsProps {
@@ -35,14 +32,6 @@ export const ListingsTabs = ({ currentActiveTab, onTabChange }: ListingsTabsProp
           SOLD
         </button>
       </div>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="text-gray-600 gap-2"
-      >
-        <ListFilter className="h-4 w-4" />
-        Filter
-      </Button>
     </div>
   );
 };

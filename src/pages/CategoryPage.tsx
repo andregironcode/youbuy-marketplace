@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from "@/context/AuthContext";
@@ -90,11 +89,20 @@ const CategoryPage = () => {
       query = query.lte('price', priceRange.max);
     }
 
+    // Get total count first
+    const { count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('category', categoryId)
+      .eq('subcategory', subcategoryId || '')
+      .eq('sub_subcategory', subSubcategoryId || '');
+
+    // Apply sorting
     if (sortOrder === 'price-asc') {
       query = query.order('price', { ascending: true });
     } else if (sortOrder === 'price-desc') {
       query = query.order('price', { ascending: false });
-    } else {
+    } else if (sortOrder === 'newest') {
       query = query.order('created_at', { ascending: false });
     }
 
@@ -102,13 +110,22 @@ const CategoryPage = () => {
     query = query.range(startIndex, startIndex + productsPerPage - 1);
 
     try {
-      const { data, error, count } = await query;
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching products:', error);
         setError(error.message);
       } else {
-        const convertedProducts = data.map((item: any) => convertToProductType(item));
+        let convertedProducts = data.map((item: any) => convertToProductType(item));
+        
+        // Apply distance filter if needed
+        if (maxDistance && userLocation) {
+          convertedProducts = convertedProducts.filter(product => {
+            const distance = calculateProductDistance(product);
+            return distance !== null && distance <= maxDistance;
+          });
+        }
+        
         setProducts(convertedProducts);
         setTotalPages(Math.ceil((count || 0) / productsPerPage));
       }
@@ -118,7 +135,7 @@ const CategoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [categoryId, subcategoryId, subSubcategoryId, debouncedSearchTerm, sortOrder, priceRange, currentPage]);
+  }, [categoryId, subcategoryId, subSubcategoryId, debouncedSearchTerm, sortOrder, priceRange, currentPage, maxDistance, userLocation]);
 
   useEffect(() => {
     fetchProducts();
