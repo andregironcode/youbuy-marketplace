@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 interface ProductDetailsProps {
   product: ProductType;
   onAddToCart?: () => void;
+  isOwnProduct?: boolean;
 }
 
-export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) => {
+export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDetailsProps) => {
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({});
   const [price, setPrice] = useState(product.price);
   const navigate = useNavigate();
@@ -308,23 +309,25 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
         <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
       </div>
       
-      <Button 
-        className="w-full mt-4"
-        variant="default"
-        style={{ backgroundColor: "#4CD137" }}
-        disabled={
-          product.status === 'sold' || 
-          product.status === 'reserved' || 
-          !areAllRequiredVariationsSelected()
-        }
-        onClick={handleBuyNow}
-      >
-        {product.status === 'sold' 
-          ? 'Sold Out' 
-          : product.status === 'reserved' 
-            ? 'Reserved' 
-            : <><ShoppingBag className="mr-2 h-5 w-5" />Buy Now</>}
-      </Button>
+      {!isOwnProduct && (
+        <Button 
+          className="w-full mt-4"
+          variant="default"
+          style={{ backgroundColor: "#4CD137" }}
+          disabled={
+            product.status === 'sold' || 
+            product.status === 'reserved' || 
+            !areAllRequiredVariationsSelected()
+          }
+          onClick={handleBuyNow}
+        >
+          {product.status === 'sold' 
+            ? 'Sold Out' 
+            : product.status === 'reserved' 
+              ? 'Reserved' 
+              : <><ShoppingBag className="mr-2 h-5 w-5" />Buy Now</>}
+        </Button>
+      )}
       
       {product.variations && product.variations.some(v => v.required) && !areAllRequiredVariationsSelected() && (
         <p className="text-xs text-destructive text-center">

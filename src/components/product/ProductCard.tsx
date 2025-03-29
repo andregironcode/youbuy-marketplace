@@ -1,8 +1,7 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye, ShoppingBag } from "lucide-react";
+import { Heart, Eye, ShoppingBag, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { MessageButton } from "./MessageButton";
@@ -10,16 +9,21 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProductCardProps {
   product: ProductType;
 }
+
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
   const { convertPrice } = useCurrency();
   const productIsFavorite = isFavorite(product.id);
   const [likes, setLikes] = useState(product.likeCount || 0);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isOwnProduct = user && product.seller?.id === user.id;
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -44,7 +48,18 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate(`/checkout/${product.id}`);
+    if (isOwnProduct) {
+      navigate(`/product/${product.id}`);
+    } else {
+      navigate(`/checkout/${product.id}`);
+    }
+  };
+
+  const handleMessage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isOwnProduct) {
+      navigate(`/product/${product.id}`);
+    }
   };
 
   return (
@@ -72,6 +87,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </Button>
         </div>
       </Link>
+      
       <CardContent className="p-4">
         <div className="flex justify-between items-start gap-2">
           <Link to={`/product/${product.id}`} className="flex-1">
@@ -93,9 +109,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             size="sm"
             className="flex-1"
           >
-            <ShoppingBag className="h-4 w-4" /> Buy Now
+            <ShoppingBag className="h-4 w-4" /> {isOwnProduct ? "View Details" : "Buy Now"}
           </Button>
-          <MessageButton product={product} size="sm" variant="outline" />
+          {!isOwnProduct && (
+            <MessageButton product={product} size="sm" variant="outline" />
+          )}
         </div>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">

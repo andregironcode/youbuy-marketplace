@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +11,8 @@ import {
   Star, 
   MessageCircle, 
   ShieldCheck,
-  Info
+  Info,
+  Pencil
 } from "lucide-react";
 import { ProductType } from "@/types/product";
 import { getProductById } from "@/data/products";
@@ -106,6 +106,26 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const location = window.location;
 
+  const { 
+    data: product, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      if (!id) throw new Error('Product ID is undefined');
+      console.log("Fetching product with ID:", id);
+      const result = await getProductById(id);
+      console.log("Query result:", result);
+      if (!result) throw new Error('Product not found');
+      return result as ProductType;
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const isOwnProduct = user && product?.seller?.id === user.id;
+
   useEffect(() => {
     const storedFavorite = localStorage.getItem(`favorite-${id}`);
     setIsFavorite(storedFavorite === 'true');
@@ -147,24 +167,6 @@ export default function ProductDetail() {
       });
     }
   };
-
-  const { 
-    data: product, 
-    isLoading, 
-    error 
-  } = useQuery({
-    queryKey: ['product', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Product ID is undefined');
-      console.log("Fetching product with ID:", id);
-      const result = await getProductById(id);
-      console.log("Query result:", result);
-      if (!result) throw new Error('Product not found');
-      return result;
-    },
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
 
   useEffect(() => {
     if (product?.images && product.images.length > 0) {
@@ -229,9 +231,9 @@ export default function ProductDetail() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Product Images and Details */}
-        <div className="space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
             <img
               src={currentImage || product.images?.[0] || product.image}
@@ -263,16 +265,18 @@ export default function ProductDetail() {
             ))}
           </div>
           
-          <div className="flex justify-between">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleToggleFavorite}
-              className={isFavorite ? "text-pink-600" : ""}
-            >
-              <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-pink-600" : ""}`} />
-              {isFavorite ? "Saved" : "Save"}
-            </Button>
+          <div className="flex gap-2">
+            {!isOwnProduct && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleToggleFavorite}
+                className={isFavorite ? "text-pink-600" : ""}
+              >
+                <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-pink-600" : ""}`} />
+                {isFavorite ? "Saved" : "Save"}
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -282,13 +286,24 @@ export default function ProductDetail() {
               <Share className="mr-1 h-4 w-4" />
               Share
             </Button>
+
+            {isOwnProduct && (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => navigate(`/profile/edit-product/${product.id}`)}
+              >
+                <Pencil className="mr-1 h-4 w-4" />
+                Edit Product
+              </Button>
+            )}
           </div>
           
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Product Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 text-sm">
+            <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -309,18 +324,20 @@ export default function ProductDetail() {
                 </span>
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>Seller</span>
+              {!isOwnProduct && (
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>Seller</span>
+                  </div>
+                  <Link 
+                    to={`/seller/${product.seller.id}`}
+                    className="text-right text-pink-600 hover:underline"
+                  >
+                    {product.seller.name}
+                  </Link>
                 </div>
-                <Link 
-                  to={`/seller/${product.seller.id}`}
-                  className="text-right text-pink-600 hover:underline"
-                >
-                  {product.seller.name}
-                </Link>
-              </div>
+              )}
               
               {product.viewCount && (
                 <div className="flex justify-between items-center">
@@ -335,10 +352,10 @@ export default function ProductDetail() {
           </Card>
         </div>
         
-        {/* Right Column - Product Description and Seller Info */}
+        {/* Right Column - Price, Actions, and Seller Info */}
         <div className="space-y-6">
           {/* Product Description */}
-          <ProductDetails product={product} />
+          <ProductDetails product={product} isOwnProduct={isOwnProduct} />
           
           {/* Map showing product location */}
           {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
@@ -361,7 +378,7 @@ export default function ProductDetail() {
           )}
           
           {/* Seller Information */}
-          {product.seller && (
+          {!isOwnProduct && product.seller && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Seller Information</CardTitle>
