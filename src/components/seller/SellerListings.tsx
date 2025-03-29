@@ -119,7 +119,7 @@ export const SellerListings = ({
   const displayProducts = initialProducts.length > 0 ? initialProducts.slice(0, limit) : products.slice(0, limit);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 -ml-6">
       {!onTabChange && (
         <div className="flex flex-col space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Products</h2>
@@ -138,8 +138,8 @@ export const SellerListings = ({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-72">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
@@ -150,7 +150,7 @@ export const SellerListings = ({
         </div>
         <Button 
           variant="outline" 
-          className="flex items-center gap-2 whitespace-nowrap"
+          className="flex items-center gap-2"
           onClick={() => setIsFilterOpen(true)}
         >
           <Filter className="h-4 w-4" />
@@ -174,7 +174,7 @@ export const SellerListings = ({
               onAddProduct={handleAddProduct} 
             />
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {displayProducts.map((product) => (
                 <ListingItem 
                   key={product.id} 

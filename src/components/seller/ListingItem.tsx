@@ -17,7 +17,7 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
   const isOwnProduct = user?.id === product.seller?.id;
 
   return (
-    <div className="flex items-start gap-4 border rounded-lg p-4 hover:bg-gray-50/50 transition-colors">
+    <div className="flex items-start gap-4 border rounded-lg p-4 bg-white hover:bg-gray-50/50 transition-colors">
       <Link to={`/product/${product.id}`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
         <img 
           src={product.image} 
@@ -36,9 +36,15 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
             </div>
             <div className="text-xs text-muted-foreground whitespace-nowrap">
               <p>Listed {product.timeAgo}</p>
+              <Link 
+                to={`/profile/edit-product/${product.id}`} 
+                className="text-youbuy hover:underline mt-1 block"
+              >
+                Edit Listing
+              </Link>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2 justify-end">
             {showBuyButtons && !isOwnProduct && (
               <>
                 <Button 
@@ -67,7 +73,7 @@ export const ListingItem = ({ product, showBuyButtons = true }: ListingItemProps
             {isOwnProduct && (
               <Button 
                 size="sm" 
-                variant="outline"
+                className="bg-youbuy hover:bg-youbuy/90 text-white"
                 onClick={() => navigate(`/profile/edit-product/${product.id}`)}
               >
                 Edit Listing

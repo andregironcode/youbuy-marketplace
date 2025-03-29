@@ -312,9 +312,9 @@ export function ProfileSettings() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Profile Settings</CardTitle>
           <CardDescription>
             Update your profile information and how others see you on the platform
@@ -322,25 +322,25 @@ export function ProfileSettings() {
         </CardHeader>
         <CardContent>
           {loading && !form.formState.isSubmitting ? (
-            <div className="flex justify-center p-8">
+            <div className="flex justify-center p-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {/* Avatar Section */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    <div className="h-24 w-24 rounded-full overflow-hidden">
+                    <div className="h-20 w-20 rounded-full overflow-hidden">
                       <Avatar className="h-full w-full">
                         <AvatarImage src={avatarUrl || undefined} alt="Profile" className="object-cover" />
                         <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
                       </Avatar>
                     </div>
                   </div>
-                  <div className="flex-grow space-y-2">
-                    <h3 className="text-lg font-medium">Profile Picture</h3>
-                    <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-base font-medium mb-1">Profile Picture</h3>
+                    <div className="flex items-center gap-2">
                       <Input
                         type="file"
                         accept="image/*"
@@ -350,13 +350,13 @@ export function ProfileSettings() {
                       />
                       {uploadingAvatar && <Loader2 className="h-4 w-4 animate-spin" />}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Upload a photo to make your profile more personal.
                     </p>
                   </div>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <FormField
                     control={form.control}
@@ -371,9 +371,6 @@ export function ProfileSettings() {
                             icon={<User className="h-4 w-4 text-muted-foreground" />}
                           />
                         </FormControl>
-                        <FormDescription>
-                          To verify identity
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -392,9 +389,6 @@ export function ProfileSettings() {
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>
-                          This will be displayed on your public profile
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -414,9 +408,6 @@ export function ProfileSettings() {
                             icon={<Mail className="h-4 w-4 text-muted-foreground" />}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Used for notifications and account recovery
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -435,9 +426,6 @@ export function ProfileSettings() {
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Used for account verification (optional)
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -499,7 +487,7 @@ export function ProfileSettings() {
                         <Textarea 
                           placeholder="Tell us a little about yourself" 
                           {...field}
-                          className="min-h-[100px]"
+                          className="h-20 resize-none"
                         />
                       </FormControl>
                       <FormMessage />
