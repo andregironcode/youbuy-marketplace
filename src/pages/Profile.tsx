@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -22,10 +21,10 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="h-screen flex">
+    <div className="min-h-screen flex bg-gray-50">
       <ProfileSidebar />
-      <div className="flex-1 ml-60 overflow-auto">
-        <main className="h-full">
+      <div className="flex-1 ml-60 pt-16">
+        <main className="h-full max-w-7xl mx-auto px-4 py-6">
           <ProfileRoutes />
         </main>
       </div>
