@@ -362,7 +362,7 @@ export const PurchaseHistory = () => {
             {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">
-                  {order.order_number ? `#${order.order_number}` : order.id.substring(0, 8)}
+                  #{order.order_number || order.id.slice(0, 8)}
                 </TableCell>
                 <TableCell>{format(new Date(order.created_at), "PPP")}</TableCell>
                 <TableCell>
