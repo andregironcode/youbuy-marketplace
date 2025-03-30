@@ -47,3 +47,8 @@
 ## APIS
 
 - [ ] add an api to fetch realworld exchange rates
+
+
+## Tracking
+- [ ] Live track orders
+- [ ] automatic location updates
