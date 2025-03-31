@@ -1,562 +1,327 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button-extended";
-import { 
-  MapPin, 
-  CheckCircle, 
-  Truck, 
-  Calendar, 
-  Clock, 
-  Package, 
-  AlertCircle, 
-  ArrowRight 
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateDistance } from "@/utils/locationUtils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Truck, UserCircle, Map, Package, Clock, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-interface RouteStop {
+// Define specific types to avoid recursive type issues
+type DeliveryItem = {
   id: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  status: string;
-  order_id: string;
-  product_id: string;
-  product_title: string;
-  customer_name: string;
-  notes?: string;
-  completed_at?: string;
-}
+  orderNumber?: string;
+  address?: string;
+  status?: string;
+  customerName?: string;
+  timeSlot?: string;
+};
 
-interface DeliveryRoute {
-  id: string;
-  date: string;
-  time_slot: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  pickup_route: RouteStop[];
-  delivery_route: RouteStop[];
-}
+type DriverStatus = 'available' | 'busy' | 'offline';
 
 export const DriverRoutes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [todayRoutes, setTodayRoutes] = useState<DeliveryRoute[]>([]);
-  const [upcomingRoutes, setUpcomingRoutes] = useState<DeliveryRoute[]>([]);
-  const [pastRoutes, setPastRoutes] = useState<DeliveryRoute[]>([]);
-  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
-  const [activeTab, setActiveTab] = useState("today");
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          toast({
-            title: "Location Error",
-            description: "Unable to access your location. Some features might be limited.",
-            variant: "destructive"
-          });
-        }
-      );
-    }
-  }, []);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDriverRegistered, setIsDriverRegistered] = useState(false);
+  const [driverProfile, setDriverProfile] = useState<{id: string, shipday_id?: string} | null>(null);
+  const [deliveries, setDeliveries] = useState<DeliveryItem[]>([]);
+  const [driverStatus, setDriverStatus] = useState<DriverStatus>('offline');
+  
   useEffect(() => {
     if (user) {
-      fetchRoutes();
+      checkDriverProfile();
     }
   }, [user]);
-
-  const fetchRoutes = async () => {
-    if (!user) return;
-    
-    setLoading(true);
+  
+  const checkDriverProfile = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      setIsLoading(true);
       
       const { data, error } = await supabase
-        .from("delivery_routes")
+        .from("driver_profiles")
         .select("*")
-        .eq("driver_id", user.id)
-        .order("date", { ascending: true })
-        .order("time_slot", { ascending: true });
+        .eq("user_id", user?.id)
+        .single();
       
       if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        const today = new Date().toISOString().split("T")[0];
+        console.error("Error fetching driver profile:", error);
+        setIsDriverRegistered(false);
+      } else if (data) {
+        setDriverProfile(data);
+        setIsDriverRegistered(true);
+        fetchDeliveries();
         
-        const todayData: DeliveryRoute[] = [];
-        const upcomingData: DeliveryRoute[] = [];
-        const pastData: DeliveryRoute[] = [];
-        
-        data.forEach((route: any) => {
-          const parsedRoute: DeliveryRoute = {
-            ...route,
-            pickup_route: Array.isArray(route.pickup_route) 
-              ? route.pickup_route 
-              : (typeof route.pickup_route === 'string' 
-                ? JSON.parse(route.pickup_route) 
-                : []),
-            delivery_route: Array.isArray(route.delivery_route) 
-              ? route.delivery_route 
-              : (typeof route.delivery_route === 'string' 
-                ? JSON.parse(route.delivery_route) 
-                : [])
-          };
-          
-          if (route.date === today) {
-            todayData.push(parsedRoute);
-          } else if (route.date > today) {
-            upcomingData.push(parsedRoute);
-          } else {
-            pastData.push(parsedRoute);
-          }
-        });
-        
-        setTodayRoutes(todayData);
-        setUpcomingRoutes(upcomingData);
-        setPastRoutes(pastData);
+        // Update driver status based on is_online field
+        setDriverStatus(data.is_online ? 'available' : 'offline');
+      } else {
+        setIsDriverRegistered(false);
       }
     } catch (error) {
-      console.error("Error fetching routes:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load delivery routes. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error checking driver profile:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const updateStopStatus = async (routeId: string, stopId: string, newStatus: string) => {
-    if (!user) return;
-    
+  const fetchDeliveries = async () => {
     try {
-      const routeIndex = todayRoutes.findIndex(route => route.id === routeId);
-      if (routeIndex === -1) return;
+      // In a real implementation, this would fetch deliveries from Shipday API
+      // For now, using mock data
+      const mockDeliveries: DeliveryItem[] = [
+        {
+          id: "del-1",
+          orderNumber: "ORD-12345",
+          address: "123 Main St, New York, NY",
+          status: "assigned",
+          customerName: "John Doe",
+          timeSlot: "2-4 PM"
+        },
+        {
+          id: "del-2",
+          orderNumber: "ORD-12346",
+          address: "456 Park Ave, New York, NY",
+          status: "in_progress",
+          customerName: "Jane Smith",
+          timeSlot: "4-6 PM"
+        }
+      ];
       
-      const route = {...todayRoutes[routeIndex]};
+      setDeliveries(mockDeliveries);
+    } catch (error) {
+      console.error("Error fetching deliveries:", error);
+      toast({
+        title: "Failed to load deliveries",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const registerAsDriver = async () => {
+    try {
+      if (!user) return;
       
-      let isPickup = false;
-      let stopIndex = route.pickup_route.findIndex(stop => stop.id === stopId);
-      
-      if (stopIndex === -1) {
-        stopIndex = route.delivery_route.findIndex(stop => stop.id === stopId);
-        if (stopIndex === -1) return;
-      } else {
-        isPickup = true;
-      }
-      
-      if (isPickup) {
-        route.pickup_route[stopIndex].status = newStatus;
-        route.pickup_route[stopIndex].completed_at = new Date().toISOString();
-      } else {
-        route.delivery_route[stopIndex].status = newStatus;
-        route.delivery_route[stopIndex].completed_at = new Date().toISOString();
-      }
-      
-      const updatedRoutes = [...todayRoutes];
-      updatedRoutes[routeIndex] = route;
-      setTodayRoutes(updatedRoutes);
-      
-      const { error } = await supabase
-        .from("delivery_routes")
-        .update({
-          pickup_route: JSON.stringify(route.pickup_route),
-          delivery_route: JSON.stringify(route.delivery_route),
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", routeId);
+      const { data, error } = await supabase.functions.invoke("create-driver-account", {
+        body: { userId: user.id }
+      });
       
       if (error) throw error;
       
-      if (newStatus === "completed") {
-        const orderId = isPickup 
-          ? route.pickup_route[stopIndex].order_id 
-          : route.delivery_route[stopIndex].order_id;
-        
-        const newOrderStatus = isPickup ? "picked_up" : "delivered";
-        
-        const { error: orderError } = await supabase
-          .from("orders")
-          .update({
-            status: newOrderStatus,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", orderId);
-        
-        if (orderError) throw orderError;
+      if (data?.shipdayAuthUrl) {
+        window.location.href = data.shipdayAuthUrl;
+      } else {
+        toast({
+          title: "Registration successful",
+          description: "Your driver account has been created",
+        });
+        checkDriverProfile();
       }
-      
-      toast({
-        title: "Success",
-        description: `Stop marked as ${newStatus}.`,
-      });
     } catch (error) {
-      console.error("Error updating stop status:", error);
+      console.error("Error registering as driver:", error);
       toast({
-        title: "Error",
-        description: "Failed to update stop status. Please try again.",
+        title: "Registration failed",
+        description: "Could not create your driver account",
         variant: "destructive"
       });
-      
-      fetchRoutes();
     }
   };
 
-  const updateRouteStatus = async (routeId: string, newStatus: string) => {
-    if (!user) return;
-    
+  const toggleDriverStatus = async () => {
     try {
-      const routeIndex = todayRoutes.findIndex(route => route.id === routeId);
-      if (routeIndex === -1) return;
+      if (!driverProfile) return;
       
-      const updatedRoutes = [...todayRoutes];
-      updatedRoutes[routeIndex] = {
-        ...updatedRoutes[routeIndex],
-        status: newStatus
-      };
-      setTodayRoutes(updatedRoutes);
+      const newStatus = driverStatus === 'offline' ? 'available' : 'offline';
       
       const { error } = await supabase
-        .from("delivery_routes")
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", routeId);
+        .from("driver_profiles")
+        .update({ is_online: newStatus === 'available' })
+        .eq("id", driverProfile.id);
       
       if (error) throw error;
       
+      setDriverStatus(newStatus);
+      
       toast({
-        title: "Success",
-        description: `Route marked as ${newStatus}.`,
+        title: `You are now ${newStatus}`,
+        description: newStatus === 'available' 
+          ? "You will receive delivery notifications" 
+          : "You won't receive any new deliveries",
       });
     } catch (error) {
-      console.error("Error updating route status:", error);
+      console.error("Error updating driver status:", error);
       toast({
-        title: "Error",
-        description: "Failed to update route status. Please try again.",
+        title: "Status update failed",
+        description: "Could not update your availability",
         variant: "destructive"
       });
-      
-      fetchRoutes();
     }
   };
 
-  const getStopDistance = (stop: RouteStop) => {
-    if (!userLocation || !stop.latitude || !stop.longitude) return null;
-    
-    return calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      stop.latitude,
-      stop.longitude
-    );
-  };
-
-  const formatDistance = (distance: number | null) => {
-    if (distance === null) return "Unknown";
-    
-    if (distance < 1) {
-      return `${Math.round(distance * 1000)} m`;
-    }
-    
-    return `${distance.toFixed(1)} km`;
-  };
-
-  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "outline" | "secondary" => {
-    switch (status) {
-      case "pending":
-        return "outline";
-      case "in_progress":
-        return "secondary";
-      case "completed":
-        return "default";
-      case "cancelled":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  const renderRouteCard = (route: DeliveryRoute) => {
+  if (isLoading) {
     return (
-      <Card key={route.id} className="mb-6">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-lg flex items-center">
-                <Calendar className="mr-2 h-5 w-5 text-primary" />
-                {new Date(route.date).toLocaleDateString(undefined, { 
-                  weekday: 'long', 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </CardTitle>
-              <CardDescription className="flex items-center mt-1">
-                <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                {route.time_slot}
-              </CardDescription>
-            </div>
-            <Badge variant={getStatusBadgeVariant(route.status)}>
-              {route.status.replace("_", " ")}
-            </Badge>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="space-y-4">
-            {route.pickup_route && route.pickup_route.length > 0 && (
-              <div>
-                <h3 className="font-medium flex items-center mb-2">
-                  <Package className="mr-2 h-4 w-4 text-blue-500" />
-                  Pickups ({route.pickup_route.length})
-                </h3>
-                <div className="space-y-3 ml-6">
-                  {route.pickup_route.map((stop) => (
-                    <div key={stop.id} className="border rounded-md p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{stop.product_title}</p>
-                          <p className="text-sm text-muted-foreground flex items-center mt-1">
-                            <MapPin className="mr-1 h-3 w-3" />
-                            {stop.address}
-                          </p>
-                          {userLocation && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Distance: {formatDistance(getStopDistance(stop))}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant={getStatusBadgeVariant(stop.status)}>
-                          {stop.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      
-                      {route.status === "in_progress" && stop.status !== "completed" && (
-                        <div className="mt-3 flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
-                              window.open(mapsUrl, "_blank");
-                            }}
-                          >
-                            Navigate
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => updateStopStatus(route.id, stop.id, "completed")}
-                          >
-                            Mark Picked Up
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {route.delivery_route && route.delivery_route.length > 0 && (
-              <div>
-                <h3 className="font-medium flex items-center mb-2">
-                  <Truck className="mr-2 h-4 w-4 text-green-500" />
-                  Deliveries ({route.delivery_route.length})
-                </h3>
-                <div className="space-y-3 ml-6">
-                  {route.delivery_route.map((stop) => (
-                    <div key={stop.id} className="border rounded-md p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{stop.product_title}</p>
-                          <p className="text-sm flex items-center mt-1">
-                            <MapPin className="mr-1 h-3 w-3" />
-                            {stop.address}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            For: {stop.customer_name}
-                          </p>
-                          {userLocation && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Distance: {formatDistance(getStopDistance(stop))}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant={getStatusBadgeVariant(stop.status)}>
-                          {stop.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      
-                      {route.status === "in_progress" && stop.status !== "completed" && (
-                        <div className="mt-3 flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
-                              window.open(mapsUrl, "_blank");
-                            }}
-                          >
-                            Navigate
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => updateStopStatus(route.id, stop.id, "completed")}
-                          >
-                            Mark Delivered
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        
-        {route.status === "pending" && (
-          <CardFooter>
-            <Button 
-              className="w-full" 
-              onClick={() => updateRouteStatus(route.id, "in_progress")}
-            >
-              Start Route
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        )}
-        
-        {route.status === "in_progress" && (
-          <CardFooter>
-            <Button 
-              variant="default"
-              className="w-full" 
-              onClick={() => updateRouteStatus(route.id, "completed")}
-            >
-              Complete Route
-              <CheckCircle className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        )}
-      </Card>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
-  };
+  }
 
-  if (loading) {
+  if (!isDriverRegistered) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading routes...</p>
-        </div>
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Become a Driver</CardTitle>
+            <CardDescription>
+              Start delivering orders and earning money
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>
+              Register as a driver to start accepting delivery requests from sellers.
+              You'll be able to choose your own schedule and delivery area.
+            </p>
+            <Button onClick={registerAsDriver} className="w-full sm:w-auto">
+              Register as Driver
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">My Delivery Routes</h1>
+    <div className="container max-w-4xl mx-auto py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Driver Dashboard</h1>
+          <p className="text-muted-foreground">Manage your deliveries and availability</p>
+        </div>
+        <Button 
+          onClick={toggleDriverStatus}
+          variant={driverStatus === 'offline' ? 'outline' : 'default'}
+          className={`gap-2 ${driverStatus === 'available' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        >
+          <UserCircle className="h-4 w-4" />
+          {driverStatus === 'offline' ? 'Go Online' : 'Go Offline'}
+        </Button>
+      </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="today">
-            Today
-            {todayRoutes.length > 0 && (
-              <Badge className="ml-2">{todayRoutes.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="upcoming">
-            Upcoming
-            {upcomingRoutes.length > 0 && (
-              <Badge className="ml-2">{upcomingRoutes.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="past">
-            Past
-            {pastRoutes.length > 0 && (
-              <Badge className="ml-2">{pastRoutes.length}</Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Today's Deliveries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{deliveries.length}</div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="today">
-          {todayRoutes.length > 0 ? (
-            todayRoutes.map(renderRouteCard)
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No routes scheduled for today</p>
-                <p className="text-muted-foreground mt-2">
-                  Check back later or view upcoming deliveries
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`font-medium flex items-center gap-1.5 ${
+              driverStatus === 'available' ? 'text-green-600' : 
+              driverStatus === 'busy' ? 'text-orange-500' : 'text-gray-500'
+            }`}>
+              <span className={`h-2.5 w-2.5 rounded-full ${
+                driverStatus === 'available' ? 'bg-green-600' : 
+                driverStatus === 'busy' ? 'bg-orange-500' : 'bg-gray-500'
+              }`}></span>
+              {driverStatus === 'available' ? 'Available' : 
+               driverStatus === 'busy' ? 'On Delivery' : 'Offline'}
+            </div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="upcoming">
-          {upcomingRoutes.length > 0 ? (
-            upcomingRoutes.map(renderRouteCard)
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No upcoming routes</p>
-                <p className="text-muted-foreground mt-2">
-                  You don't have any future deliveries scheduled
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Earnings Today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">$0.00</div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {driverStatus === 'offline' ? (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-amber-800">You're currently offline</h3>
+                <p className="text-amber-700 text-sm">
+                  Go online to start receiving delivery requests
                 </p>
-              </CardContent>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : deliveries.length > 0 ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Your Deliveries</h2>
+          {deliveries.map((delivery) => (
+            <Card key={delivery.id} className="overflow-hidden">
+              <div className="border-l-4 border-primary">
+                <CardContent className="p-4">
+                  <div className="flex justify-between">
+                    <h3 className="font-medium mb-2">Order #{delivery.orderNumber}</h3>
+                    <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${
+                      delivery.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
+                      delivery.status === 'in_progress' ? 'bg-amber-100 text-amber-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {delivery.status === 'assigned' ? 'Assigned' :
+                       delivery.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        <Package className="h-4 w-4 mr-2 text-gray-500" />
+                        <span>{delivery.customerName}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Map className="h-4 w-4 mr-2 text-gray-500" />
+                        <span>{delivery.address}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                        <span>{delivery.timeSlot}</span>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-4 md:mt-0">
+                        <Button variant="outline" size="sm" className="gap-1">
+                          <Map className="h-3.5 w-3.5" />
+                          Directions
+                        </Button>
+                        <Button size="sm">Start Delivery</Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="past">
-          {pastRoutes.length > 0 ? (
-            pastRoutes.map(renderRouteCard)
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No past routes</p>
-                <p className="text-muted-foreground mt-2">
-                  Your delivery history will appear here
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Truck className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+            <h3 className="text-lg font-medium mb-1">No Deliveries</h3>
+            <p className="text-muted-foreground">
+              You don't have any deliveries assigned yet.
+              Check back later or contact support if you think this is an error.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
