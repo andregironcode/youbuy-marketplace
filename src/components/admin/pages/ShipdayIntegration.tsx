@@ -78,6 +78,9 @@ export const ShipdayIntegration = () => {
   // This would be your Supabase edge function URL in production
   const webhookBaseUrl = `https://${window.location.hostname.includes('localhost') ? 'epkpqlkvhuqnfepfpscd.supabase.co' : window.location.hostname}/functions/v1/shipday-integration`;
   
+  // The base URL without token for Shipday
+  const baseWebhookUrl = webhookBaseUrl;
+
   // Generate webhook URL with token to display to user
   const webhookUrlWithToken = `${webhookBaseUrl}?token=${webhookToken}`;
 
@@ -178,24 +181,25 @@ export const ShipdayIntegration = () => {
     setWebhookTestResult(null);
     
     try {
-      // Make a GET request to the webhook URL with token to test it
-      const response = await fetch(`${webhookBaseUrl}?token=${webhookToken}`, {
+      // Make a GET request to the webhook URL to test it
+      const response = await fetch(baseWebhookUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
         }
       });
       
+      const responseText = await response.text();
       let data;
+      
       try {
         // Try to parse as JSON
-        data = await response.json();
+        data = JSON.parse(responseText);
       } catch (jsonError) {
-        // If it's not valid JSON, get as text
-        const text = await response.text();
+        // If it's not valid JSON
         data = { 
           success: false, 
-          message: `Received non-JSON response: ${text.length > 100 ? text.substring(0, 100) + '...' : text}` 
+          message: `Received non-JSON response: ${responseText.length > 100 ? responseText.substring(0, 100) + '...' : responseText}` 
         };
       }
       
@@ -279,7 +283,7 @@ export const ShipdayIntegration = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Important Notice - Shipday Webhook Configuration</AlertTitle>
             <AlertDescription>
-              Shipday requires both a URL and token for webhook setup. In the Shipday webhook configuration dialog, copy both the URL and token from below into their respective fields.
+              Shipday requires both a URL and token for webhook setup. In the Shipday webhook configuration dialog, copy the URL and token separately into their respective fields.
             </AlertDescription>
           </Alert>
           
@@ -345,20 +349,24 @@ export const ShipdayIntegration = () => {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle className="text-amber-800 font-bold">READ CAREFULLY: Shipday Webhook Setup</AlertTitle>
                   <AlertDescription className="text-amber-700">
-                    <p className="mb-2">For Shipday webhook setup, you need to copy the URL (with token) shown below and paste it in the Shipday webhook configuration dialog.</p>
-                    <p>In Shipday, paste the URL in the "URL" field and the token in the "Token" field when adding webhook.</p>
+                    <p className="mb-2">For Shipday webhook setup, you need two separate pieces of information:</p>
+                    <ol className="list-decimal pl-5 mb-2 space-y-1">
+                      <li>The base URL (copy from the "URL" field below)</li>
+                      <li>The token (copy from the "Token" field below)</li>
+                    </ol>
+                    <p className="font-bold">In Shipday, add both separately in their respective fields when configuring the webhook.</p>
                   </AlertDescription>
                 </Alert>
                 
-                {/* URL with token for Shipday */}
+                {/* URL without token for Shipday */}
                 <div className="flex flex-col space-y-2">
                   <Label className="flex items-center gap-1 text-green-600 font-medium">
-                    <Webhook className="h-4 w-4" /> 👉 USE THIS URL IN SHIPDAY 👈
+                    <Webhook className="h-4 w-4" /> 👉 COPY THIS AS THE URL (without token) 👈
                   </Label>
                   <div className="flex items-center">
                     <div className="relative flex-1">
                       <Input 
-                        value={webhookUrlWithToken} 
+                        value={baseWebhookUrl} 
                         readOnly 
                         className="pr-10 font-mono text-sm border-green-300 bg-green-50 font-bold"
                       />
@@ -366,7 +374,7 @@ export const ShipdayIntegration = () => {
                         variant="ghost" 
                         size="icon" 
                         className="absolute right-0 top-0 h-full"
-                        onClick={() => copyToClipboard(webhookUrlWithToken, 'url')}
+                        onClick={() => copyToClipboard(baseWebhookUrl, 'url')}
                       >
                         {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                       </Button>
@@ -380,14 +388,14 @@ export const ShipdayIntegration = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-green-800 font-semibold">
-                    ⚠️ In Shipday, copy this URL and paste it in the "URL" field when adding a webhook. You will also need to provide the token separately (see below).
+                    ⚠️ In Shipday, copy this URL and paste ONLY in the "URL" field when adding a webhook.
                   </p>
                 </div>
                 
                 {/* Separated token field for easier copy */}
                 <div className="flex flex-col space-y-2 mt-4">
                   <Label className="flex items-center gap-1 text-green-600 font-medium">
-                    <Shield className="h-4 w-4" /> 👉 USE THIS TOKEN IN SHIPDAY 👈
+                    <Shield className="h-4 w-4" /> 👉 COPY THIS AS THE TOKEN 👈
                   </Label>
                   <div className="flex items-center">
                     <div className="relative flex-1">
@@ -416,8 +424,28 @@ export const ShipdayIntegration = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-green-800 font-semibold">
-                    ⚠️ Copy this token and paste it in the "Token" field in Shipday when adding a webhook.
+                    ⚠️ Copy this token and paste ONLY in the "Token" field in Shipday when adding a webhook.
                   </p>
+                </div>
+
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <h3 className="font-medium text-blue-800 flex items-center mb-2">
+                    <Info className="h-4 w-4 mr-1" /> Visual Guide for Shipday Setup
+                  </h3>
+                  <div className="grid gap-2">
+                    <div className="border border-blue-300 rounded p-2 bg-white">
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 1: Go to Shipday Dashboard → Settings → Developer</p>
+                    </div>
+                    <div className="border border-blue-300 rounded p-2 bg-white">
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 2: Scroll down to "Webhook Setup" and click "+ Add API Link"</p>
+                    </div>
+                    <div className="border border-blue-300 rounded p-2 bg-white">
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 3: In the popup form:</p>
+                      <p className="text-xs text-blue-700">- Paste the URL (from above) in the "URL" field</p>
+                      <p className="text-xs text-blue-700">- Paste the token (from above) in the "Token" field</p>
+                      <p className="text-xs text-blue-700">- Click "Add Info" to save</p>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-2">

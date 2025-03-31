@@ -113,14 +113,18 @@ export const DriverRoutes = () => {
         const pastData: DeliveryRoute[] = [];
         
         data.forEach((route: any) => {
-          const parsedRoute = {
+          const parsedRoute: DeliveryRoute = {
             ...route,
-            pickup_route: typeof route.pickup_route === 'string' 
-              ? JSON.parse(route.pickup_route) 
-              : route.pickup_route,
-            delivery_route: typeof route.delivery_route === 'string' 
-              ? JSON.parse(route.delivery_route) 
-              : route.delivery_route
+            pickup_route: Array.isArray(route.pickup_route) 
+              ? route.pickup_route 
+              : (typeof route.pickup_route === 'string' 
+                ? JSON.parse(route.pickup_route) 
+                : []),
+            delivery_route: Array.isArray(route.delivery_route) 
+              ? route.delivery_route 
+              : (typeof route.delivery_route === 'string' 
+                ? JSON.parse(route.delivery_route) 
+                : [])
           };
           
           if (route.date === today) {

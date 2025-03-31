@@ -19,15 +19,12 @@ serve(async (req) => {
     console.log("Request URL:", url.toString());
     
     // IMPORTANT: For Shipday webhook verification, we need to accept GET requests
-    // Shipday sends a GET request with a token parameter to verify the webhook
+    // Shipday sends a GET request to verify the webhook
     if (req.method === "GET") {
       console.log("Handling GET verification from Shipday");
       
-      // Get the token from the query params
-      const token = url.searchParams.get('token');
-      console.log("Received token for verification:", token || "No token provided");
-      
-      // No validation for GET requests - just confirm the webhook is valid
+      // The verification is just checking if the endpoint returns a 200 response
+      // No token validation is needed for verification
       return new Response(
         JSON.stringify({ success: true, message: "Webhook endpoint is valid" }),
         { 
