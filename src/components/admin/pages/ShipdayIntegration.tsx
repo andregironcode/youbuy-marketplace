@@ -23,17 +23,23 @@ import {
   ArrowRight, 
   Link, 
   Copy, 
-  CheckCircle
+  CheckCircle,
+  RefreshCw,
+  Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ShipdayIntegration = () => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [webhookToken, setWebhookToken] = useState("");
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [settings, setSettings] = useState({
     enabled: true,
     apiKey: "YOUR_SHIPDAY_API_KEY",
@@ -44,18 +50,67 @@ export const ShipdayIntegration = () => {
   // This would be your Supabase edge function URL in production
   const webhookUrl = "https://epkpqlkvhuqnfepfpscd.supabase.co/functions/v1/shipday-integration";
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
+  useEffect(() => {
+    // Fetch the webhook token from local storage or generate a new one if not present
+    const storedToken = localStorage.getItem("shipday_webhook_token");
+    if (storedToken) {
+      setWebhookToken(storedToken);
+    } else {
+      generateNewToken();
+    }
+  }, []);
+
+  const generateNewToken = async () => {
+    setIsGeneratingToken(true);
+    try {
+      // Generate a random token (in a real app, this would be done securely on the server)
+      const randomToken = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
+      
+      // Store it in local storage for demo purposes
+      // In production, this would be stored in your database
+      localStorage.setItem("shipday_webhook_token", randomToken);
+      setWebhookToken(randomToken);
+      
+      toast({
+        title: "New webhook token generated",
+        description: "Make sure to update this in your Shipday dashboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Error generating token",
+        description: "Failed to generate a new webhook token",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, type: 'url' | 'token') => {
+    navigator.clipboard.writeText(text);
     
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-    
-    toast({
-      title: "Webhook URL copied",
-      description: "The URL has been copied to your clipboard"
-    });
+    if (type === 'url') {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+      
+      toast({
+        title: "Webhook URL copied",
+        description: "The URL has been copied to your clipboard"
+      });
+    } else {
+      setTokenCopied(true);
+      setTimeout(() => {
+        setTokenCopied(false);
+      }, 2000);
+      
+      toast({
+        title: "Webhook token copied",
+        description: "The token has been copied to your clipboard"
+      });
+    }
   };
 
   const handleSaveSettings = () => {
@@ -64,6 +119,10 @@ export const ShipdayIntegration = () => {
       title: "Settings saved",
       description: "Shipday integration settings have been updated"
     });
+  };
+
+  const getCompleteWebhookUrl = () => {
+    return `${webhookUrl}?token=${webhookToken}`;
   };
 
   return (
@@ -164,12 +223,13 @@ export const ShipdayIntegration = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Webhook URL with token */}
                 <div className="flex flex-col space-y-2">
-                  <Label>Webhook URL</Label>
+                  <Label>Webhook URL (with token)</Label>
                   <div className="flex items-center">
                     <div className="relative flex-1">
                       <Input 
-                        value={webhookUrl} 
+                        value={getCompleteWebhookUrl()} 
                         readOnly 
                         className="pr-10 font-mono text-sm"
                       />
@@ -177,7 +237,7 @@ export const ShipdayIntegration = () => {
                         variant="ghost" 
                         size="icon" 
                         className="absolute right-0 top-0 h-full"
-                        onClick={copyToClipboard}
+                        onClick={() => copyToClipboard(getCompleteWebhookUrl(), 'url')}
                       >
                         {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                       </Button>
@@ -192,10 +252,46 @@ export const ShipdayIntegration = () => {
                   </div>
                 </div>
                 
+                {/* Webhook security token */}
+                <div className="flex flex-col space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Shield className="h-4 w-4" /> Webhook Security Token
+                  </Label>
+                  <div className="flex items-center">
+                    <div className="relative flex-1">
+                      <Input 
+                        value={webhookToken} 
+                        readOnly 
+                        className="pr-10 font-mono text-sm"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => copyToClipboard(webhookToken, 'token')}
+                      >
+                        {tokenCopied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="ml-2 gap-1"
+                      onClick={generateNewToken}
+                      disabled={isGeneratingToken}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isGeneratingToken ? 'animate-spin' : ''}`} /> 
+                      Regenerate
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This token must be added to your Shipday webhook configuration for security verification.
+                  </p>
+                </div>
+                
                 <div className="rounded-md bg-muted p-4 text-sm">
                   <p className="font-medium">Setup instructions:</p>
                   <ol className="list-decimal pl-5 space-y-1 mt-2">
-                    <li>Copy the webhook URL above</li>
+                    <li>Copy the webhook URL above (it includes the security token)</li>
                     <li>Go to your Shipday dashboard &gt; Settings &gt; Developer</li>
                     <li>Paste the URL into the "Webhook URL" field</li>
                     <li>Select event types: Order Created, Status Changed, Location Updated</li>
@@ -269,6 +365,9 @@ export const ShipdayIntegration = () => {
                       value={settings.apiKey}
                       onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Find your API key in the Shipday dashboard under Settings &gt; Developer
+                    </p>
                   </div>
                   
                   <Separator />
