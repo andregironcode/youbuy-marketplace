@@ -16,6 +16,7 @@ export function useShipday() {
     setIsTestingConnection(true);
     
     try {
+      console.log("Testing Shipday connection...");
       // Make a simple GET request to the edge function
       const { data, error } = await supabase.functions.invoke("shipday-integration", {
         method: "GET",
