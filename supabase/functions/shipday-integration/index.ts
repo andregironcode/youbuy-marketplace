@@ -1,12 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-// CORS headers for cross-origin requests
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+import { corsHeaders } from "../_shared/cors.ts"
 
 // Shipday API base URL
 const SHIPDAY_API_BASE_URL = "https://api.shipday.com";

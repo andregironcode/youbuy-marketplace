@@ -49,44 +49,10 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
   try {
     console.log("Creating Shipday order with details:", JSON.stringify(orderDetails, null, 2));
     
-    // Format the order according to Shipday API requirements
-    // https://docs.shipday.com/reference/create-order
-    const shipdayPayload = {
-      orderNumber: orderDetails.orderNumber,
-      customerName: orderDetails.customerName,
-      customerAddress: orderDetails.customerAddress,
-      customerEmail: orderDetails.customerEmail,
-      customerPhoneNumber: orderDetails.customerPhoneNumber,
-      
-      restaurantName: "YouBuy Marketplace", // Using this as the pickup point name
-      pickupAddress: orderDetails.pickupAddress || "YouBuy Warehouse", // Default pickup address if none provided
-      deliveryAddress: orderDetails.deliveryAddress,
-      
-      expectedPickupTime: orderDetails.expectedPickupTime,
-      expectedDeliveryTime: orderDetails.expectedDeliveryTime,
-      orderSource: orderDetails.orderSource || "YouBuy Marketplace",
-      paymentMethod: orderDetails.paymentMethod,
-      totalPrice: orderDetails.totalPrice,
-      tip: orderDetails.tipAmount,
-      
-      // Location data
-      pickupLatitude: orderDetails.pickupLatitude,
-      pickupLongitude: orderDetails.pickupLongitude,
-      deliveryLatitude: orderDetails.deliveryLatitude,
-      deliveryLongitude: orderDetails.deliveryLongitude,
-      
-      // Order items
-      items: orderDetails.items?.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price
-      }))
-    };
-    
-    // Send the order to Shipday via our Edge Function
+    // Send the order directly to Shipday via our Edge Function
     const { data, error } = await supabase.functions.invoke("shipday-integration", {
       method: "POST",
-      body: shipdayPayload
+      body: orderDetails
     });
     
     if (error) {
