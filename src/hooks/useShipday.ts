@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { createShipdayOrder, formatOrderForShipday, ShipdayOrderDetails } from "@/utils/shipdayUtils";
+import { createShipdayOrder, formatOrderForShipday } from "@/utils/shipdayUtils";
 import { useToast } from "@/hooks/use-toast";
 
 export function useShipday() {
@@ -15,8 +15,11 @@ export function useShipday() {
     setIsCreatingOrder(true);
     
     try {
+      console.log("Original order data:", order);
+      
       // Format the order for Shipday
       const shipdayOrder = formatOrderForShipday(order);
+      console.log("Formatted Shipday order:", shipdayOrder);
       
       // Create the order in Shipday
       const result = await createShipdayOrder(shipdayOrder);
@@ -46,7 +49,7 @@ export function useShipday() {
    * Test the Shipday integration by sending a test order
    */
   const sendTestOrder = async () => {
-    // Create a test order following Shipday's required format
+    // Create a test order with realistic data
     const testOrder = {
       buyer: {
         firstName: "Test",
@@ -71,7 +74,12 @@ export function useShipday() {
       totalAmount: 69.97,
       paymentMethod: "TEST",
       delivery_details: {
-        deliveryTime: "afternoon"
+        fullName: "Test Customer",
+        formattedAddress: "123 Test St, Test City, CA 12345",
+        phone: "555-123-4567",
+        deliveryTime: "afternoon",
+        latitude: 37.7749,
+        longitude: -122.4194
       }
     };
     

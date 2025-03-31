@@ -84,7 +84,7 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
     };
     
     // Send the order to Shipday via our Edge Function
-    const { data, error } = await supabase.functions.invoke("shipday-integration/create-order", {
+    const { data, error } = await supabase.functions.invoke("shipday-integration", {
       method: "POST",
       body: shipdayPayload
     });

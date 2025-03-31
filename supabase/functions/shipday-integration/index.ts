@@ -12,6 +12,8 @@ const corsHeaders = {
 const SHIPDAY_API_BASE_URL = "https://api.shipday.com";
 
 serve(async (req) => {
+  console.log("Shipday request received:", req.method, req.url);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     console.log("Handling OPTIONS request for CORS");
@@ -22,16 +24,12 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
-    console.log(`Shipday request path: ${path}`);
-    
-    // Order creation endpoint
-    if (path === "create-order") {
+    // For POST requests directly to the root endpoint, treat as order creation
+    if (req.method === "POST") {
       return handleCreateOrder(req);
     }
     
-    // For default path or empty path, return success for webhook verification
+    // For default path or GET requests, return success for testing
     return new Response(
       JSON.stringify({ success: true, message: "Shipday integration is active" }),
       { 
@@ -56,16 +54,6 @@ serve(async (req) => {
  * Based on API docs: https://docs.shipday.com/reference/create-order
  */
 async function handleCreateOrder(req) {
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed. Use POST to create orders." }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
-  }
-
   // Get the Shipday API key from environment variables
   const apiKey = Deno.env.get("SHIPDAY_API_KEY");
   if (!apiKey) {
@@ -96,7 +84,6 @@ async function handleCreateOrder(req) {
 
     // Log response status and headers for debugging
     console.log(`Shipday API response status: ${response.status}`);
-    console.log(`Shipday API response headers:`, Object.fromEntries(response.headers.entries()));
     
     // Parse the response
     const responseText = await response.text();
