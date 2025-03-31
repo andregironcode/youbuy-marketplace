@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { createShipdayOrder, formatOrderForShipday } from "@/utils/shipdayUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +23,8 @@ export function useShipday() {
           "Content-Type": "application/json"
         }
       });
+      
+      console.log("Shipday connection test response:", data, error);
       
       if (error) {
         console.error("Error testing Shipday edge function:", error);

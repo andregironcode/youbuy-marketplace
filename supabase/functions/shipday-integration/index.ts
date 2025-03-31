@@ -30,7 +30,8 @@ serve(async (req) => {
           JSON.stringify({ 
             error: "Shipday API key not configured",
             status: "failed",
-            message: "Please set the SHIPDAY_API_KEY environment variable in Supabase"
+            message: "Please set the SHIPDAY_API_KEY environment variable in Supabase",
+            environmentVariables: Object.keys(Deno.env.toObject()).join(", ")
           }),
           { 
             status: 400,
@@ -38,6 +39,9 @@ serve(async (req) => {
           }
         );
       }
+      
+      // Log the first few characters of the API key for debugging (avoiding exposing the full key)
+      console.log(`API key found, starts with: ${apiKey.substring(0, 4)}...`);
       
       // Validate API key by making a simple request to Shipday
       try {
@@ -58,14 +62,15 @@ serve(async (req) => {
         console.log(`Shipday API test response body: ${responseText}`);
         
         if (!testResponse.ok) {
-          console.error("Invalid Shipday API key:", responseText);
+          console.error("Invalid Shipday API key response:", responseText);
           return new Response(
             JSON.stringify({ 
-              error: "Invalid Shipday API key", 
+              error: "Shipday API authentication failed", 
               status: "failed",
               details: responseText,
               statusCode: testResponse.status,
-              message: "The API key provided is invalid or has expired. Please check your Shipday API key."
+              message: "Authentication with Shipday failed. Please verify your API key format and validity.",
+              note: "Make sure the API key is added exactly as provided by Shipday without any extra characters or spaces."
             }),
             { 
               status: 400,
@@ -79,6 +84,7 @@ serve(async (req) => {
         try {
           carrierData = responseText ? JSON.parse(responseText) : [];
         } catch (e) {
+          console.log("Response is not JSON format:", e.message);
           carrierData = { text: responseText };
         }
         
@@ -102,7 +108,8 @@ serve(async (req) => {
           JSON.stringify({ 
             error: "Failed to test Shipday API key", 
             message: error.message,
-            status: "failed"
+            status: "failed",
+            stack: error.stack
           }),
           { 
             status: 400,
