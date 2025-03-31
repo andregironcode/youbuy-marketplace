@@ -29,18 +29,18 @@ export function useShipday() {
         console.error("Error testing Shipday edge function:", error);
         toast({
           title: "Connection test failed",
-          description: `${error.message}`,
+          description: `Failed to connect to Shipday: ${error.message}`,
           variant: "destructive",
         });
         return false;
       }
       
-      // Check if data contains an error message (non-2xx status codes can return data with an error property)
+      // Check if data contains an error message
       if (data && data.error) {
         console.error("Shipday connection test failed:", data);
         toast({
           title: "Connection test failed",
-          description: `${data.error}: ${data.message || 'Please check your Shipday API key'}`,
+          description: data.error + (data.message ? `: ${data.message}` : ''),
           variant: "destructive",
         });
         return false;
@@ -87,6 +87,17 @@ export function useShipday() {
     setIsCreatingOrder(true);
     
     try {
+      // First test if connection is working
+      const connectionWorks = await testShipdayConnection();
+      if (!connectionWorks) {
+        toast({
+          title: "Aborting order creation",
+          description: "Cannot create order because connection to Shipday failed",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
       console.log("Original order data:", order);
       
       // Format the order for Shipday
@@ -94,14 +105,35 @@ export function useShipday() {
       console.log("Formatted Shipday order:", shipdayOrder);
       
       // Create the order in Shipday
-      const result = await createShipdayOrder(shipdayOrder);
+      const { data, error } = await supabase.functions.invoke("shipday-integration", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: shipdayOrder
+      });
+      
+      if (error) {
+        console.error("Error in sendOrderToShipday:", error);
+        throw new Error(`Failed to connect to Shipday edge function: ${error.message}`);
+      }
+      
+      if (data && data.error) {
+        console.error("Failed to create Shipday order:", data);
+        throw new Error(`Failed to create Shipday order: ${data.error}`);
+      }
+      
+      if (!data || !data.success) {
+        console.error("Unexpected response creating Shipday order:", data);
+        throw new Error(`Failed to create Shipday order: ${data?.message || "Unexpected response"}`);
+      }
       
       toast({
         title: "Order sent to Shipday",
         description: "The delivery has been created successfully",
       });
       
-      return result;
+      return data;
     } catch (error) {
       console.error("Error in sendOrderToShipday:", error);
       
@@ -169,7 +201,7 @@ export function useShipday() {
       console.error("Test order creation failed:", error);
       toast({
         title: "Failed to create test delivery",
-        description: "Failed to connect to Shipday. Please check your API key and try again.",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
       return null;

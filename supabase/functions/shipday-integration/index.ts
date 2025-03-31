@@ -30,10 +30,10 @@ serve(async (req) => {
           JSON.stringify({ 
             error: "Shipday API key not configured",
             status: "failed",
-            message: "Please set the SHIPDAY_API_KEY environment variable"
+            message: "Please set the SHIPDAY_API_KEY environment variable in Supabase"
           }),
           { 
-            status: 400, // Changed from 500 to 400 for better client handling
+            status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           }
         );
@@ -60,10 +60,11 @@ serve(async (req) => {
               error: "Invalid Shipday API key", 
               status: "failed",
               details: errorText,
-              statusCode: testResponse.status
+              statusCode: testResponse.status,
+              message: "The API key provided is invalid or has expired. Please check your Shipday API key."
             }),
             { 
-              status: 400, // Changed from 401 to 400 for better client handling
+              status: 400,
               headers: { ...corsHeaders, "Content-Type": "application/json" } 
             }
           );
@@ -94,7 +95,7 @@ serve(async (req) => {
             status: "failed"
           }),
           { 
-            status: 400, // Changed from implicit 500 to 400
+            status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           }
         );
@@ -111,7 +112,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Method not supported", message: "Only GET and POST methods are supported" }),
       { 
-        status: 400, // Changed from 405 to 400
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -120,7 +121,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Internal server error", message: error.message, stack: error.stack }),
       { 
-        status: 400, // Changed from 500 to 400
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -140,10 +141,10 @@ async function handleCreateOrder(req) {
       JSON.stringify({ 
         error: "Shipday API key not configured",
         status: "failed",
-        message: "Please set the SHIPDAY_API_KEY environment variable"
+        message: "Please set the SHIPDAY_API_KEY environment variable in Supabase"
       }),
       { 
-        status: 400, // Changed from 500 to 400
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -255,7 +256,7 @@ async function handleCreateOrder(req) {
           message: responseText || "No response details available"
         }),
         { 
-          status: 400, // Always return 400 to the client for better error handling
+          status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
@@ -265,7 +266,7 @@ async function handleCreateOrder(req) {
     return new Response(
       JSON.stringify({ error: "Failed to create order", message: error.message, stack: error.stack }),
       { 
-        status: 400, // Changed from 500 to 400
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
