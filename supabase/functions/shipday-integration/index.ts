@@ -66,6 +66,41 @@ async function handleCreateOrder(req) {
     const orderData = await req.json();
     console.log("Creating order with data:", JSON.stringify(orderData, null, 2));
 
+    // Format the order according to Shipday API requirements
+    const shipdayPayload = {
+      orderNumber: orderData.orderNumber,
+      customerName: orderData.customerName,
+      customerAddress: orderData.customerAddress,
+      customerEmail: orderData.customerEmail,
+      customerPhoneNumber: orderData.customerPhoneNumber,
+      
+      restaurantName: "YouBuy Marketplace", // Using this as the pickup point name
+      pickupAddress: orderData.pickupAddress || "YouBuy Warehouse", // Default pickup address if none provided
+      deliveryAddress: orderData.deliveryAddress,
+      
+      expectedPickupTime: orderData.expectedPickupTime,
+      expectedDeliveryTime: orderData.expectedDeliveryTime,
+      orderSource: orderData.orderSource || "YouBuy Marketplace",
+      paymentMethod: orderData.paymentMethod,
+      totalPrice: orderData.totalPrice,
+      tip: orderData.tipAmount,
+      
+      // Location data
+      pickupLatitude: orderData.pickupLatitude,
+      pickupLongitude: orderData.pickupLongitude,
+      deliveryLatitude: orderData.deliveryLatitude,
+      deliveryLongitude: orderData.deliveryLongitude,
+      
+      // Order items
+      items: orderData.items?.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      }))
+    };
+
+    console.log("Formatted Shipday payload:", JSON.stringify(shipdayPayload, null, 2));
+
     // Make a request to Shipday API to create the order
     const response = await fetch(`${SHIPDAY_API_BASE_URL}/orders`, {
       method: "POST",
@@ -73,7 +108,7 @@ async function handleCreateOrder(req) {
         "Authorization": apiKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(shipdayPayload)
     });
 
     // Log response status and headers for debugging
