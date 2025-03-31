@@ -26,17 +26,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/utils/locationUtils";
 
-interface DeliveryRoute {
-  id: string;
-  date: string;
-  time_slot: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  pickup_route: RouteStop[];
-  delivery_route: RouteStop[];
-}
-
 interface RouteStop {
   id: string;
   address: string;
@@ -51,8 +40,19 @@ interface RouteStop {
   completed_at?: string;
 }
 
+interface DeliveryRoute {
+  id: string;
+  date: string;
+  time_slot: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  pickup_route: RouteStop[];
+  delivery_route: RouteStop[];
+}
+
 export const DriverRoutes = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [todayRoutes, setTodayRoutes] = useState<DeliveryRoute[]>([]);
@@ -192,8 +192,8 @@ export const DriverRoutes = () => {
       const { error } = await supabase
         .from("delivery_routes")
         .update({
-          pickup_route: route.pickup_route,
-          delivery_route: route.delivery_route,
+          pickup_route: JSON.stringify(route.pickup_route),
+          delivery_route: JSON.stringify(route.delivery_route),
           updated_at: new Date().toISOString()
         })
         .eq("id", routeId);
@@ -222,7 +222,6 @@ export const DriverRoutes = () => {
       toast({
         title: "Success",
         description: `Stop marked as ${newStatus}.`,
-        variant: "default"
       });
     } catch (error) {
       console.error("Error updating stop status:", error);
@@ -267,7 +266,6 @@ export const DriverRoutes = () => {
       toast({
         title: "Success",
         description: `Route marked as ${newStatus}.`,
-        variant: "default"
       });
     } catch (error) {
       console.error("Error updating route status:", error);
@@ -303,14 +301,14 @@ export const DriverRoutes = () => {
     return `${distance.toFixed(1)} km`;
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "outline" | "secondary" => {
     switch (status) {
       case "pending":
         return "outline";
       case "in_progress":
         return "secondary";
       case "completed":
-        return "success";
+        return "default"; // Using default instead of success
       case "cancelled":
         return "destructive";
       default:
@@ -388,7 +386,7 @@ export const DriverRoutes = () => {
                             Navigate
                           </Button>
                           <Button
-                            variant="success"
+                            variant="default"
                             size="sm"
                             onClick={() => updateStopStatus(route.id, stop.id, "completed")}
                           >
@@ -447,7 +445,7 @@ export const DriverRoutes = () => {
                             Navigate
                           </Button>
                           <Button
-                            variant="success"
+                            variant="default"
                             size="sm"
                             onClick={() => updateStopStatus(route.id, stop.id, "completed")}
                           >
@@ -478,7 +476,7 @@ export const DriverRoutes = () => {
         {route.status === "in_progress" && (
           <CardFooter>
             <Button 
-              variant="success"
+              variant="default"
               className="w-full" 
               onClick={() => updateRouteStatus(route.id, "completed")}
             >

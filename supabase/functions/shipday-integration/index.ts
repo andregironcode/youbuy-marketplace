@@ -67,39 +67,50 @@ serve(async (req) => {
 
     // Handle webhook events from Shipday
     if (req.method === "POST") {
-      const payload = await req.json();
-      
-      console.log("Received Shipday webhook payload:", JSON.stringify(payload, null, 2));
-      
-      // Extract the event type and handle accordingly
-      const eventType = payload.eventType || payload.type || "unknown";
-      console.log("Event type:", eventType);
-      
-      // Process different event types
-      switch (eventType) {
-        case "ORDER_CREATED":
-          console.log("Processing order created event");
-          // Handle order creation
-          break;
-        case "STATUS_CHANGED":
-          console.log("Processing status change event");
-          // Handle order status change
-          break;
-        case "LOCATION_UPDATED":
-          console.log("Processing location update event");
-          // Handle driver location update
-          break;
-        default:
-          console.log("Received unhandled event type:", eventType);
-      }
-      
-      return new Response(
-        JSON.stringify({ success: true, message: "Webhook received" }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      try {
+        const payload = await req.json();
+        
+        console.log("Received Shipday webhook payload:", JSON.stringify(payload, null, 2));
+        
+        // Extract the event type and handle accordingly
+        const eventType = payload.eventType || payload.type || "unknown";
+        console.log("Event type:", eventType);
+        
+        // Process different event types
+        switch (eventType) {
+          case "ORDER_CREATED":
+            console.log("Processing order created event");
+            // Handle order creation
+            break;
+          case "STATUS_CHANGED":
+            console.log("Processing status change event");
+            // Handle order status change
+            break;
+          case "LOCATION_UPDATED":
+            console.log("Processing location update event");
+            // Handle driver location update
+            break;
+          default:
+            console.log("Received unhandled event type:", eventType);
         }
-      );
+        
+        return new Response(
+          JSON.stringify({ success: true, message: "Webhook received" }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      } catch (error) {
+        console.error("Error parsing webhook payload:", error);
+        return new Response(
+          JSON.stringify({ error: "Invalid payload format", details: error.message }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
     }
     
     // For all other types of requests

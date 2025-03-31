@@ -193,7 +193,22 @@ export const ShipdayIntegration = () => {
         }
       });
       
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      
+      // Check if the response is JSON or not
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        // If it's not JSON, get the text and create our own response object
+        const text = await response.text();
+        data = { 
+          success: response.ok, 
+          message: text.length > 100 ? 
+            `Received non-JSON response (${text.substring(0, 100)}...)` : 
+            `Received non-JSON response: ${text}`
+        };
+      }
       
       if (response.ok) {
         setWebhookTestResult({ 
@@ -207,7 +222,7 @@ export const ShipdayIntegration = () => {
       } else {
         setWebhookTestResult({ 
           success: false, 
-          message: `Error: ${data.error || 'Unknown error'}` 
+          message: `Error: ${data.error || data.message || 'Unknown error'}` 
         });
         toast({
           title: "Webhook test failed",
@@ -330,11 +345,11 @@ export const ShipdayIntegration = () => {
             <CardContent>
               <div className="space-y-4">
                 
-                <Alert variant="info" className="bg-blue-50 text-blue-800 border-blue-200">
+                <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
                   <Info className="h-4 w-4" />
                   <AlertTitle>Important Shipday Configuration Note</AlertTitle>
                   <AlertDescription>
-                    For Shipday webhook configuration, use only the basic URL without the token. Shipday adds its own security.
+                    For Shipday webhook configuration, use only the basic URL without the token parameter. Shipday adds its own security.
                   </AlertDescription>
                 </Alert>
                 
@@ -472,7 +487,7 @@ export const ShipdayIntegration = () => {
                           </ul>
                         </div>
                         
-                        <Alert variant="info" className="bg-blue-50 border-blue-200">
+                        <Alert variant="default" className="bg-blue-50 border-blue-200">
                           <AlertTitle className="text-blue-800">Shipday Test Requirements</AlertTitle>
                           <AlertDescription className="text-blue-700 text-sm">
                             Shipday needs to receive a 200 OK response to a simple GET request without any parameters.
