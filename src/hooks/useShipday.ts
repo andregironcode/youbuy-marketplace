@@ -56,6 +56,12 @@ export function useShipday() {
       orderSource: "YouBuy Test",
       
       deliveryAddress: "123 Test St, Test City, CA 12345",
+      deliveryLatitude: 37.7749,
+      deliveryLongitude: -122.4194,
+      
+      pickupAddress: "456 Seller St, Seller City, CA 54321",
+      pickupLatitude: 37.8044,
+      pickupLongitude: -122.2712,
       
       items: [
         { name: "Test Product 1", quantity: 1, price: 19.99 },
@@ -65,7 +71,7 @@ export function useShipday() {
       totalPrice: 69.97,
       paymentMethod: "TEST",
       
-      expectedDeliveryTime: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
+      expectedDeliveryTime: new Date(Date.now() + 86400000).toISOString() // 24 hours from now
     };
     
     return sendOrderToShipday(testOrder);

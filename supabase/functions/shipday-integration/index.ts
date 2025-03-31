@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 // CORS headers for cross-origin requests
@@ -30,14 +29,15 @@ serve(async (req) => {
     const path = url.pathname.split('/').pop();
     console.log(`Request path: ${path}`);
     
-    // Webhook handler - when Shipday sends events to us
-    if (path === "shipday-integration" || !path) {
-      return handleWebhook(req);
-    }
-    
     // Order creation endpoint - when we want to create orders in Shipday
     if (path === "create-order") {
       return handleCreateOrder(req);
+    }
+    
+    // Webhook handler - when Shipday sends events to us
+    // We don't need this for basic order creation, but keeping for future use
+    if (path === "shipday-integration" || !path) {
+      return handleWebhook(req);
     }
     
     // Return 404 Not Found for any other paths
@@ -64,6 +64,7 @@ serve(async (req) => {
 
 /**
  * Handle webhook events from Shipday
+ * This is not required for basic order creation but kept for future use
  */
 async function handleWebhook(req) {
   // According to Shipday documentation:
@@ -99,46 +100,9 @@ async function handleWebhook(req) {
       payload = {}; // Use empty object if parsing fails
     }
     
-    // Get the event type from the payload
-    const eventType = payload.eventType || payload.type || "unknown";
-    console.log(`Processing Shipday webhook event: ${eventType}`);
-    
-    // Handle different event types
-    // Documentation: https://docs.shipday.com/reference/webhook-notifications
-    switch (eventType) {
-      case "ORDER_CREATED":
-        console.log("Order created event received");
-        // Here you would handle a new order being created in Shipday
-        break;
-        
-      case "ORDER_ASSIGNED":
-        console.log("Order assigned event received");
-        const driverId = payload.driverId;
-        const orderId = payload.orderId || payload.orderNumber;
-        console.log(`Order ${orderId} assigned to driver ${driverId}`);
-        // Update order assignment in your database
-        break;
-        
-      case "STATUS_CHANGED":
-        console.log("Status change event received");
-        const newStatus = payload.newStatus;
-        const statusOrderId = payload.orderId || payload.orderNumber;
-        console.log(`Order ${statusOrderId} status changed to ${newStatus}`);
-        // Update order status in your database
-        break;
-        
-      case "LOCATION_UPDATED":
-        console.log("Driver location update received");
-        // Process driver location update
-        break;
-        
-      default:
-        console.log(`Received unhandled event type: ${eventType}`);
-    }
-    
     // Always return a 200 response to acknowledge receipt of the webhook
     return new Response(
-      JSON.stringify({ success: true, message: `Successfully processed ${eventType} event` }),
+      JSON.stringify({ success: true, message: "Successfully processed webhook event" }),
       { 
         status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -190,6 +154,7 @@ async function handleCreateOrder(req) {
     console.log("Creating order with data:", JSON.stringify(orderData, null, 2));
 
     // Make a request to Shipday API to create the order
+    // As per API docs: https://docs.shipday.com/reference/create-order
     const response = await fetch(`${SHIPDAY_API_BASE_URL}/orders`, {
       method: "POST",
       headers: {
