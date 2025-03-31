@@ -92,10 +92,8 @@ export const DriverRoutes = () => {
     
     setLoading(true);
     try {
-      // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split("T")[0];
       
-      // Fetch all routes for this driver
       const { data, error } = await supabase
         .from("delivery_routes")
         .select("*")
@@ -107,7 +105,6 @@ export const DriverRoutes = () => {
         throw error;
       }
       
-      // Process and categorize routes
       if (data) {
         const today = new Date().toISOString().split("T")[0];
         
@@ -116,7 +113,6 @@ export const DriverRoutes = () => {
         const pastData: DeliveryRoute[] = [];
         
         data.forEach((route: any) => {
-          // Parse JSON fields
           const parsedRoute = {
             ...route,
             pickup_route: typeof route.pickup_route === 'string' 
@@ -156,13 +152,11 @@ export const DriverRoutes = () => {
     if (!user) return;
     
     try {
-      // Find the route and stop
       const routeIndex = todayRoutes.findIndex(route => route.id === routeId);
       if (routeIndex === -1) return;
       
       const route = {...todayRoutes[routeIndex]};
       
-      // Check if the stop is in pickup or delivery route
       let isPickup = false;
       let stopIndex = route.pickup_route.findIndex(stop => stop.id === stopId);
       
@@ -173,7 +167,6 @@ export const DriverRoutes = () => {
         isPickup = true;
       }
       
-      // Update the stop status
       if (isPickup) {
         route.pickup_route[stopIndex].status = newStatus;
         route.pickup_route[stopIndex].completed_at = new Date().toISOString();
@@ -182,12 +175,10 @@ export const DriverRoutes = () => {
         route.delivery_route[stopIndex].completed_at = new Date().toISOString();
       }
       
-      // Update the UI first for responsiveness
       const updatedRoutes = [...todayRoutes];
       updatedRoutes[routeIndex] = route;
       setTodayRoutes(updatedRoutes);
       
-      // Now update the database
       const { error } = await supabase
         .from("delivery_routes")
         .update({
@@ -199,7 +190,6 @@ export const DriverRoutes = () => {
       
       if (error) throw error;
       
-      // Also update the order status in the database if needed
       if (newStatus === "completed") {
         const orderId = isPickup 
           ? route.pickup_route[stopIndex].order_id 
@@ -230,7 +220,6 @@ export const DriverRoutes = () => {
         variant: "destructive"
       });
       
-      // Revert UI changes
       fetchRoutes();
     }
   };
@@ -239,11 +228,9 @@ export const DriverRoutes = () => {
     if (!user) return;
     
     try {
-      // Find the route
       const routeIndex = todayRoutes.findIndex(route => route.id === routeId);
       if (routeIndex === -1) return;
       
-      // Update the route status in UI first
       const updatedRoutes = [...todayRoutes];
       updatedRoutes[routeIndex] = {
         ...updatedRoutes[routeIndex],
@@ -251,7 +238,6 @@ export const DriverRoutes = () => {
       };
       setTodayRoutes(updatedRoutes);
       
-      // Now update the database
       const { error } = await supabase
         .from("delivery_routes")
         .update({
@@ -274,7 +260,6 @@ export const DriverRoutes = () => {
         variant: "destructive"
       });
       
-      // Revert UI changes
       fetchRoutes();
     }
   };
@@ -307,7 +292,7 @@ export const DriverRoutes = () => {
       case "in_progress":
         return "secondary";
       case "completed":
-        return "default"; // Using default instead of success
+        return "default";
       case "cancelled":
         return "destructive";
       default:
