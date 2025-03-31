@@ -33,7 +33,7 @@ serve(async (req) => {
             message: "Please set the SHIPDAY_API_KEY environment variable"
           }),
           { 
-            status: 500, 
+            status: 400, // Changed from 500 to 400 for better client handling
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           }
         );
@@ -63,26 +63,42 @@ serve(async (req) => {
               statusCode: testResponse.status
             }),
             { 
-              status: 401, 
+              status: 400, // Changed from 401 to 400 for better client handling
               headers: { ...corsHeaders, "Content-Type": "application/json" } 
             }
           );
         }
+        
+        // If we get here, the key is valid
+        const carrierData = await testResponse.json();
+        console.log("Shipday connection test successful with valid carriers list");
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Shipday integration is active and API key is valid",
+            status: "ok",
+            carriers: carrierData.length
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
       } catch (error) {
         console.error("Error testing Shipday API key:", error);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to test Shipday API key", 
+            message: error.message,
+            status: "failed"
+          }),
+          { 
+            status: 400, // Changed from implicit 500 to 400
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
       }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Shipday integration is active and API key is configured",
-          status: "ok"
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
     }
     
     // For POST requests, treat as order creation
@@ -95,7 +111,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Method not supported", message: "Only GET and POST methods are supported" }),
       { 
-        status: 405, 
+        status: 400, // Changed from 405 to 400
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -104,7 +120,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Internal server error", message: error.message, stack: error.stack }),
       { 
-        status: 500, 
+        status: 400, // Changed from 500 to 400
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -127,7 +143,7 @@ async function handleCreateOrder(req) {
         message: "Please set the SHIPDAY_API_KEY environment variable"
       }),
       { 
-        status: 500, 
+        status: 400, // Changed from 500 to 400
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
@@ -249,7 +265,7 @@ async function handleCreateOrder(req) {
     return new Response(
       JSON.stringify({ error: "Failed to create order", message: error.message, stack: error.stack }),
       { 
-        status: 500, 
+        status: 400, // Changed from 500 to 400
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );

@@ -26,20 +26,31 @@ export function useShipday() {
       });
       
       if (error) {
-        console.error("Error testing Shipday connection:", error);
+        console.error("Error testing Shipday edge function:", error);
         toast({
           title: "Connection test failed",
-          description: `Error: ${error.message}`,
+          description: `${error.message}`,
           variant: "destructive",
         });
         return false;
       }
       
-      if (!data.success) {
+      // Check if data contains an error message (non-2xx status codes can return data with an error property)
+      if (data && data.error) {
         console.error("Shipday connection test failed:", data);
         toast({
           title: "Connection test failed",
-          description: `Error: ${data.error || data.message || 'Unknown error'}`,
+          description: `${data.error}: ${data.message || 'Please check your Shipday API key'}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (!data || !data.success) {
+        console.error("Shipday connection test failed with unexpected response:", data);
+        toast({
+          title: "Connection test failed",
+          description: data?.message || "Unexpected response from Shipday integration",
           variant: "destructive",
         });
         return false;
@@ -49,12 +60,12 @@ export function useShipday() {
       
       toast({
         title: "Connection test successful",
-        description: "Successfully connected to Shipday integration",
+        description: data.message || "Successfully connected to Shipday integration",
       });
       
       return true;
     } catch (error) {
-      console.error("Exception testing Shipday connection:", error);
+      console.error("Exception testing Shipday edge function:", error);
       
       toast({
         title: "Connection test failed",
@@ -92,7 +103,7 @@ export function useShipday() {
       
       return result;
     } catch (error) {
-      console.error("Test order creation failed:", error);
+      console.error("Error in sendOrderToShipday:", error);
       
       toast({
         title: "Failed to create delivery",
@@ -110,42 +121,59 @@ export function useShipday() {
    * Test the Shipday integration by sending a test order
    */
   const sendTestOrder = async () => {
-    // Create a test order with realistic data
-    const testOrder = {
-      buyer: {
-        firstName: "Test",
-        lastName: "Customer",
-        email: "test@example.com",
-        phone: "555-123-4567",
-        address: "123 Test St, Test City, CA 12345",
-        latitude: 37.7749,
-        longitude: -122.4194
-      },
-      seller: {
-        name: "Test Seller",
-        address: "456 Seller St, Seller City, CA 54321",
-        latitude: 37.8044,
-        longitude: -122.2712
-      },
-      id: `TEST-${Date.now()}`,
-      items: [
-        { title: "Test Product 1", quantity: 1, price: 19.99 },
-        { title: "Test Product 2", quantity: 2, price: 24.99 }
-      ],
-      totalAmount: 69.97,
-      paymentMethod: "TEST",
-      delivery_details: {
-        fullName: "Test Customer",
-        formattedAddress: "123 Test St, Test City, CA 12345",
-        phone: "555-123-4567",
-        deliveryTime: "afternoon",
-        latitude: 37.7749,
-        longitude: -122.4194
+    try {
+      // First test if connection is working
+      const connectionWorks = await testShipdayConnection();
+      if (!connectionWorks) {
+        console.log("Aborting test order as connection is not working");
+        return null;
       }
-    };
-    
-    console.log("Sending test order:", testOrder);
-    return sendOrderToShipday(testOrder);
+      
+      // Create a test order with realistic data
+      const testOrder = {
+        buyer: {
+          firstName: "Test",
+          lastName: "Customer",
+          email: "test@example.com",
+          phone: "555-123-4567",
+          address: "123 Test St, Test City, CA 12345",
+          latitude: 37.7749,
+          longitude: -122.4194
+        },
+        seller: {
+          name: "Test Seller",
+          address: "456 Seller St, Seller City, CA 54321",
+          latitude: 37.8044,
+          longitude: -122.2712
+        },
+        id: `TEST-${Date.now()}`,
+        items: [
+          { title: "Test Product 1", quantity: 1, price: 19.99 },
+          { title: "Test Product 2", quantity: 2, price: 24.99 }
+        ],
+        totalAmount: 69.97,
+        paymentMethod: "TEST",
+        delivery_details: {
+          fullName: "Test Customer",
+          formattedAddress: "123 Test St, Test City, CA 12345",
+          phone: "555-123-4567",
+          deliveryTime: "afternoon",
+          latitude: 37.7749,
+          longitude: -122.4194
+        }
+      };
+      
+      console.log("Sending test order:", testOrder);
+      return sendOrderToShipday(testOrder);
+    } catch (error) {
+      console.error("Test order creation failed:", error);
+      toast({
+        title: "Failed to create test delivery",
+        description: "Failed to connect to Shipday. Please check your API key and try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
   };
   
   return {

@@ -60,12 +60,18 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
     
     if (error) {
       console.error("Error creating Shipday order:", error);
-      throw new Error(`Failed to create Shipday order: ${error.message}`);
+      throw new Error(`Failed to connect to Shipday edge function: ${error.message}`);
     }
     
-    if (!data.success) {
+    // Check if data contains an error message (non-2xx status codes can return data with an error property)
+    if (data && data.error) {
       console.error("Failed to create Shipday order:", data);
-      throw new Error(`Failed to create Shipday order: ${data.error || data.message || 'Unknown error'}`);
+      throw new Error(`Failed to create Shipday order: ${data.error}`);
+    }
+    
+    if (!data || !data.success) {
+      console.error("Unexpected response creating Shipday order:", data);
+      throw new Error(`Failed to create Shipday order: Unexpected response`);
     }
     
     console.log("Shipday order created successfully:", data);
