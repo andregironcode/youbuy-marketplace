@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface ShipdayOrderItem {
@@ -53,17 +52,16 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
     // Format the order according to Shipday API requirements
     // https://docs.shipday.com/reference/create-order
     const shipdayPayload = {
-      // Required fields
       orderNumber: orderDetails.orderNumber,
       customerName: orderDetails.customerName,
-      customerAddress: orderDetails.deliveryAddress, // Use delivery address as customer address
-      
-      // Optional fields
+      customerAddress: orderDetails.customerAddress,
       customerEmail: orderDetails.customerEmail,
       customerPhoneNumber: orderDetails.customerPhoneNumber,
+      
       restaurantName: "YouBuy Marketplace", // Using this as the pickup point name
-      pickupAddress: orderDetails.pickupAddress,
+      pickupAddress: orderDetails.pickupAddress || "YouBuy Warehouse", // Default pickup address if none provided
       deliveryAddress: orderDetails.deliveryAddress,
+      
       expectedPickupTime: orderDetails.expectedPickupTime,
       expectedDeliveryTime: orderDetails.expectedDeliveryTime,
       orderSource: orderDetails.orderSource || "YouBuy Marketplace",
@@ -71,7 +69,7 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
       totalPrice: orderDetails.totalPrice,
       tip: orderDetails.tipAmount,
       
-      // Optional location data
+      // Location data
       pickupLatitude: orderDetails.pickupLatitude,
       pickupLongitude: orderDetails.pickupLongitude,
       deliveryLatitude: orderDetails.deliveryLatitude,
@@ -85,7 +83,7 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
       }))
     };
     
-    // Send the order to Shipday
+    // Send the order to Shipday via our Edge Function
     const { data, error } = await supabase.functions.invoke("shipday-integration/create-order", {
       method: "POST",
       body: shipdayPayload
@@ -170,19 +168,19 @@ export function formatOrderForShipday(order: any): ShipdayOrderDetails {
   
   // Return formatted order
   return {
-    customerName: customerName,
-    customerAddress: deliveryAddress,
+    customerName: customerName || "Customer",
+    customerAddress: deliveryAddress || "Address not provided",
     customerEmail: buyer.email || deliveryDetails.email,
     customerPhoneNumber: buyer.phone || deliveryDetails.phone,
     
     orderNumber: order.id || order.orderId || `ORD-${Date.now()}`,
     orderSource: "YouBuy Marketplace",
     
-    deliveryAddress: deliveryAddress,
+    deliveryAddress: deliveryAddress || "Address not provided",
     deliveryLatitude: deliveryDetails.latitude || buyer.latitude,
     deliveryLongitude: deliveryDetails.longitude || buyer.longitude,
     
-    pickupAddress: pickupAddress,
+    pickupAddress: pickupAddress || "YouBuy Warehouse",
     pickupLatitude: seller.latitude,
     pickupLongitude: seller.longitude,
     

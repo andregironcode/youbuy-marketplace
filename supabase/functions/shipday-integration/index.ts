@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 // CORS headers for cross-origin requests
@@ -11,47 +12,35 @@ const corsHeaders = {
 const SHIPDAY_API_BASE_URL = "https://api.shipday.com";
 
 serve(async (req) => {
-  // Log the basic request information
-  console.log(`Shipday request: ${req.method} ${req.url}`);
-  
-  try {
-    // Handle CORS preflight requests
-    if (req.method === "OPTIONS") {
-      console.log("Handling OPTIONS request for CORS");
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
-      });
-    }
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request for CORS");
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
 
-    // Get the path from the URL
+  try {
     const url = new URL(req.url);
     const path = url.pathname.split('/').pop();
-    console.log(`Request path: ${path}`);
+    console.log(`Shipday request path: ${path}`);
     
-    // Order creation endpoint - when we want to create orders in Shipday
+    // Order creation endpoint
     if (path === "create-order") {
       return handleCreateOrder(req);
     }
     
-    // Webhook handler - when Shipday sends events to us
-    // We don't need this for basic order creation, but keeping for future use
-    if (path === "shipday-integration" || !path) {
-      return handleWebhook(req);
-    }
-    
-    // Return 404 Not Found for any other paths
+    // For default path or empty path, return success for webhook verification
     return new Response(
-      JSON.stringify({ error: "Endpoint not found" }),
+      JSON.stringify({ success: true, message: "Shipday integration is active" }),
       { 
-        status: 404, 
+        status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
   } catch (error) {
-    // Log and return any unhandled errors
     console.error("Unhandled error:", error);
-    
     return new Response(
       JSON.stringify({ error: "Internal server error", message: error.message }),
       { 
@@ -61,64 +50,6 @@ serve(async (req) => {
     );
   }
 });
-
-/**
- * Handle webhook events from Shipday
- * This is not required for basic order creation but kept for future use
- */
-async function handleWebhook(req) {
-  // According to Shipday documentation:
-  // For webhook verification, Shipday sends a GET request and expects a 200 response
-  if (req.method === "GET") {
-    console.log("Received GET request - This is likely Shipday verifying the webhook endpoint");
-    
-    // Simple 200 OK response for webhook verification
-    return new Response(
-      JSON.stringify({ success: true, message: "Webhook endpoint is active" }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
-  }
-  
-  // For actual webhook events, Shipday sends POST requests
-  if (req.method === "POST") {
-    console.log("Received POST webhook event from Shipday");
-    
-    // Get the raw request body as text for logging
-    const bodyText = await req.clone().text();
-    console.log("Raw webhook payload:", bodyText);
-    
-    // Attempt to parse the JSON payload
-    let payload;
-    try {
-      payload = JSON.parse(bodyText);
-      console.log("Parsed webhook payload:", JSON.stringify(payload, null, 2));
-    } catch (error) {
-      console.error("Error parsing webhook JSON:", error);
-      payload = {}; // Use empty object if parsing fails
-    }
-    
-    // Always return a 200 response to acknowledge receipt of the webhook
-    return new Response(
-      JSON.stringify({ success: true, message: "Successfully processed webhook event" }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
-  }
-  
-  // Return 405 Method Not Allowed for any other request methods
-  return new Response(
-    JSON.stringify({ error: "Method not allowed" }),
-    { 
-      status: 405, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    }
-  );
-}
 
 /**
  * Handle order creation in Shipday
@@ -154,7 +85,6 @@ async function handleCreateOrder(req) {
     console.log("Creating order with data:", JSON.stringify(orderData, null, 2));
 
     // Make a request to Shipday API to create the order
-    // As per API docs: https://docs.shipday.com/reference/create-order
     const response = await fetch(`${SHIPDAY_API_BASE_URL}/orders`, {
       method: "POST",
       headers: {
@@ -164,12 +94,13 @@ async function handleCreateOrder(req) {
       body: JSON.stringify(orderData)
     });
 
-    // Log response status
+    // Log response status and headers for debugging
     console.log(`Shipday API response status: ${response.status}`);
+    console.log(`Shipday API response headers:`, Object.fromEntries(response.headers.entries()));
     
     // Parse the response
     const responseText = await response.text();
-    console.log(`Shipday API response: ${responseText}`);
+    console.log(`Shipday API response body: ${responseText}`);
     
     let responseData;
     try {
@@ -195,7 +126,8 @@ async function handleCreateOrder(req) {
       return new Response(
         JSON.stringify({ 
           error: "Failed to create order in Shipday", 
-          details: responseData 
+          details: responseData,
+          status: response.status
         }),
         { 
           status: response.status || 500, 

@@ -46,34 +46,36 @@ export function useShipday() {
    * Test the Shipday integration by sending a test order
    */
   const sendTestOrder = async () => {
-    const testOrder: ShipdayOrderDetails = {
-      customerName: "Test Customer",
-      customerAddress: "123 Test St, Test City, CA 12345",
-      customerEmail: "test@example.com",
-      customerPhoneNumber: "555-123-4567",
-      
-      orderNumber: `TEST-${Date.now()}`,
-      orderSource: "YouBuy Test",
-      
-      deliveryAddress: "123 Test St, Test City, CA 12345",
-      deliveryLatitude: 37.7749,
-      deliveryLongitude: -122.4194,
-      
-      pickupAddress: "456 Seller St, Seller City, CA 54321",
-      pickupLatitude: 37.8044,
-      pickupLongitude: -122.2712,
-      
+    // Create a test order following Shipday's required format
+    const testOrder = {
+      buyer: {
+        firstName: "Test",
+        lastName: "Customer",
+        email: "test@example.com",
+        phone: "555-123-4567",
+        address: "123 Test St, Test City, CA 12345",
+        latitude: 37.7749,
+        longitude: -122.4194
+      },
+      seller: {
+        name: "Test Seller",
+        address: "456 Seller St, Seller City, CA 54321",
+        latitude: 37.8044,
+        longitude: -122.2712
+      },
+      id: `TEST-${Date.now()}`,
       items: [
-        { name: "Test Product 1", quantity: 1, price: 19.99 },
-        { name: "Test Product 2", quantity: 2, price: 24.99 }
+        { title: "Test Product 1", quantity: 1, price: 19.99 },
+        { title: "Test Product 2", quantity: 2, price: 24.99 }
       ],
-      
-      totalPrice: 69.97,
+      totalAmount: 69.97,
       paymentMethod: "TEST",
-      
-      expectedDeliveryTime: new Date(Date.now() + 86400000).toISOString() // 24 hours from now
+      delivery_details: {
+        deliveryTime: "afternoon"
+      }
     };
     
+    console.log("Sending test order:", testOrder);
     return sendOrderToShipday(testOrder);
   };
   
