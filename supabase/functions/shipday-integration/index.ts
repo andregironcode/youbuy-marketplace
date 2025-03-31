@@ -39,6 +39,39 @@ serve(async (req) => {
         );
       }
       
+      // Validate API key by making a simple request to Shipday
+      try {
+        console.log("Testing Shipday API key validity...");
+        const testResponse = await fetch(`${SHIPDAY_API_BASE_URL}/carriers`, {
+          method: "GET",
+          headers: {
+            "Authorization": apiKey,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        console.log(`Shipday API test response status: ${testResponse.status}`);
+        
+        if (!testResponse.ok) {
+          const errorText = await testResponse.text();
+          console.error("Invalid Shipday API key:", errorText);
+          return new Response(
+            JSON.stringify({ 
+              error: "Invalid Shipday API key", 
+              status: "failed",
+              details: errorText,
+              statusCode: testResponse.status
+            }),
+            { 
+              status: 401, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Error testing Shipday API key:", error);
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -152,6 +185,7 @@ async function handleCreateOrder(req) {
 
     // Log response status and headers for debugging
     console.log(`Shipday API response status: ${response.status}`);
+    console.log(`Shipday API response headers:`, Object.fromEntries(response.headers.entries()));
     
     // Parse the response
     const responseText = await response.text();
@@ -159,7 +193,7 @@ async function handleCreateOrder(req) {
     
     let responseData;
     try {
-      responseData = JSON.parse(responseText);
+      responseData = responseText ? JSON.parse(responseText) : {};
     } catch (error) {
       console.error("Error parsing Shipday API response:", error);
       responseData = { text: responseText };
@@ -169,7 +203,11 @@ async function handleCreateOrder(req) {
     if (response.ok) {
       console.log("Order created successfully in Shipday");
       return new Response(
-        JSON.stringify({ success: true, data: responseData }),
+        JSON.stringify({ 
+          success: true, 
+          data: responseData,
+          message: "Order created successfully in Shipday" 
+        }),
         { 
           status: 200, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -178,14 +216,30 @@ async function handleCreateOrder(req) {
     } else {
       // If there was an error from Shipday API
       console.error("Error creating order in Shipday:", responseData);
+      
+      // Provide more specific error messages based on status code
+      let errorMessage = "Failed to create order in Shipday";
+      if (response.status === 401 || response.status === 403) {
+        errorMessage = "Authentication failed. Please check your Shipday API key.";
+      } else if (response.status === 400) {
+        errorMessage = "Invalid order data. Please check the order details.";
+      } else if (response.status === 404) {
+        errorMessage = "Shipday API endpoint not found.";
+      } else if (response.status === 429) {
+        errorMessage = "Too many requests to Shipday. Please try again later.";
+      } else if (response.status >= 500) {
+        errorMessage = "Shipday server error. Please try again later.";
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: "Failed to create order in Shipday", 
+          error: errorMessage, 
           details: responseData,
-          status: response.status
+          status: response.status,
+          message: responseText || "No response details available"
         }),
         { 
-          status: response.status || 500, 
+          status: 400, // Always return 400 to the client for better error handling
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );

@@ -35,6 +35,16 @@ export function useShipday() {
         return false;
       }
       
+      if (!data.success) {
+        console.error("Shipday connection test failed:", data);
+        toast({
+          title: "Connection test failed",
+          description: `Error: ${data.error || data.message || 'Unknown error'}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
       console.log("Shipday connection test successful:", data);
       
       toast({
@@ -82,7 +92,7 @@ export function useShipday() {
       
       return result;
     } catch (error) {
-      console.error("Failed to send order to Shipday:", error);
+      console.error("Test order creation failed:", error);
       
       toast({
         title: "Failed to create delivery",
