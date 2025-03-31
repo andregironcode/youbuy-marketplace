@@ -40,12 +40,40 @@ serve(async (req) => {
         );
       }
       
-      // Log the first few characters of the API key for debugging (avoiding exposing the full key)
-      console.log(`API key found, starts with: ${apiKey.substring(0, 4)}...`);
+      // Log API key info (securely)
+      const keyLength = apiKey.length;
+      const firstFour = apiKey.substring(0, 4);
+      const lastFour = apiKey.substring(keyLength - 4);
+      console.log(`API key found: ${firstFour}...${lastFour} (${keyLength} characters long)`);
+      
+      // Check if API key has typical format (no spaces, quotes, or special characters that shouldn't be there)
+      if (apiKey.includes(" ") || apiKey.includes('"') || apiKey.includes("'")) {
+        console.error("API key contains invalid characters (spaces or quotes)");
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid API key format",
+            message: "Your API key contains spaces, quotes, or other invalid characters. Please copy it exactly as provided by Shipday.",
+            status: "failed"
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
       
       // Validate API key by making a simple request to Shipday
       try {
         console.log("Testing Shipday API key validity...");
+        
+        // First, let's try a simple OPTIONS request to check connectivity
+        const pingResponse = await fetch(`${SHIPDAY_API_BASE_URL}/ping`, {
+          method: "GET"
+        });
+        
+        console.log(`Shipday ping response: ${pingResponse.status}`);
+        
+        // Now make the actual API test request
         const testResponse = await fetch(`${SHIPDAY_API_BASE_URL}/carriers`, {
           method: "GET",
           headers: {
@@ -62,6 +90,15 @@ serve(async (req) => {
         console.log(`Shipday API test response body: ${responseText}`);
         
         if (!testResponse.ok) {
+          let errorMessage = "The API key provided is invalid or has expired";
+          
+          // Provide more specific error guidance based on status code
+          if (testResponse.status === 401 || testResponse.status === 403) {
+            errorMessage = "Authentication failed. The API key is invalid or unauthorized.";
+          } else if (testResponse.status === 400) {
+            errorMessage = "Bad request. The API key format might be incorrect.";
+          }
+          
           console.error("Invalid Shipday API key response:", responseText);
           return new Response(
             JSON.stringify({ 
@@ -69,8 +106,14 @@ serve(async (req) => {
               status: "failed",
               details: responseText,
               statusCode: testResponse.status,
-              message: "Authentication with Shipday failed. Please verify your API key format and validity.",
-              note: "Make sure the API key is added exactly as provided by Shipday without any extra characters or spaces."
+              message: errorMessage,
+              note: "Make sure the API key is added exactly as provided by Shipday without any extra characters or spaces. It should start with a specific format like 'UI3J' and not include any quotes.",
+              keyInfo: {
+                length: keyLength,
+                startsWithFourChars: firstFour,
+                containsSpaces: apiKey.includes(" "),
+                containsQuotes: apiKey.includes('"') || apiKey.includes("'")
+              }
             }),
             { 
               status: 400,
@@ -109,7 +152,8 @@ serve(async (req) => {
             error: "Failed to test Shipday API key", 
             message: error.message,
             status: "failed",
-            stack: error.stack
+            stack: error.stack,
+            note: "This may be a connectivity issue rather than an API key issue. Check that your network can reach the Shipday API."
           }),
           { 
             status: 400,

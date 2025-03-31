@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { createShipdayOrder, formatOrderForShipday } from "@/utils/shipdayUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -39,9 +40,30 @@ export function useShipday() {
       // Check if data contains an error message
       if (data && data.error) {
         console.error("Shipday connection test failed:", data);
+        
+        // Extract helpful information from the response
+        let errorDescription = data.error;
+        if (data.note) {
+          errorDescription += `: ${data.note}`;
+        } else if (data.message) {
+          errorDescription += `: ${data.message}`;
+        }
+        
+        // If we have key format issues, display them
+        if (data.keyInfo) {
+          const keyInfo = data.keyInfo;
+          errorDescription += `\n\nAPI Key Info: ${keyInfo.length} chars, starts with ${keyInfo.startsWithFourChars}`;
+          if (keyInfo.containsSpaces) {
+            errorDescription += ", contains spaces (remove them)";
+          }
+          if (keyInfo.containsQuotes) {
+            errorDescription += ", contains quotes (remove them)";
+          }
+        }
+        
         toast({
           title: "Connection test failed",
-          description: data.error + (data.message ? `: ${data.message}` : ''),
+          description: errorDescription,
           variant: "destructive",
         });
         return false;
