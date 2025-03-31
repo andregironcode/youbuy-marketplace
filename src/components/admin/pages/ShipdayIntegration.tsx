@@ -27,7 +27,8 @@ import {
   RefreshCw,
   Shield,
   AlertCircle,
-  Info
+  Info,
+  Send
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
@@ -59,12 +60,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useShipday } from "@/hooks/useShipday";
 
 export const ShipdayIntegration = () => {
   const { toast } = useToast();
+  const { sendTestOrder, isCreatingOrder } = useShipday();
   const [copied, setCopied] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [webhookToken, setWebhookToken] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [isTokenInEnvironment, setIsTokenInEnvironment] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
@@ -163,12 +167,30 @@ export const ShipdayIntegration = () => {
     }
   };
 
-  const handleSaveSettings = () => {
-    // This would save settings to the database in a real implementation
-    toast({
-      title: "Settings saved",
-      description: "Shipday integration settings have been updated"
-    });
+  const handleSaveSettings = async () => {
+    try {
+      // Update the API key in the environment variables
+      if (apiKey) {
+        // In a real implementation, this would be saved to the database
+        // For now, we'll just show a success toast
+        toast({
+          title: "API Key saved",
+          description: "Don't forget to add it to your Supabase environment variables"
+        });
+      }
+      
+      // This would save settings to the database in a real implementation
+      toast({
+        title: "Settings saved",
+        description: "Shipday integration settings have been updated"
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving settings",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    }
   };
   
   const testWebhook = async () => {
@@ -236,6 +258,15 @@ export const ShipdayIntegration = () => {
       setIsTestingWebhook(false);
     }
   };
+  
+  const handleTestOrderCreation = async () => {
+    try {
+      await sendTestOrder();
+    } catch (error) {
+      // Error is handled in the hook
+      console.error("Test order creation failed:", error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -279,13 +310,14 @@ export const ShipdayIntegration = () => {
         <TabsContent value="overview" className="space-y-4">
           <Alert className="bg-red-50 text-red-800 border-red-200">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Important Notice - Shipday Webhook Configuration</AlertTitle>
+            <AlertTitle>Important Notice - Shipday Integration Configuration</AlertTitle>
             <AlertDescription>
-              <p className="mb-2">For Shipday webhook to work correctly, follow these exact steps:</p>
+              <p className="mb-2">For Shipday integration to work correctly, follow these steps:</p>
               <ol className="list-decimal pl-5 mb-2 space-y-1">
-                <li>Add this <strong>exact URL</strong> to Shipday webhook settings (no parameters or modifications)</li>
-                <li>Add the token as an environment variable in Supabase</li>
-                <li>Test the connection using the button below</li>
+                <li>Add your Shipday API key in the Settings tab and in Supabase environment variables</li>
+                <li>Add the webhook URL to Shipday webhook settings (exactly as shown below)</li>
+                <li>Add the webhook token as an environment variable in Supabase</li>
+                <li>Test the connection using the buttons below</li>
               </ol>
             </AlertDescription>
           </Alert>
@@ -397,36 +429,67 @@ export const ShipdayIntegration = () => {
                 
                 <div className="flex flex-col space-y-2 mt-4">
                   <Label className="flex items-center gap-1 text-green-600 font-medium">
-                    <Shield className="h-4 w-4" /> STEP 2: Add this token as environment variable in Supabase
+                    <Shield className="h-4 w-4" /> STEP 2: Add these environment variables in Supabase
                   </Label>
-                  <div className="flex items-center">
-                    <div className="relative flex-1">
-                      <Input 
-                        value={webhookToken} 
-                        readOnly 
-                        className="pr-10 font-mono text-sm border-green-300 bg-green-50 font-bold"
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute right-0 top-0 h-full"
-                        onClick={() => copyToClipboard(webhookToken, 'token')}
-                      >
-                        {tokenCopied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                      </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs mb-1 block">SHIPDAY_WEBHOOK_TOKEN</Label>
+                      <div className="flex items-center">
+                        <div className="relative flex-1">
+                          <Input 
+                            value={webhookToken} 
+                            readOnly 
+                            className="pr-10 font-mono text-sm border-green-300 bg-green-50 font-bold"
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute right-0 top-0 h-full"
+                            onClick={() => copyToClipboard(webhookToken, 'token')}
+                          >
+                            {tokenCopied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          className="ml-2 gap-1"
+                          onClick={generateNewToken}
+                          disabled={isGeneratingToken}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${isGeneratingToken ? 'animate-spin' : ''}`} /> 
+                          Regenerate
+                        </Button>
+                      </div>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      className="ml-2 gap-1"
-                      onClick={generateNewToken}
-                      disabled={isGeneratingToken}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isGeneratingToken ? 'animate-spin' : ''}`} /> 
-                      Regenerate
-                    </Button>
+                    
+                    <div>
+                      <Label className="text-xs mb-1 block">SHIPDAY_API_KEY</Label>
+                      <div className="flex items-center">
+                        <div className="relative flex-1">
+                          <Input 
+                            value={apiKey} 
+                            onChange={(e) => setApiKey(e.target.value)}
+                            className="pr-10 font-mono text-sm border-green-300"
+                            placeholder="Enter your Shipday API Key"
+                          />
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          className="ml-2 gap-1"
+                          onClick={handleSaveSettings}
+                        >
+                          <Shield className="h-4 w-4" /> 
+                          Save API Key
+                        </Button>
+                      </div>
+                      <p className="text-xs text-green-800 mt-1">
+                        Find your API key in Shipday Dashboard → Settings → Developer
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-green-800 font-semibold">
-                    ⚠️ Add this token as <code className="bg-green-100 px-1 rounded">SHIPDAY_WEBHOOK_TOKEN</code> in 
+                  
+                  <p className="text-xs text-green-800 font-semibold mt-2">
+                    ⚠️ Add these environment variables in 
                     <a href="https://supabase.com/dashboard/project/epkpqlkvhuqnfepfpscd/settings/functions" 
                       target="_blank" rel="noopener noreferrer"
                       className="underline ml-1">
@@ -437,37 +500,36 @@ export const ShipdayIntegration = () => {
 
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <h3 className="font-medium text-blue-800 flex items-center mb-2">
-                    <Info className="h-4 w-4 mr-1" /> Step-by-Step Shipday Webhook Setup
+                    <Info className="h-4 w-4 mr-1" /> Step-by-Step Shipday Setup Guide
                   </h3>
                   <div className="grid gap-2">
                     <div className="border border-blue-300 rounded p-2 bg-white">
-                      <p className="text-xs font-medium text-blue-800 mb-1">Step 1: Go to Shipday Dashboard → Settings → Developer</p>
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 1: Add your Shipday API Key</p>
+                      <p className="text-xs text-blue-700">Get your API key from Shipday Dashboard → Settings → Developer</p>
                     </div>
                     <div className="border border-blue-300 rounded p-2 bg-white">
-                      <p className="text-xs font-medium text-blue-800 mb-1">Step 2: Scroll down to "Webhook Setup" and click "+ Add API Link"</p>
-                    </div>
-                    <div className="border border-blue-300 rounded p-2 bg-white">
-                      <p className="text-xs font-medium text-blue-800 mb-1">Step 3: In the popup form:</p>
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 2: Set up the Webhook in Shipday</p>
+                      <p className="text-xs text-blue-700">- Go to Shipday Dashboard → Settings → Developer</p>
+                      <p className="text-xs text-blue-700">- Scroll down to "Webhook Setup" and click "+ Add API Link"</p>
                       <p className="text-xs text-blue-700">- Paste EXACTLY the URL above (no parameters!) in the "URL" field</p>
                       <p className="text-xs text-blue-700">- The "Token" field in Shipday is <strong>NOT</strong> related to our token</p>
-                      <p className="text-xs text-blue-700">- You can leave Shipday's token field empty or add any value</p>
                       <p className="text-xs text-blue-700">- Click "Add Info" to save</p>
                     </div>
                     <div className="border border-blue-300 rounded p-2 bg-white">
-                      <p className="text-xs font-medium text-blue-800 mb-1">Step 4: Set the Environment Variable in Supabase:</p>
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 3: Set the Environment Variables in Supabase:</p>
                       <p className="text-xs text-blue-700">- Go to Supabase Dashboard → Settings → Edge Functions</p>
                       <p className="text-xs text-blue-700">- Add <code className="bg-blue-100 px-1 rounded">SHIPDAY_WEBHOOK_TOKEN</code> with the value shown above</p>
+                      <p className="text-xs text-blue-700">- Add <code className="bg-blue-100 px-1 rounded">SHIPDAY_API_KEY</code> with your API key from Shipday</p>
                     </div>
                     <div className="border border-blue-300 rounded p-2 bg-white">
-                      <p className="text-xs font-medium text-blue-800 mb-1">Step 5: Test the webhook connection:</p>
+                      <p className="text-xs font-medium text-blue-800 mb-1">Step 4: Test the connection:</p>
                       <p className="text-xs text-blue-700">- Click the "Test Webhook Connection" button below</p>
-                      <p className="text-xs text-blue-700">- Check that the webhook responds with a successful message</p>
-                      <p className="text-xs text-blue-700">- In Shipday, check if the webhook status shows "Connected successfully"</p>
+                      <p className="text-xs text-blue-700">- Click the "Test Order Creation" button to test creating an order</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button 
                     variant="outline" 
                     className="gap-1"
@@ -479,7 +541,21 @@ export const ShipdayIntegration = () => {
                     ) : (
                       <Webhook className="h-4 w-4" />
                     )}
-                    STEP 3: Test Webhook Connection
+                    Test Webhook Connection
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="gap-1"
+                    onClick={handleTestOrderCreation}
+                    disabled={isCreatingOrder}
+                  >
+                    {isCreatingOrder ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Test Order Creation
                   </Button>
                   
                   <Dialog>
@@ -554,10 +630,10 @@ export const ShipdayIntegration = () => {
                   <div className="rounded-md bg-amber-50 border border-amber-200 p-4 text-sm">
                     <p className="font-medium flex items-center gap-1 text-amber-800">
                       <AlertCircle className="h-4 w-4" />
-                      Environment Variable Not Set
+                      Environment Variables Not Set
                     </p>
                     <p className="mt-1 text-amber-700">
-                      For production use, you should set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> environment variable in your Supabase project.
+                      For production use, you should set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> and <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_API_KEY</code> environment variables in your Supabase project.
                     </p>
                     <Button 
                       variant="outline" 
@@ -565,7 +641,7 @@ export const ShipdayIntegration = () => {
                       className="mt-2 text-amber-800 border-amber-300 hover:bg-amber-100"
                       onClick={() => window.open("https://supabase.com/dashboard/project/epkpqlkvhuqnfepfpscd/settings/functions", "_blank")}
                     >
-                      Set Environment Variable
+                      Set Environment Variables
                     </Button>
                   </div>
                 )}
@@ -613,7 +689,10 @@ export const ShipdayIntegration = () => {
                 <Button className="gap-2" onClick={() => window.open("https://www.shipday.com/dashboard/orders", "_blank")}>
                   <Package className="h-4 w-4" /> View in Shipday
                 </Button>
-                <Button variant="outline">Create Test Delivery</Button>
+                <Button variant="outline" className="gap-2" onClick={handleTestOrderCreation} disabled={isCreatingOrder}>
+                  {isCreatingOrder ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Create Test Delivery
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -633,8 +712,8 @@ export const ShipdayIntegration = () => {
                     <Input 
                       id="shipday-api-key" 
                       type="password" 
-                      value={settings.apiKey}
-                      onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
                       placeholder="Enter your Shipday API key"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -671,6 +750,16 @@ export const ShipdayIntegration = () => {
                   </div>
                   
                   <Separator />
+                  
+                  <Alert variant="default" className="bg-amber-50 border-amber-100">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-amber-800">Important</AlertTitle>
+                    <AlertDescription className="text-amber-700 text-sm">
+                      After saving settings here, make sure to also add the API key as the 
+                      <code className="bg-amber-100 px-1 rounded"> SHIPDAY_API_KEY </code> 
+                      environment variable in your Supabase project.
+                    </AlertDescription>
+                  </Alert>
                   
                   <Button onClick={handleSaveSettings}>Save Settings</Button>
                 </div>

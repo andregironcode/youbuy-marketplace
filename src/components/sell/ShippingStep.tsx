@@ -11,10 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Info, Scale, Package, UserRound } from "lucide-react";
+import { ArrowRight, Info, Scale, Package, UserRound, Truck } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { SellStep } from "@/types/sellForm";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ShippingStepProps {
   weight: string;
@@ -41,6 +42,30 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
 }) => {
   const isShippingValid = weight !== "";
 
+  // Calculate estimated shipping cost based on weight
+  const getShippingCost = (weightRange: string): number => {
+    switch (weightRange) {
+      case "0-1": return 4.99;
+      case "1-2": return 7.99;
+      case "2-5": return 12.99;
+      case "5-10": return 18.99;
+      case "10-20": return 24.99;
+      case "20+": return 29.99;
+      default: return 0;
+    }
+  };
+
+  // Update shipping options when weight changes
+  const handleWeightChange = (newWeight: string) => {
+    setWeight(newWeight);
+    const cost = getShippingCost(newWeight);
+    setShippingOptions({
+      ...shippingOptions,
+      platformShipping: true,
+      shippingCost: cost
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -51,12 +76,12 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800 mb-4">
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
-              <p className="text-sm">Shipping is provided by our platform. We just need some details about your item.</p>
-            </div>
-          </div>
+          <Alert className="bg-blue-50 border border-blue-200 text-blue-800">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              Shipping is provided through our <strong>Shipday</strong> integration. We just need some details about your item.
+            </AlertDescription>
+          </Alert>
           
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -67,42 +92,48 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
               Choose the weight range corresponding to your item. Please consider the weight of the packaging too.
             </p>
             
-            <RadioGroup value={weight} onValueChange={setWeight} className="space-y-2">
+            <RadioGroup value={weight} onValueChange={handleWeightChange} className="space-y-2">
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="0-1" id="weight-1" />
                   <Label htmlFor="weight-1">0 to 1 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$4.99</div>
               </div>
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="1-2" id="weight-2" />
                   <Label htmlFor="weight-2">1 to 2 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$7.99</div>
               </div>
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="2-5" id="weight-3" />
                   <Label htmlFor="weight-3">2 to 5 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$12.99</div>
               </div>
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="5-10" id="weight-4" />
                   <Label htmlFor="weight-4">5 to 10 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$18.99</div>
               </div>
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="10-20" id="weight-5" />
                   <Label htmlFor="weight-5">10 to 20 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$24.99</div>
               </div>
               <div className="flex items-center justify-between border p-3 rounded-md">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="20+" id="weight-6" />
                   <Label htmlFor="weight-6">Over 20 kg</Label>
                 </div>
+                <div className="text-sm font-medium">$29.99</div>
               </div>
             </RadioGroup>
           </div>
@@ -128,6 +159,28 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
                 <Label htmlFor="height">Height</Label>
                 <Input id="height" placeholder="cm" type="number" />
               </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-gray-500" />
+              <Label>Shipping Method</Label>
+            </div>
+            <div className="space-y-2 pl-7">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="platform-shipping" 
+                  checked={shippingOptions.platformShipping}
+                  onCheckedChange={(checked) => setShippingOptions({...shippingOptions, platformShipping: checked})}
+                />
+                <Label htmlFor="platform-shipping">Use platform shipping (Shipday delivery)</Label>
+              </div>
+              {shippingOptions.platformShipping && (
+                <p className="text-sm text-muted-foreground ml-7">
+                  Estimated shipping cost: ${shippingOptions.shippingCost.toFixed(2)}
+                </p>
+              )}
             </div>
           </div>
           
