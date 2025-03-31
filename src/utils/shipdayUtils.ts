@@ -53,7 +53,10 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
     // Test connection to the edge function first
     try {
       const { data: testData, error: testError } = await supabase.functions.invoke("shipday-integration", {
-        method: "GET"
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
       
       if (testError) {
@@ -70,6 +73,9 @@ export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
     // Send the order directly to Shipday via our Edge Function
     const { data, error } = await supabase.functions.invoke("shipday-integration", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: orderDetails
     });
     

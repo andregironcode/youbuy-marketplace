@@ -18,7 +18,10 @@ export function useShipday() {
     try {
       // Make a simple GET request to the edge function
       const { data, error } = await supabase.functions.invoke("shipday-integration", {
-        method: "GET"
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
       
       if (error) {
