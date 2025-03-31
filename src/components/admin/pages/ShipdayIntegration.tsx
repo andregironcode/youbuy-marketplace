@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -174,7 +173,6 @@ export const ShipdayIntegration = () => {
     }
   };
 
-  // Add missing handleSaveSettings function
   const handleSaveSettings = async () => {
     try {
       // Save API key to local state
@@ -193,8 +191,7 @@ export const ShipdayIntegration = () => {
         toast({
           title: "Important reminder",
           description: "Remember to add the API key as an environment variable in Supabase",
-          variant: "warning",
-          duration: 6000
+          variant: "default"
         });
       }
     } catch (error) {
@@ -207,7 +204,6 @@ export const ShipdayIntegration = () => {
     }
   };
 
-  // Add missing testWebhook function
   const testWebhook = async () => {
     setIsTestingWebhook(true);
     try {
@@ -632,7 +628,7 @@ export const ShipdayIntegration = () => {
                       Environment Variables Not Set
                     </p>
                     <p className="mt-1 text-amber-700">
-                      You must set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_API_KEY</code> and <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> environment variables in your Supabase project for the integration to work.
+                      You must set the <code className="bg-amber-100 p-1 rounded">SHIPDAY_API_KEY</code> and <code className="bg-amber-100 p-1 rounded">SHIPDAY_WEBHOOK_TOKEN</code> environment variables in your Supabase project for the integration to work.
                     </p>
                     <Button 
                       variant="outline" 
