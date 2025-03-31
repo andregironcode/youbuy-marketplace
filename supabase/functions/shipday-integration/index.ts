@@ -41,6 +41,9 @@ serve(async (req) => {
     // Handle Shipday webhook verification test - it sends a GET request to test the URL
     if (req.method === "GET") {
       console.log("Handling GET verification from Shipday");
+      
+      // For Shipday verification, we don't check the token on GET requests
+      // This is necessary for Shipday to verify the endpoint
       return new Response(
         JSON.stringify({ success: true, message: "Webhook endpoint is valid" }),
         { 

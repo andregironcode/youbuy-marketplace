@@ -26,7 +26,8 @@ import {
   CheckCircle,
   RefreshCw,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +43,11 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,6 +171,11 @@ export const ShipdayIntegration = () => {
     });
   };
 
+  const getBasicWebhookUrl = () => {
+    // For Shipday, the basic webhook URL without token is needed
+    return webhookUrl;
+  };
+  
   const getCompleteWebhookUrl = () => {
     return `${webhookUrl}?token=${webhookToken}`;
   };
@@ -318,21 +329,32 @@ export const ShipdayIntegration = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Webhook URL with token */}
+                
+                <Alert variant="info" className="bg-blue-50 text-blue-800 border-blue-200">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Important Shipday Configuration Note</AlertTitle>
+                  <AlertDescription>
+                    For Shipday webhook configuration, use only the basic URL without the token. Shipday adds its own security.
+                  </AlertDescription>
+                </Alert>
+                
+                {/* Basic Webhook URL (for Shipday) */}
                 <div className="flex flex-col space-y-2">
-                  <Label>Webhook URL (with token)</Label>
+                  <Label className="flex items-center gap-1 text-green-600 font-medium">
+                    <Webhook className="h-4 w-4" /> Use this URL in Shipday
+                  </Label>
                   <div className="flex items-center">
                     <div className="relative flex-1">
                       <Input 
-                        value={getCompleteWebhookUrl()} 
+                        value={getBasicWebhookUrl()} 
                         readOnly 
-                        className="pr-10 font-mono text-sm"
+                        className="pr-10 font-mono text-sm border-green-300 bg-green-50"
                       />
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="absolute right-0 top-0 h-full"
-                        onClick={() => copyToClipboard(getCompleteWebhookUrl(), 'url')}
+                        onClick={() => copyToClipboard(getBasicWebhookUrl(), 'url')}
                       >
                         {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                       </Button>
@@ -345,6 +367,32 @@ export const ShipdayIntegration = () => {
                       <Link className="h-4 w-4" /> Configure in Shipday
                     </Button>
                   </div>
+                  <p className="text-xs text-green-700">
+                    Copy this URL and paste it in the Webhook URL field in Shipday's Developer Settings.
+                  </p>
+                </div>
+                
+                {/* Full Webhook URL with token (for testing) */}
+                <div className="flex flex-col space-y-2">
+                  <Label>Complete Webhook URL (with token for testing)</Label>
+                  <div className="relative">
+                    <Input 
+                      value={getCompleteWebhookUrl()} 
+                      readOnly 
+                      className="pr-10 font-mono text-sm"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => copyToClipboard(getCompleteWebhookUrl(), 'url')}
+                    >
+                      {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This full URL is for testing and API calls, not for Shipday configuration.
+                  </p>
                 </div>
                 
                 {/* Webhook security token */}
@@ -379,7 +427,7 @@ export const ShipdayIntegration = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    This token must be added to your Shipday webhook configuration for security verification.
+                    This token must be added to your Supabase environment variables for security verification.
                   </p>
                 </div>
                 
@@ -417,12 +465,20 @@ export const ShipdayIntegration = () => {
                           <h3 className="font-medium">If you see "Webhook connect failed" in Shipday:</h3>
                           <ul className="list-disc pl-5 space-y-1 text-sm">
                             <li>Make sure your Supabase function is deployed</li>
-                            <li>Ensure the token is correctly included in the URL</li>
-                            <li>Check that you've copied the entire URL with no spaces</li>
-                            <li>Shipday requires the endpoint to respond to GET requests</li>
+                            <li><strong>Important:</strong> Use only the basic URL in Shipday (without the token parameter)</li>
+                            <li>Ensure there are no spaces in the URL</li>
                             <li>Set the webhook token in your Supabase environment variables</li>
+                            <li>Check that your function is properly handling GET requests</li>
                           </ul>
                         </div>
+                        
+                        <Alert variant="info" className="bg-blue-50 border-blue-200">
+                          <AlertTitle className="text-blue-800">Shipday Test Requirements</AlertTitle>
+                          <AlertDescription className="text-blue-700 text-sm">
+                            Shipday needs to receive a 200 OK response to a simple GET request without any parameters.
+                            Our function has been updated to automatically respond correctly to these verification tests.
+                          </AlertDescription>
+                        </Alert>
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -522,7 +578,7 @@ export const ShipdayIntegration = () => {
                 <div className="rounded-md bg-muted p-4 text-sm">
                   <p className="font-medium">Setup instructions for Shipday:</p>
                   <ol className="list-decimal pl-5 space-y-1 mt-2">
-                    <li>Copy the webhook URL above (it includes the security token)</li>
+                    <li><strong>Copy the basic webhook URL</strong> shown above (the green one, without the token)</li>
                     <li>Go to your Shipday dashboard &gt; Settings &gt; Developer</li>
                     <li>Paste the URL into the "Webhook URL" field</li>
                     <li>Select event types: Order Created, Status Changed, Location Updated</li>
