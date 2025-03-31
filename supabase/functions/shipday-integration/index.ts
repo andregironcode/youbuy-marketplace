@@ -18,23 +18,58 @@ serve(async (req) => {
   }
 
   try {
-    // For POST requests directly to the root endpoint, treat as order creation
+    // For basic connection testing
+    if (req.method === "GET") {
+      console.log("Handling GET request for connection testing");
+      
+      // Get the Shipday API key to validate it's set
+      const apiKey = Deno.env.get("SHIPDAY_API_KEY");
+      if (!apiKey) {
+        console.error("SHIPDAY_API_KEY environment variable is not set");
+        return new Response(
+          JSON.stringify({ 
+            error: "Shipday API key not configured",
+            status: "failed",
+            message: "Please set the SHIPDAY_API_KEY environment variable"
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Shipday integration is active and API key is configured",
+          status: "ok"
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    // For POST requests, treat as order creation
     if (req.method === "POST") {
+      console.log("Handling POST request for order creation");
       return handleCreateOrder(req);
     }
     
-    // For default path or GET requests, return success for testing
+    // For default path or any other methods, return error
     return new Response(
-      JSON.stringify({ success: true, message: "Shipday integration is active" }),
+      JSON.stringify({ error: "Method not supported", message: "Only GET and POST methods are supported" }),
       { 
-        status: 200, 
+        status: 405, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
   } catch (error) {
     console.error("Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", message: error.message }),
+      JSON.stringify({ error: "Internal server error", message: error.message, stack: error.stack }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -53,7 +88,11 @@ async function handleCreateOrder(req) {
   if (!apiKey) {
     console.error("SHIPDAY_API_KEY environment variable is not set");
     return new Response(
-      JSON.stringify({ error: "Shipday API key not configured" }),
+      JSON.stringify({ 
+        error: "Shipday API key not configured",
+        status: "failed",
+        message: "Please set the SHIPDAY_API_KEY environment variable"
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -154,10 +193,11 @@ async function handleCreateOrder(req) {
   } catch (error) {
     console.error("Error creating order:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to create order", message: error.message }),
+      JSON.stringify({ error: "Failed to create order", message: error.message, stack: error.stack }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        
       }
     );
   }

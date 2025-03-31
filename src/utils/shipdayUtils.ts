@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface ShipdayOrderItem {
@@ -48,6 +49,23 @@ export interface ShipdayOrderDetails {
 export async function createShipdayOrder(orderDetails: ShipdayOrderDetails) {
   try {
     console.log("Creating Shipday order with details:", JSON.stringify(orderDetails, null, 2));
+    
+    // Test connection to the edge function first
+    try {
+      const { data: testData, error: testError } = await supabase.functions.invoke("shipday-integration", {
+        method: "GET"
+      });
+      
+      if (testError) {
+        console.error("Error testing Shipday edge function:", testError);
+        throw new Error(`Failed to connect to Shipday edge function: ${testError.message}`);
+      }
+      
+      console.log("Shipday edge function test successful:", testData);
+    } catch (testError) {
+      console.error("Exception testing Shipday edge function:", testError);
+      throw new Error(`Failed to connect to Shipday edge function: ${testError instanceof Error ? testError.message : 'Unknown error'}`);
+    }
     
     // Send the order directly to Shipday via our Edge Function
     const { data, error } = await supabase.functions.invoke("shipday-integration", {

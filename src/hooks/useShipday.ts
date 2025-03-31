@@ -2,10 +2,57 @@
 import { useState } from "react";
 import { createShipdayOrder, formatOrderForShipday } from "@/utils/shipdayUtils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useShipday() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+
+  /**
+   * Test the connection to the Shipday edge function
+   */
+  const testShipdayConnection = async () => {
+    setIsTestingConnection(true);
+    
+    try {
+      // Make a simple GET request to the edge function
+      const { data, error } = await supabase.functions.invoke("shipday-integration", {
+        method: "GET"
+      });
+      
+      if (error) {
+        console.error("Error testing Shipday connection:", error);
+        toast({
+          title: "Connection test failed",
+          description: `Error: ${error.message}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      console.log("Shipday connection test successful:", data);
+      
+      toast({
+        title: "Connection test successful",
+        description: "Successfully connected to Shipday integration",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Exception testing Shipday connection:", error);
+      
+      toast({
+        title: "Connection test failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
 
   /**
    * Send an order to Shipday for delivery
@@ -90,6 +137,8 @@ export function useShipday() {
   return {
     sendOrderToShipday,
     sendTestOrder,
-    isCreatingOrder
+    testShipdayConnection,
+    isCreatingOrder,
+    isTestingConnection
   };
 }

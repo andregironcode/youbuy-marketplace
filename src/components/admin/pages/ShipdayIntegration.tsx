@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -64,7 +63,7 @@ import { useShipday } from "@/hooks/useShipday";
 
 export const ShipdayIntegration = () => {
   const { toast } = useToast();
-  const { sendTestOrder, isCreatingOrder } = useShipday();
+  const { sendTestOrder, isCreatingOrder, testShipdayConnection, isTestingConnection } = useShipday();
   const [copied, setCopied] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [webhookToken, setWebhookToken] = useState("");
@@ -80,11 +79,9 @@ export const ShipdayIntegration = () => {
     autoCreateDrivers: true,
   });
 
-  // Supabase Edge Function URL - This is the exact URL format Shipday needs
   const webhookBaseUrl = `https://epkpqlkvhuqnfepfpscd.supabase.co/functions/v1/shipday-integration`;
   
   useEffect(() => {
-    // Fetch the webhook token from local storage or generate a new one if not present
     const storedToken = localStorage.getItem("shipday_webhook_token");
     if (storedToken) {
       setWebhookToken(storedToken);
@@ -92,19 +89,18 @@ export const ShipdayIntegration = () => {
       generateNewToken();
     }
     
-    // Check if the token is set in environment
     checkTokenInEnvironment();
   }, []);
   
   const checkTokenInEnvironment = async () => {
     try {
-      // We'll make a simple call to check if the token is set
       const { data, error } = await supabase.functions.invoke("shipday-integration", {
         method: "GET"
       });
       
       if (!error) {
         setIsTokenInEnvironment(true);
+        console.log("Shipday token check successful:", data);
       } else {
         console.log("Token check response:", error);
         setIsTokenInEnvironment(false);
@@ -118,11 +114,9 @@ export const ShipdayIntegration = () => {
   const generateNewToken = async () => {
     setIsGeneratingToken(true);
     try {
-      // Generate a random token
       const randomToken = Math.random().toString(36).substring(2, 15) + 
                           Math.random().toString(36).substring(2, 15);
       
-      // Store it in local storage for demo purposes
       localStorage.setItem("shipday_webhook_token", randomToken);
       setWebhookToken(randomToken);
       
@@ -167,103 +161,14 @@ export const ShipdayIntegration = () => {
     }
   };
 
-  const handleSaveSettings = async () => {
-    try {
-      // Update the API key in the environment variables
-      if (apiKey) {
-        // In a real implementation, this would be saved to the database
-        // For now, we'll just show a success toast
-        toast({
-          title: "API Key saved",
-          description: "Don't forget to add it to your Supabase environment variables"
-        });
-      }
-      
-      // This would save settings to the database in a real implementation
-      toast({
-        title: "Settings saved",
-        description: "Shipday integration settings have been updated"
-      });
-    } catch (error) {
-      toast({
-        title: "Error saving settings",
-        description: "Failed to save settings",
-        variant: "destructive"
-      });
-    }
+  const handleTestConnectionOnly = async () => {
+    await testShipdayConnection();
   };
-  
-  const testWebhook = async () => {
-    setIsTestingWebhook(true);
-    setWebhookTestResult(null);
-    
-    try {
-      console.log("Testing webhook by making a GET request to:", webhookBaseUrl);
-      
-      // Make a GET request to the webhook URL to test it
-      const response = await fetch(webhookBaseUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      
-      const responseText = await response.text();
-      console.log("Webhook test response:", responseText);
-      
-      let data;
-      try {
-        // Try to parse as JSON
-        data = JSON.parse(responseText);
-      } catch (jsonError) {
-        // If it's not valid JSON
-        data = { 
-          success: false, 
-          message: `Received non-JSON response: ${responseText.substring(0, 100)}${responseText.length > 100 ? '...' : ''}` 
-        };
-      }
-      
-      if (response.ok) {
-        setWebhookTestResult({ 
-          success: true, 
-          message: "Webhook endpoint is responding correctly" 
-        });
-        toast({
-          title: "Webhook test successful",
-          description: "Your webhook endpoint is configured correctly"
-        });
-      } else {
-        setWebhookTestResult({ 
-          success: false, 
-          message: `Error: ${data.error || data.message || 'Unknown error'}` 
-        });
-        toast({
-          title: "Webhook test failed",
-          description: data.error || "The webhook endpoint is not responding correctly",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error testing webhook:", error);
-      setWebhookTestResult({ 
-        success: false, 
-        message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      });
-      toast({
-        title: "Webhook test failed",
-        description: "Could not connect to the webhook endpoint",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTestingWebhook(false);
-    }
-  };
-  
+
   const handleTestOrderCreation = async () => {
     try {
       await sendTestOrder();
     } catch (error) {
-      // Error is handled in the hook
       console.error("Test order creation failed:", error);
     }
   };
@@ -532,6 +437,20 @@ export const ShipdayIntegration = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Button 
                     variant="outline" 
+                    className="gap-1 bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100"
+                    onClick={handleTestConnectionOnly}
+                    disabled={isTestingConnection}
+                  >
+                    {isTestingConnection ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Link className="h-4 w-4" />
+                    )}
+                    Test Connection Only
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
                     className="gap-1"
                     onClick={testWebhook}
                     disabled={isTestingWebhook}
@@ -633,7 +552,7 @@ export const ShipdayIntegration = () => {
                       Environment Variables Not Set
                     </p>
                     <p className="mt-1 text-amber-700">
-                      For production use, you should set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> and <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_API_KEY</code> environment variables in your Supabase project.
+                      You must set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_API_KEY</code> and <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> environment variables in your Supabase project for the integration to work.
                     </p>
                     <Button 
                       variant="outline" 
