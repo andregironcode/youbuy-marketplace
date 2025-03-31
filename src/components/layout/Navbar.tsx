@@ -118,9 +118,8 @@ export const Navbar = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white/95">
       <div className="container flex h-16 items-center">
         <div className="mr-2 md:mr-4 flex">
-          <Link to="/" className="flex items-center space-x-2">
-            <ShoppingBag className="h-6 w-6 text-youbuy" />
-            <span className="font-bold text-xl hidden sm:inline-block">YouBuy</span>
+          <Link to="/" className="flex items-center">
+            <img src="/youbuy-logo.png" alt="YouBuy" className="h-8" />
           </Link>
         </div>
 
@@ -170,7 +169,10 @@ export const Navbar = () => {
                   <Link to="/profile" className="flex items-center">
                     <Button variant="outline" size="sm" className="gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarImage 
+                          src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
+                          className="object-cover"
+                        />
                         <AvatarFallback>{getInitials()}</AvatarFallback>
                       </Avatar>
                       <span className="text-xs font-medium">Profile</span>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderTracker } from "../purchases/OrderTracker";
 import { TrackingUpdate } from "./TrackingUpdate";
 
-type OrderStatus = "pending" | "paid" | "processing" | "out_for_delivery" | "delivered" | "cancelled";
+type OrderStatus = "pending" | "paid" | "processing" | "out_for_delivery" | "delivered" | "cancelled" | "confirmed" | "preparing" | "pickup_scheduled" | "picked_up" | "in_transit" | "completed" | "returned";
 
 interface Order {
   id: string;
@@ -54,6 +53,7 @@ interface Order {
   estimated_delivery?: string | null;
   current_stage?: string;
   last_status_change?: string;
+  order_number?: string;
 }
 
 export const SalesHistory = () => {
@@ -71,16 +71,36 @@ export const SalesHistory = () => {
       let statusFilter: OrderStatus[];
       switch (activeTab) {
         case "active":
-          statusFilter = ["pending", "paid", "processing", "out_for_delivery"];
+          statusFilter = [
+            "pending", 
+            "paid", 
+            "processing", 
+            "out_for_delivery",
+            "confirmed",
+            "preparing",
+            "pickup_scheduled",
+            "picked_up",
+            "in_transit"
+          ];
           break;
         case "completed":
-          statusFilter = ["delivered"];
+          statusFilter = ["delivered", "completed"];
           break;
         case "cancelled":
-          statusFilter = ["cancelled"];
+          statusFilter = ["cancelled", "returned"];
           break;
         default:
-          statusFilter = ["pending", "paid", "processing", "out_for_delivery"];
+          statusFilter = [
+            "pending", 
+            "paid", 
+            "processing", 
+            "out_for_delivery",
+            "confirmed",
+            "preparing",
+            "pickup_scheduled",
+            "picked_up",
+            "in_transit"
+          ];
       }
 
       // Fetch orders where user is the seller
@@ -97,7 +117,8 @@ export const SalesHistory = () => {
           delivery_details,
           estimated_delivery,
           current_stage,
-          last_status_change
+          last_status_change,
+          order_number
         `)
         .eq("seller_id", user.id)
         .in("status", statusFilter)
@@ -109,7 +130,7 @@ export const SalesHistory = () => {
 
       // Fetch product details and buyer info for each order
       const ordersWithDetails = await Promise.all(
-        orders.map(async (order) => {
+        orders.map(async (order: any) => {  // Type as any temporarily to handle the database response
           // Fetch product details
           const { data: productData, error: productError } = await supabase
             .from("products")
@@ -185,6 +206,20 @@ export const SalesHistory = () => {
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "confirmed":
+        return "bg-pink-100 text-pink-800";
+      case "preparing":
+        return "bg-orange-100 text-orange-800";
+      case "pickup_scheduled":
+        return "bg-teal-100 text-teal-800";
+      case "picked_up":
+        return "bg-lime-100 text-lime-800";
+      case "in_transit":
+        return "bg-cyan-100 text-cyan-800";
+      case "completed":
+        return "bg-emerald-100 text-emerald-800";
+      case "returned":
+        return "bg-rose-100 text-rose-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -276,7 +311,7 @@ export const SalesHistory = () => {
                       {orders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">
-                            {order.id.substring(0, 8)}...
+                            #{order.order_number || order.id.slice(0, 8)}
                           </TableCell>
                           <TableCell>{format(new Date(order.created_at), "PPP")}</TableCell>
                           <TableCell>

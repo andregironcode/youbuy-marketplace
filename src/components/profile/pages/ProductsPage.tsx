@@ -173,8 +173,8 @@ export const ProductsPage = () => {
   }, [user, toast]);
 
   return (
-    <div className="flex-1 p-6">
-      <div className="mb-6 text-left">
+    <div className="flex-1 -mt-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">Your products</h1>
         <p className="text-muted-foreground">
           Here you can list items, manage the ones you already have and activate featured to sell them faster
@@ -182,7 +182,7 @@ export const ProductsPage = () => {
       </div>
 
       {creating && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-amber-800">Creating your products, please wait...</p>
         </div>
       )}

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -108,12 +109,12 @@
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-family: 'Lexend Deca', sans-serif;
     font-weight: 500; /* Medium font weight */
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600; /* Bolder headings */
-    font-family: 'Winky Sans', sans-serif;
   }
   
   a, button, .font-medium {

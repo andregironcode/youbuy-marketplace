@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TitleStep } from "@/components/sell/TitleStep";
 import { CategoryStep } from "@/components/sell/CategoryStep";
@@ -105,6 +104,8 @@ export const SellFormSteps: React.FC<SellFormStepsProps> = ({
             coordinates={formData.coordinates}
             setCoordinates={(coordinates) => updateFormData({ coordinates })}
             setCurrentStep={setCurrentStep}
+            locationDetails={formData.locationDetails}
+            setLocationDetails={(locationDetails) => updateFormData({ locationDetails })}
           />
         );
       case "preview":
@@ -118,6 +119,7 @@ export const SellFormSteps: React.FC<SellFormStepsProps> = ({
             specifications={formData.specifications}
             weight={formData.weight}
             coordinates={formData.coordinates}
+            locationDetails={formData.locationDetails}
             shippingOptions={formData.shippingOptions}
             setCurrentStep={setCurrentStep}
             handleSubmit={handleSubmit}

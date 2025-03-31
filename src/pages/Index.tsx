@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +10,7 @@ import { HomeBanner } from "@/components/home/HomeBanner";
 import { CategoryCards } from "@/components/home/CategoryCards";
 import { PopularNearYou } from "@/components/home/PopularNearYou";
 import { TrendingProducts } from "@/components/home/TrendingProducts";
+import { SparklesHome } from "@/components/home/SparklesHome";
 
 const Index = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
@@ -36,10 +36,9 @@ const Index = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      
       try {
-        // Fetch regular products
-        const { data, error } = await supabase
+        // Fetch recently added products
+        const { data: recentData, error: recentError } = await supabase
           .from('products')
           .select(`
             *,
@@ -50,20 +49,14 @@ const Index = () => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(20);
-          
-        if (error) {
-          console.error('Error fetching products:', error);
-          setLoading(false);
-          return;
-        }
-        
-        if (data) {
-          const mappedProducts = data.map(item => convertToProductType(item));
-          setProducts(mappedProducts);
-        }
+          .limit(8);
 
-        // Fetch trending products (most liked)
+        if (recentError) throw recentError;
+
+        // Fetch trending products (most liked in last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
         const { data: trendingData, error: trendingError } = await supabase
           .from('products')
           .select(`
@@ -74,22 +67,21 @@ const Index = () => {
               avatar_url
             )
           `)
+          .gte('created_at', sevenDaysAgo.toISOString())
           .order('like_count', { ascending: false })
-          .limit(12);
-          
-        if (trendingError) {
-          console.error('Error fetching trending products:', trendingError);
-        } else if (trendingData) {
-          const mappedTrending = trendingData.map(item => convertToProductType(item));
-          setTrendingProducts(mappedTrending);
-        }
-      } catch (err) {
-        console.error('Error in products fetch:', err);
+          .limit(8);
+
+        if (trendingError) throw trendingError;
+
+        setProducts(recentData.map(item => convertToProductType(item)));
+        setTrendingProducts(trendingData.map(item => convertToProductType(item)));
+      } catch (error) {
+        console.error('Error fetching products:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchProducts();
   }, []);
 
@@ -109,34 +101,38 @@ const Index = () => {
     setShowCategories(false);
   };
 
+  // Use the new SparklesHome component
+  return (
+    <SparklesHome 
+      products={products}
+      trendingProducts={trendingProducts}
+      isLoading={loading}
+    />
+  );
+
+  /* Original implementation (commented out)
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
-        {/* CategoryBrowser component */}
         <CategoryBrowser 
           open={showCategories} 
           onOpenChange={setShowCategories} 
           onSelectCategory={handleCategorySelect} 
         />
         
-        {/* Hero Banner */}
         <HomeBanner />
         
         <div className="container py-8">
-          {/* Category Cards */}
           <CategoryCards />
           
-          {/* Trending Products */}
           <TrendingProducts products={trendingProducts} isLoading={loading} />
           
-          {/* Popular Near You */}
           <PopularNearYou />
           
-          {/* Recently Added Products */}
           <ProductSection
             title="Recently Added"
             products={products}
-            link="/search?sort=newest"
+            link="/search?sort=newest&time=24h"
             linkText="View all new items"
             isLoading={loading}
           />
@@ -144,6 +140,7 @@ const Index = () => {
       </main>
     </div>
   );
+  */
 };
 
 export default Index;

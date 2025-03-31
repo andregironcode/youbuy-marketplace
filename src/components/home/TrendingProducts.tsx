@@ -1,4 +1,3 @@
-
 import { ProductSection } from "@/components/product/ProductSection";
 import { ProductType } from "@/types/product";
 
@@ -12,7 +11,7 @@ export const TrendingProducts = ({ products, isLoading = false }: TrendingProduc
     <ProductSection
       title="Trending Items"
       products={products}
-      link="/search?sort=popular"
+      link="/search?sort=popular&time=7d"
       linkText="View all trending items"
       isLoading={isLoading}
       emptyMessage="No trending items at the moment"

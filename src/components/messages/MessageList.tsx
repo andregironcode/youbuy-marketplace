@@ -2,7 +2,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { MessageType } from "@/types/message";
 import { formatMessageTime } from "@/utils/dateFormat";
-import { Trash2 } from "lucide-react";
+import { Trash2, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   AlertDialog,
@@ -60,25 +60,41 @@ export const MessageList = ({ messages, onDeleteMessage }: MessageListProps) => 
             className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} mb-4 max-w-full`}
           >
             <div className={`relative group max-w-[80%] p-3 rounded-lg ${
-              isUserMessage 
-                ? 'bg-youbuy text-white rounded-tr-none' 
-                : 'bg-gray-100 rounded-tl-none'
+              isUserMessage
+                ? 'bg-youbuy text-white rounded-tr-none'
+                : !message.read
+                  ? 'bg-blue-50 rounded-tl-none shadow-sm'
+                  : 'bg-gray-100 rounded-tl-none'
             }`}>
+              {!isUserMessage && !message.read && (
+                <span className="absolute -left-1.5 -top-1.5 bg-blue-600 text-white text-[8px] font-medium px-1.5 py-0.5 rounded-full ring-1 ring-white">
+                  NEW
+                </span>
+              )}
               {isImageMessage ? (
-                <img 
-                  src={message.content.substring(6)} 
-                  alt="Shared image" 
+                <img
+                  src={message.content.substring(6)}
+                  alt="Shared image"
                   className="rounded max-w-full h-auto cursor-pointer"
                   onClick={() => window.open(message.content.substring(6), '_blank')}
                 />
               ) : (
                 <p className="break-words whitespace-pre-wrap">{message.content}</p>
               )}
-              <p className={`text-xs mt-1 text-right ${
-                isUserMessage ? 'text-white/80' : 'text-gray-500'
-              }`}>
-                {formatMessageTime(message.created_at)}
-              </p>
+              <div className="flex items-center justify-end mt-1 space-x-1">
+                <p className={`text-xs ${
+                  isUserMessage ? 'text-white/80' : 'text-gray-500'
+                }`}>
+                  {formatMessageTime(message.created_at)}
+                </p>
+                {isUserMessage && (
+                  message.read ? (
+                    <CheckCheck className="h-3.5 w-3.5 ml-1 text-blue-400" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5 ml-1 text-gray-400" />
+                  )
+                )}
+              </div>
               
               {isUserMessage && onDeleteMessage && (
                 <AlertDialog open={messageToDelete === message.id} onOpenChange={(open) => {

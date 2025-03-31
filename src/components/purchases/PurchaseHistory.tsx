@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +24,7 @@ type OrderStatus = "pending" | "paid" | "processing" | "out_for_delivery" | "del
 
 interface Order {
   id: string;
+  order_number?: number;
   product_id: string;
   amount: number;
   status: OrderStatus;
@@ -62,7 +62,8 @@ export const PurchaseHistory = () => {
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select(`
-          id, 
+          id,
+          order_number,
           product_id, 
           amount, 
           status, 
@@ -82,7 +83,7 @@ export const PurchaseHistory = () => {
 
       // Fetch product details for each order
       const ordersWithProducts = await Promise.all(
-        orders.map(async (order) => {
+        orders.map(async (order: any) => {  // Type as any temporarily to handle the database response
           const { data: productData, error: productError } = await supabase
             .from("products")
             .select(`
@@ -102,7 +103,11 @@ export const PurchaseHistory = () => {
 
           if (productError) {
             console.error("Error fetching product:", productError);
-            return order as Order; // Cast to Order type
+            return {
+              ...order,
+              status: order.status as OrderStatus,
+              product: undefined
+            };
           }
 
           const product = {
@@ -120,9 +125,9 @@ export const PurchaseHistory = () => {
 
           return {
             ...order,
-            status: order.status as OrderStatus, // Cast string to OrderStatus
+            status: order.status as OrderStatus,
             product
-          } as Order;
+          };
         })
       );
 
@@ -357,7 +362,7 @@ export const PurchaseHistory = () => {
             {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">
-                  {order.id.substring(0, 8)}...
+                  #{order.order_number || order.id.slice(0, 8)}
                 </TableCell>
                 <TableCell>{format(new Date(order.created_at), "PPP")}</TableCell>
                 <TableCell>
@@ -384,8 +389,9 @@ export const PurchaseHistory = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   <Button 
-                    variant="ghost" 
-                    size="sm" 
+                    variant="default"
+                    size="sm"
+                    className="bg-youbuy hover:bg-youbuy-dark text-white"
                     onClick={() => {
                       console.log("Track order clicked for:", order.id);
                       setSelectedOrder(order);

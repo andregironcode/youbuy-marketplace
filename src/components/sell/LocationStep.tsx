@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -22,9 +21,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 interface LocationStepProps {
   location: string;
   setLocation: (location: string) => void;
-  coordinates: { latitude?: number; longitude?: number } | null;
-  setCoordinates: (coords: { latitude: number; longitude: number } | null) => void;
+  coordinates: { latitude: number; longitude: number };
+  setCoordinates: (coordinates: { latitude: number; longitude: number }) => void;
   setCurrentStep: (step: SellStep) => void;
+  locationDetails: LocationDetails;
+  setLocationDetails: (locationDetails: LocationDetails) => void;
 }
 
 type LocationType = "house" | "apartment";
@@ -44,6 +45,8 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   coordinates,
   setCoordinates,
   setCurrentStep,
+  locationDetails,
+  setLocationDetails,
 }) => {
   const [searchValue, setSearchValue] = useState(location);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -51,11 +54,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   const [mapVisible, setMapVisible] = useState(true);
   const { toast } = useToast();
   
-  // New state for location details
-  const [locationDetails, setLocationDetails] = useState<LocationDetails>({
-    type: "house",
-  });
-
   const isLocationValid = location.length >= 3 && coordinates !== null && 
     coordinates.latitude !== undefined && coordinates.longitude !== undefined;
 

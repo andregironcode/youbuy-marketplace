@@ -129,7 +129,9 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
       id: typeof sellerId === 'string' ? sellerId : String(sellerId),
       name: profileData?.full_name || 'Unknown Seller',
       avatar: profileData?.avatar_url || '/placeholder.svg',
-      joinedDate: profileData?.created_at || item.created_at
+      joinedDate: profileData?.created_at || item.created_at,
+      rating: profileData?.rating || item.seller_rating || undefined,
+      totalReviews: profileData?.total_reviews || item.seller_total_reviews || 0
     },
     category: item.category,
     subcategory: item.subcategory || undefined,

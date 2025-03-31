@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
 import { calculateDistance, getCurrentPosition } from "@/utils/locationUtils";
@@ -13,6 +12,7 @@ interface SearchFilters {
   onlyAvailable?: boolean;
   limit?: number;
   userLocation?: { lat: number; lng: number } | null;
+  time?: string;
 }
 
 /**
@@ -32,10 +32,12 @@ export const searchProducts = async (
     distance,
     onlyAvailable = false,
     limit = 50,
-    userLocation = null
+    userLocation = null,
+    time
   } = filters;
 
-  if (!query && !category && !minPrice && !maxPrice && !onlyAvailable) {
+  // Only return empty array if no filters and no sort is applied
+  if (!query && !category && !minPrice && !maxPrice && !onlyAvailable && !sortBy) {
     return [];
   }
 
@@ -51,6 +53,28 @@ export const searchProducts = async (
         )
       `)
       .limit(limit);
+
+    // Apply time filter if provided
+    if (time) {
+      const now = new Date();
+      let timeFilter;
+      
+      switch (time) {
+        case "24h":
+          timeFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case "7d":
+          timeFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "30d":
+          timeFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          timeFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to 24h
+      }
+      
+      searchQuery = searchQuery.gte('created_at', timeFilter.toISOString());
+    }
 
     // Apply category filter if provided
     if (category) {

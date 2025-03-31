@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,7 +77,7 @@ export const useImageUpload = () => {
     const uploadedUrls: string[] = [];
     
     try {
-      // Ensure product-images bucket exists by checking if it exists
+      // Check if bucket exists
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
@@ -88,7 +87,7 @@ export const useImageUpload = () => {
       
       const bucketExists = buckets?.some(bucket => bucket.name === 'product-images');
       
-      // Create bucket if it doesn't exist
+      // Only try to create bucket if it doesn't exist
       if (!bucketExists) {
         console.log('Creating product-images bucket');
         const { error } = await supabase.storage.createBucket('product-images', {
@@ -97,26 +96,19 @@ export const useImageUpload = () => {
           allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
         });
         
-        if (error) {
+        // If error is not "already exists", then it's a real error
+        if (error && !error.message.includes('already exists')) {
           console.error('Error creating bucket:', error);
           throw error;
         }
       }
       
-      // Set bucket to public if needed - using updateBucket instead of setBucketPublic
-      const { error: updateError } = await supabase.storage.updateBucket('product-images', {
-        public: true
-      });
-      
-      if (updateError) {
-        console.error('Error updating bucket publicity:', updateError);
-        // Continue anyway as this is not critical
-      }
-      
+      // Upload each image
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
         const fileExt = file.name.split('.').pop();
-        const filePath = `${userId}/${Date.now()}-${i}.${fileExt}`;
+        const timestamp = Date.now();
+        const filePath = `${userId}/${timestamp}-${i}.${fileExt}`;
         
         const { error: uploadError, data } = await supabase.storage
           .from('product-images')

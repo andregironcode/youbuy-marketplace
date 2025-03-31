@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SalesHistory } from "@/components/sales/SalesHistory";
 import { SellerAccountCard } from "@/components/profile/SellerAccountCard";
+import { Button } from "@/components/ui/button";
 
 export const SalesPage = () => {
   const { user } = useAuth();
@@ -52,22 +52,30 @@ export const SalesPage = () => {
   }, [setupSuccess, refetch, toast]);
 
   return (
-    <div className="flex-1 p-6">
-      <div className="mb-6 text-left">
+    <div className="flex-1 -mt-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">Your Sales</h1>
         <p className="text-muted-foreground">
           Track your sold items and manage orders from buyers
         </p>
       </div>
-      
-      {user && (
-        <SellerAccountCard 
-          sellerAccount={sellerAccount}
-          isLoading={loadingAccount}
-        />
-      )}
-      
-      <SalesHistory />
+
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-lg font-semibold mb-2">Seller Payment Account</h2>
+          <p className="text-muted-foreground mb-4">
+            Set up your payment account to start selling and receiving payments securely.
+          </p>
+          <Button variant="default" className="bg-youbuy hover:bg-youbuy/90 text-white">
+            Set Up Payment Account
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Your Sales History</h2>
+          <SalesHistory />
+        </div>
+      </div>
     </div>
   );
 };

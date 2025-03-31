@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 interface ProductDetailsProps {
   product: ProductType;
   onAddToCart?: () => void;
+  isOwnProduct?: boolean;
 }
 
-export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) => {
+export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDetailsProps) => {
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({});
   const [price, setPrice] = useState(product.price);
   const navigate = useNavigate();
@@ -188,17 +189,19 @@ export const ProductDetails = ({ product, onAddToCart }: ProductDetailsProps) =>
 
     return (
       <div className="mt-4">
-        <h3 className="font-medium flex items-center mb-2">
-          <Info className="h-4 w-4 mr-1" />
+        <h3 className="font-medium flex items-center mb-3">
+          <Info className="h-4 w-4 mr-1.5" />
           Specifications
         </h3>
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {specsToShow.map(([key, value]) => (
-                <div key={key} className="col-span-2 sm:col-span-1 flex">
-                  <span className="font-medium min-w-[120px]">{getSpecificationName(key)}:</span>
-                  <span className="text-muted-foreground">{formatSpecValue(key, value)}</span>
+                <div key={key} className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground mb-1">
+                    {getSpecificationName(key)}
+                  </span>
+                  <span className="text-sm">{formatSpecValue(key, value)}</span>
                 </div>
               ))}
             </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +11,8 @@ import {
   Star, 
   MessageCircle, 
   ShieldCheck,
-  Info
+  Info,
+  Pencil
 } from "lucide-react";
 import { ProductType } from "@/types/product";
 import { getProductById } from "@/data/products";
@@ -106,6 +106,26 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const location = window.location;
 
+  const { 
+    data: product, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      if (!id) throw new Error('Product ID is undefined');
+      console.log("Fetching product with ID:", id);
+      const result = await getProductById(id);
+      console.log("Query result:", result);
+      if (!result) throw new Error('Product not found');
+      return result as ProductType;
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const isOwnProduct = user && product?.seller?.id === user.id;
+
   useEffect(() => {
     const storedFavorite = localStorage.getItem(`favorite-${id}`);
     setIsFavorite(storedFavorite === 'true');
@@ -148,24 +168,6 @@ export default function ProductDetail() {
     }
   };
 
-  const { 
-    data: product, 
-    isLoading, 
-    error 
-  } = useQuery({
-    queryKey: ['product', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Product ID is undefined');
-      console.log("Fetching product with ID:", id);
-      const result = await getProductById(id);
-      console.log("Query result:", result);
-      if (!result) throw new Error('Product not found');
-      return result;
-    },
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
   useEffect(() => {
     if (product?.images && product.images.length > 0) {
       setCurrentImage(product.images[0]);
@@ -202,11 +204,11 @@ export default function ProductDetail() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-6">
+      <div className="mb-8">
         <Button 
           variant="ghost" 
           size="sm" 
-          className="mb-2" 
+          className="mb-4" 
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -229,10 +231,10 @@ export default function ProductDetail() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Product Images and Details */}
-        <div className="space-y-4">
-          <div className="relative aspect-square overflow-hidden rounded-lg border bg-white">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="relative aspect-square overflow-hidden rounded-xl border bg-white max-w-2xl mx-auto">
             <img
               src={currentImage || product.images?.[0] || product.image}
               alt={product.title}
@@ -245,12 +247,12 @@ export default function ProductDetail() {
             )}
           </div>
           
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-3">
             {product.images && product.images.map((image, index) => (
               <div
                 key={index}
-                className={`aspect-square rounded-md border cursor-pointer overflow-hidden ${
-                  currentImage === image ? 'ring-2 ring-pink-600' : ''
+                className={`aspect-square rounded-lg border cursor-pointer overflow-hidden transition-colors ${
+                  currentImage === image ? 'ring-2 ring-youbuy' : 'hover:border-youbuy/50'
                 }`}
                 onClick={() => setCurrentImage(image)}
               >
@@ -263,16 +265,18 @@ export default function ProductDetail() {
             ))}
           </div>
           
-          <div className="flex justify-between">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleToggleFavorite}
-              className={isFavorite ? "text-pink-600" : ""}
-            >
-              <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-pink-600" : ""}`} />
-              {isFavorite ? "Saved" : "Save"}
-            </Button>
+          <div className="flex gap-2">
+            {!isOwnProduct && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleToggleFavorite}
+                className={isFavorite ? "text-pink-600" : ""}
+              >
+                <Heart className={`mr-1 h-4 w-4 ${isFavorite ? "fill-pink-600" : ""}`} />
+                {isFavorite ? "Saved" : "Save"}
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -282,13 +286,24 @@ export default function ProductDetail() {
               <Share className="mr-1 h-4 w-4" />
               Share
             </Button>
+
+            {isOwnProduct && (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => navigate(`/profile/edit-product/${product.id}`)}
+              >
+                <Pencil className="mr-1 h-4 w-4" />
+                Edit Product
+              </Button>
+            )}
           </div>
           
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Product Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 text-sm">
+            <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -309,18 +324,20 @@ export default function ProductDetail() {
                 </span>
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>Seller</span>
+              {!isOwnProduct && (
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>Seller</span>
+                  </div>
+                  <Link 
+                    to={`/seller/${product.seller.id}`}
+                    className="text-right text-youbuy hover:underline"
+                  >
+                    {product.seller.name}
+                  </Link>
                 </div>
-                <Link 
-                  to={`/seller/${product.seller.id}`}
-                  className="text-right text-pink-600 hover:underline"
-                >
-                  {product.seller.name}
-                </Link>
-              </div>
+              )}
               
               {product.viewCount && (
                 <div className="flex justify-between items-center">
@@ -335,10 +352,10 @@ export default function ProductDetail() {
           </Card>
         </div>
         
-        {/* Right Column - Product Description and Seller Info */}
+        {/* Right Column - Price, Actions, and Seller Info */}
         <div className="space-y-6">
           {/* Product Description */}
-          <ProductDetails product={product} />
+          <ProductDetails product={product} isOwnProduct={isOwnProduct} />
           
           {/* Map showing product location */}
           {product.coordinates && product.coordinates.latitude && product.coordinates.longitude && (
@@ -361,14 +378,14 @@ export default function ProductDetail() {
           )}
           
           {/* Seller Information */}
-          {product.seller && (
+          {!isOwnProduct && product.seller && (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Seller Information</CardTitle>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-base mb-0">Seller Information</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 rounded-full bg-muted overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="relative h-12 w-12 rounded-full bg-muted overflow-hidden">
                     {product.seller.avatar ? (
                       <img
                         src={product.seller.avatar}
@@ -379,59 +396,45 @@ export default function ProductDetail() {
                       <User className="h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
                     )}
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">{product.seller.name}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold leading-none mb-0">{product.seller.name}</h3>
                       {product.seller.rating && product.seller.rating > 4.5 && (
-                        <Badge variant="outline" className="ml-2 bg-pink-50 text-pink-700 border-pink-200">
+                        <Badge variant="outline" className="bg-youbuy/10 text-youbuy border-youbuy/20">
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           Verified
                         </Badge>
                       )}
                     </div>
-                    {product.seller.joinedDate && (
-                      <p className="text-xs text-muted-foreground">
-                        Member since {new Date(product.seller.joinedDate).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                {product.seller.rating && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.floor(product.seller.rating)
-                                ? "fill-pink-600 text-pink-600"
+                            className={`h-3 w-3 ${
+                              product.seller.rating && i < Math.floor(product.seller.rating)
+                                ? "fill-youbuy text-youbuy"
                                 : "text-muted"
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="text-sm font-medium">
-                        {product.seller.rating.toFixed(1)}
-                      </span>
                       <span className="text-xs text-muted-foreground">
                         ({product.seller.totalReviews || 0} reviews)
                       </span>
                     </div>
-                    <Progress 
-                      value={
-                        ((product.seller.rating || 0) / 5) * 100
-                      } 
-                      className="h-1 bg-gray-200"
-                    />
+                    {product.seller.joinedDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Member since {new Date(product.seller.joinedDate).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <Button
                   variant="default"
-                  className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                  className="w-full bg-youbuy hover:bg-youbuy/90 text-white"
                   onClick={() => {
                     if (!user) {
                       toast({
@@ -451,7 +454,7 @@ export default function ProductDetail() {
                 
                 <Link 
                   to={`/seller/${product.seller.id}`}
-                  className="text-sm text-pink-600 hover:underline w-full text-center"
+                  className="text-sm text-youbuy hover:underline w-full text-center"
                 >
                   View Seller Profile
                 </Link>
@@ -463,9 +466,9 @@ export default function ProductDetail() {
       
       {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-4">Related Products</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mt-16">
+          <h2 className="text-2xl font-semibold mb-6">Related Products</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {relatedProducts.map((relatedProduct) => (
               <ProductCard 
                 key={relatedProduct.id} 

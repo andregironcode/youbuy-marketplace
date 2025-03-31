@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { SellStep, SellFormData } from "@/types/sellForm";
 
@@ -43,11 +42,29 @@ export const SellFormProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     },
     promotionLevel: 'none',
     coordinates: null,
+    locationDetails: undefined,
     showBulkListing: false
   });
 
   const updateFormData = (data: Partial<SellFormData>) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData(prev => {
+      // If updating location details, ensure we don't duplicate data
+      if (data.locationDetails) {
+        return {
+          ...prev,
+          ...data,
+          locationDetails: {
+            type: data.locationDetails.type,
+            houseNumber: data.locationDetails.houseNumber || undefined,
+            buildingName: data.locationDetails.buildingName || undefined,
+            apartmentNumber: data.locationDetails.apartmentNumber || undefined,
+            floor: data.locationDetails.floor || undefined,
+            additionalInfo: data.locationDetails.additionalInfo || undefined
+          }
+        };
+      }
+      return { ...prev, ...data };
+    });
   };
 
   const getStepProgress = () => {

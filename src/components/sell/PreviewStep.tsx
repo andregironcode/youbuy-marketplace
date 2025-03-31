@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Card,
@@ -13,15 +12,25 @@ import { SellStep } from "@/types/sellForm";
 import { ProductSpecifications } from "@/types/product";
 import { LocationMap } from "@/components/map/LocationMap";
 
+interface LocationDetails {
+  type: "house" | "apartment";
+  houseNumber?: string;
+  buildingName?: string;
+  apartmentNumber?: string;
+  floor?: string;
+  additionalInfo?: string;
+}
+
 interface PreviewStepProps {
   title: string;
   price: string;
   description: string;
   location: string;
   imagePreviewUrls: string[];
-  specifications: ProductSpecifications;
+  specifications: any;
   weight: string;
-  coordinates: { latitude: number; longitude: number } | null;
+  coordinates: { latitude: number; longitude: number };
+  locationDetails: LocationDetails;
   shippingOptions: {
     inPersonMeetup: boolean;
     platformShipping: boolean;
@@ -41,6 +50,7 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
   specifications,
   weight,
   coordinates,
+  locationDetails,
   shippingOptions,
   setCurrentStep,
   handleSubmit,
@@ -119,15 +129,22 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
                 </div>
               )}
               
-              <div>
-                <h4 className="font-medium">Shipping</h4>
-                <div className="text-sm mt-1">
-                  {shippingOptions.inPersonMeetup && <p>✓ In-person meetup</p>}
-                  {shippingOptions.platformShipping && (
-                    <p>✓ Platform shipping</p>
+              <div className="space-y-2">
+                <h3 className="font-medium">Shipping Options</h3>
+                <ul className="space-y-1">
+                  {shippingOptions.inPersonMeetup && (
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-2">✓</span>
+                      In-person meetup
+                    </li>
                   )}
-                  {weight && <p>Weight: {weight} kg</p>}
-                </div>
+                  {shippingOptions.platformShipping && (
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-2">✓</span>
+                      Platform shipping
+                    </li>
+                  )}
+                </ul>
               </div>
             </div>
           </div>
@@ -141,13 +158,13 @@ export const PreviewStep: React.FC<PreviewStepProps> = ({
           Back
         </Button>
         <div className="space-x-2">
-          <Button variant="outline" onClick={() => {}}>
+          <Button variant="outline" onClick={() => {}} className="hover:bg-transparent hover:text-foreground">
             How does it look?
           </Button>
           <Button 
             onClick={handleSubmit}
             disabled={uploading} 
-            variant="action"
+            className="bg-youbuy hover:bg-youbuy-dark"
           >
             {uploading ? "Publishing..." : "Post Ad"}
           </Button>

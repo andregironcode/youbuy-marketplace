@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductSection } from "@/components/product/ProductSection";
 import { ProductType, convertToProductType } from "@/types/product";
@@ -66,7 +65,7 @@ export const PopularNearYou = () => {
       <ProductSection
         title={`Popular Near ${userLocation || 'You'}`}
         products={products}
-        link="/search?sort=nearby"
+        link="/search?sort=nearby&distance=10"
         linkText="View all nearby items"
         isLoading={loading}
         emptyMessage="No popular items found nearby"

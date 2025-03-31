@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -104,12 +103,9 @@ export const PromoteDialog: React.FC<PromoteDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => setPromotionLevel('none')}>
-            Skip promotion
-          </Button>
           <Button 
             onClick={onComplete}
-            className="bg-cta hover:bg-cta-hover text-white"
+            className="bg-youbuy hover:bg-youbuy-dark"
             variant="action"
           >
             {promotionLevel === 'none' ? 'Publish Without Promotion' : 'Confirm & Pay'}

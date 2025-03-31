@@ -11,7 +11,9 @@ import {
   Store,
   MessageSquare,
   HeadphonesIcon,
-  LogOut
+  LogOut,
+  MessageCircle,
+  BarChart2
 } from "lucide-react";
 
 interface UserProfile {
@@ -32,6 +34,17 @@ export const ProfileSidebar = () => {
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
+  };
+
+  // Get avatar URL from either profile or user metadata
+  const getAvatarUrl = () => {
+    if (extendedUser?.profile?.avatar_url) {
+      return `${extendedUser.profile.avatar_url}?t=${Date.now()}`;
+    }
+    if (user?.user_metadata?.avatar_url) {
+      return `${user.user_metadata.avatar_url}?t=${Date.now()}`;
+    }
+    return null;
   };
 
   const items = [
@@ -58,6 +71,18 @@ export const ProfileSidebar = () => {
       label: "Sales",
       href: "/profile/sales",
       active: isActive("/sales"),
+    },
+    {
+      icon: MessageCircle,
+      label: "Messages",
+      href: "/messages",
+      active: isActive("/messages"),
+    },
+    {
+      icon: BarChart2,
+      label: "Statistics",
+      href: "/profile/statistics",
+      active: isActive("/statistics"),
     },
     {
       icon: CreditCard,
@@ -92,17 +117,19 @@ export const ProfileSidebar = () => {
   ];
   
   return (
-    <aside className="w-60 border-r border-gray-200 bg-white fixed h-screen flex flex-col">
+    <aside className="w-60 border-r border-gray-200 bg-white fixed top-0 left-0 h-full z-10 flex flex-col pt-16 shadow-sm transition-all">
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          {extendedUser?.profile?.avatar_url ? (
-            <img
-              src={extendedUser.profile.avatar_url}
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover"
-            />
+          {getAvatarUrl() ? (
+            <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+              <img
+                src={getAvatarUrl()}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            </div>
           ) : (
-            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
               <User className="h-4 w-4 text-gray-500" />
             </div>
           )}
@@ -111,13 +138,13 @@ export const ProfileSidebar = () => {
               {extendedUser?.profile?.full_name || "My Account"}
             </span>
             <div className="flex items-center text-xs text-gray-400">
-              <span>{extendedUser?.email}</span>
+              <span className="truncate max-w-[160px]">{extendedUser?.email}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="overflow-y-auto flex-1 no-scrollbar">
+      <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent no-scrollbar">
         <nav className="py-4">
           <ul className="space-y-1 px-2">
             {items.map((item) => (
@@ -129,19 +156,19 @@ export const ProfileSidebar = () => {
                       "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
                       item.active
                         ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 ) : (
                   <button
                     onClick={item.onClick}
-                    className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors w-full text-left"
+                    className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full text-left"
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
                   </button>
                 )}
               </li>

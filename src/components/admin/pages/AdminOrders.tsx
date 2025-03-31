@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +59,7 @@ interface Product {
 // Raw order from database - without joined relationships
 interface OrderRaw {
   id: string;
+  order_number?: number;
   buyer_id: string;
   seller_id: string;
   product_id: string;
@@ -85,6 +85,7 @@ interface OrderRaw {
 // Processed order with derived properties
 interface ProcessedOrder {
   id: string;
+  order_number?: number;
   buyer_id: string;
   seller_id: string;
   product_id: string;
@@ -101,6 +102,7 @@ interface ProcessedOrder {
 
 interface OrderDetails {
   order_id: string;
+  order_number?: number;
   buyer_name?: string;
   seller_name?: string;
   product_title?: string;
@@ -186,7 +188,29 @@ export const AdminOrders = () => {
       // First fetch the orders
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          id,
+          order_number,
+          buyer_id,
+          seller_id,
+          product_id,
+          amount,
+          status,
+          created_at,
+          updated_at,
+          current_stage,
+          delivery_details,
+          payment_status,
+          stripe_payment_intent_id,
+          stripe_transfer_id,
+          estimated_delivery,
+          last_status_change,
+          last_updated_by,
+          delivery_confirmed_at,
+          dispute_deadline,
+          dispute_reason,
+          dispute_status
+        `)
         .order('created_at', { ascending: false });
       
       if (ordersError) {
@@ -203,7 +227,7 @@ export const AdminOrders = () => {
       
       // Process the raw orders with additional data
       const processedOrders: ProcessedOrder[] = await Promise.all(
-        ordersData.map(async (orderData) => {
+        ordersData.map(async (orderData: any) => {  // Type as any temporarily to handle the database response
           // Explicitly cast to ensure TypeScript knows this matches our OrderRaw interface
           const order = orderData as OrderRaw;
           
@@ -261,7 +285,29 @@ export const AdminOrders = () => {
       // Get the order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          id,
+          order_number,
+          buyer_id,
+          seller_id,
+          product_id,
+          amount,
+          status,
+          created_at,
+          updated_at,
+          current_stage,
+          delivery_details,
+          payment_status,
+          stripe_payment_intent_id,
+          stripe_transfer_id,
+          estimated_delivery,
+          last_status_change,
+          last_updated_by,
+          delivery_confirmed_at,
+          dispute_deadline,
+          dispute_reason,
+          dispute_status
+        `)
         .eq('id', orderId)
         .single();
       
@@ -271,38 +317,42 @@ export const AdminOrders = () => {
       
       console.log("Order data fetched:", orderData);
       
+      // Cast orderData to unknown first, then to OrderRaw type
+      const typedOrderData = orderData as unknown as OrderRaw;
+      
       // Get associated buyer
       const { data: buyerData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', orderData.buyer_id)
+        .eq('id', typedOrderData.buyer_id)
         .single();
       
       // Get associated seller
       const { data: sellerData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', orderData.seller_id)
+        .eq('id', typedOrderData.seller_id)
         .single();
       
       // Get associated product
       const { data: productData } = await supabase
         .from('products')
         .select('*')
-        .eq('id', orderData.product_id)
+        .eq('id', typedOrderData.product_id)
         .single();
       
       const formattedData: OrderDetails = {
-        order_id: orderData.id,
+        order_id: typedOrderData.id,
+        order_number: typedOrderData.order_number,
         buyer_name: buyerData?.full_name || buyerData?.username || "Unknown Buyer",
         seller_name: sellerData?.full_name || sellerData?.username || "Unknown Seller",
         product_title: productData?.title || "Unknown Product",
         product_images: productData?.image_urls || [],
         product_id: productData?.id,
-        current_stage: orderData.current_stage || orderData.status,
-        status: orderData.status,
-        order_date: orderData.created_at,
-        estimated_delivery: orderData.estimated_delivery
+        current_stage: typedOrderData.current_stage || typedOrderData.status,
+        status: typedOrderData.status,
+        order_date: typedOrderData.created_at,
+        estimated_delivery: typedOrderData.estimated_delivery
       };
       
       console.log("Formatted order details:", formattedData);
@@ -576,7 +626,7 @@ export const AdminOrders = () => {
               filteredOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-xs">
-                    {order.id.substring(0, 8)}...
+                    #{order.order_number || order.id.slice(0, 8)}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {order.product_title}
@@ -639,7 +689,7 @@ export const AdminOrders = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Order ID:</span>
-                        <span className="font-mono">{orderDetails.order_id?.substring(0, 12)}...</span>
+                        <span className="font-mono">#{orderDetails.order_number || orderDetails.order_id?.substring(0, 12)}...</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Date:</span>

@@ -8,6 +8,11 @@ import { EmptyListings } from "./EmptyListings";
 import { ListingItem } from "./ListingItem";
 import { ListingsTabs } from "./ListingsTabs";
 import { useAuth } from "@/context/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Search, Filter } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { FilterSidebar } from "@/components/filters/FilterSidebar";
+import { Button } from "@/components/ui/button";
 
 interface SellerListingsProps {
   userId?: string;
@@ -32,6 +37,9 @@ export const SellerListings = ({
   const [products, setProducts] = useState<ProductType[]>(initialProducts);
   const [isLoading, setIsLoading] = useState<boolean>(initialLoading);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -47,13 +55,20 @@ export const SellerListings = ({
       try {
         const status = currentActiveTab === "selling" ? "available" : "sold";
         
-        const { data, error } = await supabase
+        let query = supabase
           .from('products')
           .select('*, profiles(*)')
           .eq('seller_id', userId)
-          .eq('product_status', status)
-          .order('created_at', { ascending: false })
-          .limit(limit);
+          .eq('product_status', status);
+
+        // Apply search filter
+        if (debouncedSearchTerm) {
+          query = query.ilike('title', `%${debouncedSearchTerm}%`);
+        }
+
+        query = query.limit(limit);
+          
+        const { data, error } = await query;
           
         if (error) {
           toast({
@@ -80,7 +95,7 @@ export const SellerListings = ({
       setHasAttemptedFetch(true);
       setIsLoading(false);
     }
-  }, [userId, currentActiveTab, limit, toast, initialProducts, hasAttemptedFetch]);
+  }, [userId, currentActiveTab, limit, toast, initialProducts, hasAttemptedFetch, debouncedSearchTerm]);
 
   useEffect(() => {
     if (onTabChange) {
@@ -104,22 +119,50 @@ export const SellerListings = ({
   const displayProducts = initialProducts.length > 0 ? initialProducts.slice(0, limit) : products.slice(0, limit);
 
   return (
-    <div>
+    <div className="space-y-4 -ml-6">
       {!onTabChange && (
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-2">Products</h2>
-          <p className="text-muted-foreground text-sm">
+        <div className="flex flex-col space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">Products</h2>
+          <p className="text-muted-foreground">
             View this seller's available products
           </p>
         </div>
       )}
 
       {showTabs && (
-        <ListingsTabs 
-          currentActiveTab={currentActiveTab} 
-          onTabChange={handleTabChange} 
-        />
+        <div className="border-b">
+          <ListingsTabs 
+            currentActiveTab={currentActiveTab} 
+            onTabChange={handleTabChange} 
+          />
+        </div>
       )}
+
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => setIsFilterOpen(true)}
+        >
+          <Filter className="h-4 w-4" />
+          Filters
+        </Button>
+      </div>
+
+      <FilterSidebar 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)}
+        totalResults={products.length}
+      />
 
       {isLoading ? (
         <ListingsLoader />
@@ -131,7 +174,7 @@ export const SellerListings = ({
               onAddProduct={handleAddProduct} 
             />
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3">
               {displayProducts.map((product) => (
                 <ListingItem 
                   key={product.id} 
