@@ -2,25 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from "../_shared/cors.ts"
 
-// Check if the webhook token in the URL matches stored secret token
-const verifyWebhookToken = (url: URL): boolean => {
-  const token = url.searchParams.get('token');
-  
-  // Get the token from environment variable (set in Supabase Dashboard)
-  // For security, we would use this in production
-  const storedToken = Deno.env.get("SHIPDAY_WEBHOOK_TOKEN");
-  
-  // If we have an env token, use it, otherwise accept any token for development
-  if (storedToken) {
-    return token === storedToken;
-  } else {
-    // In development, we'll accept any token that's provided
-    // This is not secure for production!
-    console.log("No SHIPDAY_WEBHOOK_TOKEN set in environment, accepting any token");
-    return token !== null && token !== "";
-  }
-}
-
 serve(async (req) => {
   console.log("Received request:", req.method, req.url);
   
@@ -36,14 +17,12 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     console.log("Request URL:", url.toString());
-    console.log("Request search params:", Object.fromEntries(url.searchParams.entries()));
     
-    // Handle Shipday webhook verification test - it sends a GET request to test the URL
+    // IMPORTANT: For Shipday webhook verification, we need to accept GET requests
+    // without token validation - Shipday sends a GET request without any parameters
     if (req.method === "GET") {
       console.log("Handling GET verification from Shipday");
       
-      // For Shipday verification, we don't check the token on GET requests
-      // This is necessary for Shipday to verify the endpoint
       return new Response(
         JSON.stringify({ success: true, message: "Webhook endpoint is valid" }),
         { 
@@ -53,23 +32,27 @@ serve(async (req) => {
       );
     }
     
-    // For all other requests, verify the token
-    if (!verifyWebhookToken(url)) {
-      console.error("Invalid webhook token");
-      return new Response(
-        JSON.stringify({ error: "Invalid webhook token" }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-
-    // Handle webhook events from Shipday
+    // For POST requests, we should verify the token
     if (req.method === "POST") {
       try {
-        const payload = await req.json();
+        // Get the token from environment variable
+        const storedToken = Deno.env.get("SHIPDAY_WEBHOOK_TOKEN");
+        const token = url.searchParams.get('token');
         
+        // Only validate the token if it's set in the environment
+        if (storedToken && token !== storedToken) {
+          console.error("Invalid webhook token");
+          return new Response(
+            JSON.stringify({ error: "Invalid webhook token" }),
+            { 
+              status: 401, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }
+          );
+        }
+
+        // Process the payload
+        const payload = await req.json();
         console.log("Received Shipday webhook payload:", JSON.stringify(payload, null, 2));
         
         // Extract the event type and handle accordingly

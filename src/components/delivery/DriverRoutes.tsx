@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { 
@@ -316,7 +315,6 @@ export const DriverRoutes = () => {
     }
   };
 
-  // Render a single delivery route card
   const renderRouteCard = (route: DeliveryRoute) => {
     return (
       <Card key={route.id} className="mb-6">
@@ -344,7 +342,6 @@ export const DriverRoutes = () => {
         
         <CardContent>
           <div className="space-y-4">
-            {/* Pickup section */}
             {route.pickup_route && route.pickup_route.length > 0 && (
               <div>
                 <h3 className="font-medium flex items-center mb-2">
@@ -378,7 +375,6 @@ export const DriverRoutes = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Open in maps
                               const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
                               window.open(mapsUrl, "_blank");
                             }}
@@ -400,7 +396,6 @@ export const DriverRoutes = () => {
               </div>
             )}
             
-            {/* Delivery section */}
             {route.delivery_route && route.delivery_route.length > 0 && (
               <div>
                 <h3 className="font-medium flex items-center mb-2">
@@ -437,7 +432,6 @@ export const DriverRoutes = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Open in maps
                               const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`;
                               window.open(mapsUrl, "_blank");
                             }}
@@ -489,7 +483,6 @@ export const DriverRoutes = () => {
     );
   };
 
-  // Show loading state
   if (loading) {
     return (
       <div className="container mx-auto py-8">
@@ -501,7 +494,6 @@ export const DriverRoutes = () => {
     );
   }
 
-  // Render the driver routes
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-6">My Delivery Routes</h1>
