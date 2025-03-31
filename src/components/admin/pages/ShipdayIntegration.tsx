@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -170,6 +171,85 @@ export const ShipdayIntegration = () => {
       await sendTestOrder();
     } catch (error) {
       console.error("Test order creation failed:", error);
+    }
+  };
+
+  // Add missing handleSaveSettings function
+  const handleSaveSettings = async () => {
+    try {
+      // Save API key to local state
+      setSettings({
+        ...settings,
+        apiKey: apiKey
+      });
+      
+      toast({
+        title: "Settings saved",
+        description: "Your Shipday integration settings have been saved"
+      });
+      
+      // Remind user to set environment variable
+      if (apiKey) {
+        toast({
+          title: "Important reminder",
+          description: "Remember to add the API key as an environment variable in Supabase",
+          variant: "warning",
+          duration: 6000
+        });
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error saving settings",
+        description: "There was a problem saving your settings",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Add missing testWebhook function
+  const testWebhook = async () => {
+    setIsTestingWebhook(true);
+    try {
+      // Test if the webhook endpoint is accessible
+      const { data, error } = await supabase.functions.invoke("shipday-integration", {
+        method: "GET"
+      });
+      
+      if (error) {
+        console.error("Webhook test failed:", error);
+        setWebhookTestResult({
+          success: false,
+          message: `Error: ${error.message}. Make sure your edge function is deployed and the API key is set.`
+        });
+        return;
+      }
+      
+      // If we get here, the connection was successful
+      console.log("Webhook test successful:", data);
+      setWebhookTestResult({
+        success: true,
+        message: "Connection successful! The webhook endpoint is accessible and responding correctly."
+      });
+      
+      toast({
+        title: "Webhook test successful",
+        description: "The webhook endpoint is accessible and correctly configured"
+      });
+    } catch (error) {
+      console.error("Exception testing webhook:", error);
+      setWebhookTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+      
+      toast({
+        title: "Webhook test failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTestingWebhook(false);
     }
   };
 
