@@ -23,8 +23,12 @@ serve(async (req) => {
     if (req.method === "GET") {
       console.log("Handling GET verification from Shipday");
       
+      // While we don't need to validate token for verification,
+      // we'll log it for debugging purposes
+      const token = url.searchParams.get('token');
+      console.log("Token in verification request:", token || "No token provided");
+      
       // The verification is just checking if the endpoint returns a 200 response
-      // No token validation is needed for verification
       return new Response(
         JSON.stringify({ success: true, message: "Webhook endpoint is valid" }),
         { 
@@ -41,6 +45,9 @@ serve(async (req) => {
         const storedToken = Deno.env.get("SHIPDAY_WEBHOOK_TOKEN");
         const token = url.searchParams.get('token');
         
+        console.log("POST request received with token:", token || "No token provided");
+        console.log("Environment token is set:", storedToken ? "Yes" : "No");
+        
         // Only validate the token if it's set in the environment
         if (storedToken && token !== storedToken) {
           console.error("Invalid webhook token");
@@ -53,8 +60,10 @@ serve(async (req) => {
           );
         }
 
-        // Process the payload
-        const payload = await req.json();
+        // Process the payload - clone the request before reading the body
+        // This ensures the body stream can be read properly
+        const clonedReq = req.clone();
+        const payload = await clonedReq.json();
         console.log("Received Shipday webhook payload:", JSON.stringify(payload, null, 2));
         
         // Extract the event type and handle accordingly
@@ -87,7 +96,7 @@ serve(async (req) => {
           }
         );
       } catch (error) {
-        console.error("Error parsing webhook payload:", error);
+        console.error("Error processing webhook payload:", error);
         return new Response(
           JSON.stringify({ error: "Invalid payload format", details: error.message }),
           { 
