@@ -51,15 +51,19 @@ serve(async (req) => {
         });
         
         console.log(`Shipday API test response status: ${testResponse.status}`);
+        console.log(`Shipday API test response headers:`, Object.fromEntries(testResponse.headers.entries()));
+        
+        // Try to get response text for better error reporting
+        const responseText = await testResponse.text();
+        console.log(`Shipday API test response body: ${responseText}`);
         
         if (!testResponse.ok) {
-          const errorText = await testResponse.text();
-          console.error("Invalid Shipday API key:", errorText);
+          console.error("Invalid Shipday API key:", responseText);
           return new Response(
             JSON.stringify({ 
               error: "Invalid Shipday API key", 
               status: "failed",
-              details: errorText,
+              details: responseText,
               statusCode: testResponse.status,
               message: "The API key provided is invalid or has expired. Please check your Shipday API key."
             }),
@@ -70,8 +74,14 @@ serve(async (req) => {
           );
         }
         
-        // If we get here, the key is valid
-        const carrierData = await testResponse.json();
+        // Try to parse response as JSON if possible
+        let carrierData;
+        try {
+          carrierData = responseText ? JSON.parse(responseText) : [];
+        } catch (e) {
+          carrierData = { text: responseText };
+        }
+        
         console.log("Shipday connection test successful with valid carriers list");
         
         return new Response(
@@ -79,7 +89,7 @@ serve(async (req) => {
             success: true, 
             message: "Shipday integration is active and API key is valid",
             status: "ok",
-            carriers: carrierData.length
+            carriers: Array.isArray(carrierData) ? carrierData.length : 'unknown'
           }),
           { 
             status: 200, 
