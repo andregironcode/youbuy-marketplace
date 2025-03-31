@@ -96,6 +96,42 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_online: boolean | null
+          last_login: string | null
+          shipday_auth_url: string | null
+          shipday_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_online?: boolean | null
+          last_login?: string | null
+          shipday_auth_url?: string | null
+          shipday_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_online?: boolean | null
+          last_login?: string | null
+          shipday_auth_url?: string | null
+          shipday_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorite_sellers: {
         Row: {
           created_at: string
@@ -264,9 +300,11 @@ export type Database = {
           id: string
           last_status_change: string | null
           last_updated_by: string | null
+          order_number: number
           payment_status: string | null
           product_id: string
           seller_id: string
+          shipday_order_id: string | null
           status: string
           stripe_payment_intent_id: string | null
           stripe_transfer_id: string | null
@@ -286,9 +324,11 @@ export type Database = {
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
+          order_number?: number
           payment_status?: string | null
           product_id: string
           seller_id: string
+          shipday_order_id?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
           stripe_transfer_id?: string | null
@@ -308,9 +348,11 @@ export type Database = {
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
+          order_number?: number
           payment_status?: string | null
           product_id?: string
           seller_id?: string
+          shipday_order_id?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
           stripe_transfer_id?: string | null
@@ -471,6 +513,7 @@ export type Database = {
           banned: boolean | null
           bio: string | null
           created_at: string
+          currency: string | null
           full_name: string | null
           id: string
           location: string | null
@@ -484,6 +527,7 @@ export type Database = {
           banned?: boolean | null
           bio?: string | null
           created_at?: string
+          currency?: string | null
           full_name?: string | null
           id: string
           location?: string | null
@@ -497,6 +541,7 @@ export type Database = {
           banned?: boolean | null
           bio?: string | null
           created_at?: string
+          currency?: string | null
           full_name?: string | null
           id?: string
           location?: string | null
@@ -739,6 +784,12 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      get_driver_delivery_stats: {
+        Args: {
+          driver_id: string
+        }
+        Returns: Json
+      }
       get_next_delivery_stage: {
         Args: {
           p_current_stage: string
@@ -760,12 +811,17 @@ export type Database = {
           updated_at: string | null
         }[]
       }
-      is_admin: {
-        Args: {
-          user_uuid?: string
-        }
-        Returns: boolean
-      }
+      is_admin:
+        | {
+            Args: Record<PropertyKey, never>
+            Returns: boolean
+          }
+        | {
+            Args: {
+              user_uuid?: string
+            }
+            Returns: boolean
+          }
       update_order_status: {
         Args: {
           p_order_id: string

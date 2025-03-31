@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -12,7 +11,8 @@ import {
   Home,
   HelpCircle,
   Truck,
-  Route
+  Route,
+  Map
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,7 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: Box, label: "Orders", path: "/admin/orders" },
   { icon: Truck, label: "Delivery Routes", path: "/admin/delivery-routes" },
   { icon: Route, label: "Route Optimization", path: "/admin/route-optimization" },
+  { icon: Map, label: "Shipday Integration", path: "/admin/shipday" },
   { icon: Flag, label: "Reports", path: "/admin/reports" },
   { icon: HelpCircle, label: "Support", path: "/admin/support" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },

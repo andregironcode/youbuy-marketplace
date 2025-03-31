@@ -11,6 +11,7 @@ import { AdminSupport } from "@/components/admin/pages/AdminSupport";
 import { DeliveryRoutes } from "@/components/admin/pages/DeliveryRoutes";
 import { DriverPanel } from "@/components/delivery/DriverPanel";
 import { RouteOptimization } from "@/components/admin/pages/RouteOptimization";
+import { ShipdayIntegration } from "@/components/admin/pages/ShipdayIntegration";
 
 const AdminPage = () => {
   return (
@@ -26,6 +27,7 @@ const AdminPage = () => {
         <Route path="/support" element={<AdminSupport />} />
         <Route path="/delivery-routes" element={<DeliveryRoutes />} />
         <Route path="/route-optimization" element={<RouteOptimization />} />
+        <Route path="/shipday" element={<ShipdayIntegration />} />
         <Route path="/driver-panel" element={<DriverPanel />} />
       </Routes>
     </AdminLayout>
