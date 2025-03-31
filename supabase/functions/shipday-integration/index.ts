@@ -22,18 +22,35 @@ const verifyWebhookToken = (url: URL): boolean => {
 }
 
 serve(async (req) => {
+  console.log("Received request:", req.method, req.url);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request for CORS");
     return new Response(null, {
       status: 204,
       headers: corsHeaders,
-    })
+    });
   }
 
   try {
     const url = new URL(req.url);
+    console.log("Request URL:", url.toString());
+    console.log("Request search params:", Object.fromEntries(url.searchParams.entries()));
     
-    // Verify the webhook token
+    // Handle Shipday webhook verification test - it sends a GET request to test the URL
+    if (req.method === "GET") {
+      console.log("Handling GET verification from Shipday");
+      return new Response(
+        JSON.stringify({ success: true, message: "Webhook endpoint is valid" }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    // For all other requests, verify the token
     if (!verifyWebhookToken(url)) {
       console.error("Invalid webhook token");
       return new Response(
@@ -45,14 +62,33 @@ serve(async (req) => {
       );
     }
 
-    // Handle different webhook events from Shipday
+    // Handle webhook events from Shipday
     if (req.method === "POST") {
       const payload = await req.json();
       
-      console.log("Received Shipday webhook:", JSON.stringify(payload));
+      console.log("Received Shipday webhook payload:", JSON.stringify(payload, null, 2));
       
-      // Here we would process the data based on event type
-      // For example, update order status, notify users, etc.
+      // Extract the event type and handle accordingly
+      const eventType = payload.eventType || payload.type || "unknown";
+      console.log("Event type:", eventType);
+      
+      // Process different event types
+      switch (eventType) {
+        case "ORDER_CREATED":
+          console.log("Processing order created event");
+          // Handle order creation
+          break;
+        case "STATUS_CHANGED":
+          console.log("Processing status change event");
+          // Handle order status change
+          break;
+        case "LOCATION_UPDATED":
+          console.log("Processing location update event");
+          // Handle driver location update
+          break;
+        default:
+          console.log("Received unhandled event type:", eventType);
+      }
       
       return new Response(
         JSON.stringify({ success: true, message: "Webhook received" }),

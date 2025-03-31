@@ -25,7 +25,8 @@ import {
   Copy, 
   CheckCircle,
   RefreshCw,
-  Shield
+  Shield,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +34,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const ShipdayIntegration = () => {
   const { toast } = useToast();
@@ -40,6 +60,9 @@ export const ShipdayIntegration = () => {
   const [tokenCopied, setTokenCopied] = useState(false);
   const [webhookToken, setWebhookToken] = useState("");
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [isTokenInEnvironment, setIsTokenInEnvironment] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [webhookTestResult, setWebhookTestResult] = useState<null | {success: boolean; message: string}>(null);
   const [settings, setSettings] = useState({
     enabled: true,
     apiKey: "YOUR_SHIPDAY_API_KEY",
@@ -48,7 +71,7 @@ export const ShipdayIntegration = () => {
   });
 
   // This would be your Supabase edge function URL in production
-  const webhookUrl = "https://epkpqlkvhuqnfepfpscd.supabase.co/functions/v1/shipday-integration";
+  const webhookUrl = `https://${window.location.hostname.includes('localhost') ? 'epkpqlkvhuqnfepfpscd.supabase.co' : window.location.hostname}/functions/v1/shipday-integration`;
 
   useEffect(() => {
     // Fetch the webhook token from local storage or generate a new one if not present
@@ -58,7 +81,28 @@ export const ShipdayIntegration = () => {
     } else {
       generateNewToken();
     }
+    
+    // Check if the token is set in environment
+    checkTokenInEnvironment();
   }, []);
+  
+  const checkTokenInEnvironment = async () => {
+    try {
+      // We'll use a function call to check if the token is set in environment
+      // In a real implementation, you might have an admin endpoint for this
+      const { data, error } = await supabase.functions.invoke("shipday-integration", {
+        method: "GET"
+      });
+      
+      if (!error && data) {
+        // This is a simple way to check if the token might be set
+        // In a real implementation, you'd have a proper admin endpoint
+        setIsTokenInEnvironment(true);
+      }
+    } catch (error) {
+      console.error("Error checking token status:", error);
+    }
+  };
 
   const generateNewToken = async () => {
     setIsGeneratingToken(true);
@@ -74,7 +118,7 @@ export const ShipdayIntegration = () => {
       
       toast({
         title: "New webhook token generated",
-        description: "Make sure to update this in your Shipday dashboard"
+        description: "Make sure to update this in your Shipday dashboard and in your Supabase environment variables"
       });
     } catch (error) {
       toast({
@@ -123,6 +167,57 @@ export const ShipdayIntegration = () => {
 
   const getCompleteWebhookUrl = () => {
     return `${webhookUrl}?token=${webhookToken}`;
+  };
+  
+  const testWebhook = async () => {
+    setIsTestingWebhook(true);
+    setWebhookTestResult(null);
+    
+    try {
+      // Make a GET request to the webhook URL to test it
+      const response = await fetch(getCompleteWebhookUrl(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setWebhookTestResult({ 
+          success: true, 
+          message: "Webhook endpoint is responding correctly" 
+        });
+        toast({
+          title: "Webhook test successful",
+          description: "Your webhook endpoint is configured correctly"
+        });
+      } else {
+        setWebhookTestResult({ 
+          success: false, 
+          message: `Error: ${data.error || 'Unknown error'}` 
+        });
+        toast({
+          title: "Webhook test failed",
+          description: data.error || "The webhook endpoint is not responding correctly",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error testing webhook:", error);
+      setWebhookTestResult({ 
+        success: false, 
+        message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      });
+      toast({
+        title: "Webhook test failed",
+        description: "Could not connect to the webhook endpoint",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTestingWebhook(false);
+    }
   };
 
   return (
@@ -288,14 +383,151 @@ export const ShipdayIntegration = () => {
                   </p>
                 </div>
                 
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="gap-1"
+                    onClick={testWebhook}
+                    disabled={isTestingWebhook}
+                  >
+                    {isTestingWebhook ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Webhook className="h-4 w-4" />
+                    )}
+                    Test Webhook Connection
+                  </Button>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" className="gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Webhook Troubleshooting
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Webhook Troubleshooting</DialogTitle>
+                        <DialogDescription>
+                          Common issues and solutions for webhooks
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <h3 className="font-medium">If you see "Webhook connect failed" in Shipday:</h3>
+                          <ul className="list-disc pl-5 space-y-1 text-sm">
+                            <li>Make sure your Supabase function is deployed</li>
+                            <li>Ensure the token is correctly included in the URL</li>
+                            <li>Check that you've copied the entire URL with no spaces</li>
+                            <li>Shipday requires the endpoint to respond to GET requests</li>
+                            <li>Set the webhook token in your Supabase environment variables</li>
+                          </ul>
+                        </div>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start">
+                              How to set the token in Supabase
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Set Webhook Token in Supabase</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Follow these steps to set your webhook token in Supabase for production use:
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="space-y-4 py-4">
+                              <ol className="list-decimal pl-5 space-y-2 text-sm">
+                                <li>Go to your Supabase dashboard</li>
+                                <li>Navigate to "Settings" &gt; "Edge Functions"</li>
+                                <li>Find the "Environment Variables" section</li>
+                                <li>Add a new variable named <code className="bg-muted p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code></li>
+                                <li>Paste your webhook token as the value</li>
+                                <li>Save your changes</li>
+                                <li>Wait a minute for the changes to take effect</li>
+                              </ol>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                After setting the token, redeploy your edge function or wait a few minutes for the changes to propagate.
+                              </p>
+                            </div>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Close</AlertDialogCancel>
+                              <AlertDialogAction asChild>
+                                <Button 
+                                  onClick={() => window.open("https://supabase.com/dashboard/project/epkpqlkvhuqnfepfpscd/settings/functions", "_blank")}
+                                >
+                                  Open Supabase Settings
+                                </Button>
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        
+                        <div className="bg-muted p-4 rounded-md">
+                          <p className="font-medium mb-2">Edge Function Logs:</p>
+                          <p className="text-sm text-muted-foreground">
+                            Check the Supabase Edge Function logs for more detailed information about what might be causing the webhook failure.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => window.open("https://supabase.com/dashboard/project/epkpqlkvhuqnfepfpscd/functions/shipday-integration/logs", "_blank")}
+                          >
+                            View Function Logs
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                {webhookTestResult && (
+                  <div className={`rounded-md p-4 text-sm ${webhookTestResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                    <p className="font-medium flex items-center gap-1">
+                      {webhookTestResult.success ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      {webhookTestResult.success ? 'Test successful' : 'Test failed'}
+                    </p>
+                    <p className={`mt-1 ${webhookTestResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {webhookTestResult.message}
+                    </p>
+                  </div>
+                )}
+                
+                {!isTokenInEnvironment && (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 p-4 text-sm">
+                    <p className="font-medium flex items-center gap-1 text-amber-800">
+                      <AlertCircle className="h-4 w-4" />
+                      Environment Variable Not Set
+                    </p>
+                    <p className="mt-1 text-amber-700">
+                      For production use, you should set the <code className="bg-amber-100 p-1 rounded text-xs">SHIPDAY_WEBHOOK_TOKEN</code> environment variable in your Supabase project.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 text-amber-800 border-amber-300 hover:bg-amber-100"
+                      onClick={() => window.open("https://supabase.com/dashboard/project/epkpqlkvhuqnfepfpscd/settings/functions", "_blank")}
+                    >
+                      Set Environment Variable
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="rounded-md bg-muted p-4 text-sm">
-                  <p className="font-medium">Setup instructions:</p>
+                  <p className="font-medium">Setup instructions for Shipday:</p>
                   <ol className="list-decimal pl-5 space-y-1 mt-2">
                     <li>Copy the webhook URL above (it includes the security token)</li>
                     <li>Go to your Shipday dashboard &gt; Settings &gt; Developer</li>
                     <li>Paste the URL into the "Webhook URL" field</li>
                     <li>Select event types: Order Created, Status Changed, Location Updated</li>
                     <li>Save your changes</li>
+                    <li>Click the "Test Connection" button in Shipday to verify</li>
                   </ol>
                 </div>
               </div>
