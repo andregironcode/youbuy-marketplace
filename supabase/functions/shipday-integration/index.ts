@@ -5,6 +5,7 @@ import { corsHeaders } from "../_shared/cors.ts"
 serve(async (req) => {
   // Log request details
   console.log(`Shipday webhook: ${req.method} ${req.url}`);
+  console.log(`Headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`);
   
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -22,6 +23,7 @@ serve(async (req) => {
       console.log("Handling GET verification request from Shipday");
       
       // Simply return a 200 OK response to verify the webhook
+      // Don't try to validate any tokens for the verification step
       return new Response(
         JSON.stringify({ success: true, message: "Webhook endpoint verified successfully" }),
         { 
@@ -36,31 +38,21 @@ serve(async (req) => {
       console.log("Received webhook POST event from Shipday");
       
       try {
-        // Get a clone of the request to read the body multiple times if needed
-        const clonedReq = req.clone();
+        // Get the request body as text first for logging
+        const textBody = await req.clone().text();
+        console.log("Raw webhook payload:", textBody);
         
-        // Try to parse the body as JSON
-        let payload;
+        // Try to parse as JSON if possible
+        let payload = {};
         try {
-          payload = await clonedReq.json();
-          console.log("Webhook payload:", JSON.stringify(payload, null, 2));
+          payload = JSON.parse(textBody);
+          console.log("Parsed webhook payload:", JSON.stringify(payload, null, 2));
         } catch (parseError) {
-          console.error("Error parsing webhook payload:", parseError);
-          // Try to get the raw text as fallback
-          const textBody = await req.clone().text();
-          console.log("Raw webhook payload:", textBody);
-          
-          // Still return 200 to acknowledge receipt
-          return new Response(
-            JSON.stringify({ success: true, message: "Webhook received but couldn't parse payload" }),
-            { 
-              status: 200, 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            }
-          );
+          console.error("Error parsing webhook JSON:", parseError);
+          // Continue with the raw text
         }
         
-        // Extract the event type
+        // Extract the event type if available
         const eventType = payload.eventType || payload.type || "unknown";
         console.log("Processing webhook event type:", eventType);
         
