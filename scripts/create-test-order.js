@@ -382,6 +382,9 @@ async function createTestOrder() {
           delivery_lat: deliveryDetails.delivery_coordinates[0],
           delivery_lng: deliveryDetails.delivery_coordinates[1],
           status: 'pending',
+          scheduled_time: new Date().toISOString(),
+          customer_name: deliveryDetails.contact_name,
+          customer_phone: deliveryDetails.contact_phone,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
