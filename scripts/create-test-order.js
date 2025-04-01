@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import axios from 'axios';
 
 // Load environment variables
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+const requiredEnvVars = [
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SHIPDAY_API_KEY'
+];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
@@ -16,6 +21,15 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ShipDay API configuration
+const shipdayConfig = {
+  apiKey: process.env.SHIPDAY_API_KEY,
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.SHIPDAY_API_KEY}`
+  }
+};
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -37,6 +51,46 @@ class DatabaseError extends Error {
     super(message);
     this.name = 'DatabaseError';
     this.originalError = originalError;
+  }
+}
+
+class ShipDayError extends Error {
+  constructor(message, originalError) {
+    super(message);
+    this.name = 'ShipDayError';
+    this.originalError = originalError;
+  }
+}
+
+// Send order to ShipDay API
+async function sendOrderToShipDay(order) {
+  try {
+    // ShipDay's API endpoint
+    const response = await axios.post(
+      'https://api.shipday.com/api/v1/orders',
+      order,
+      { 
+        headers: shipdayConfig.headers,
+        validateStatus: function (status) {
+          return status >= 200 && status < 300; // Accept any 2xx status code
+        }
+      }
+    );
+
+    if (!response.data || !response.data.order_id) {
+      throw new ShipDayError('Invalid response from ShipDay API', response.data);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      console.error('ShipDay API Error Response:', error.response.data);
+      throw new ShipDayError(
+        `ShipDay API error: ${error.response.data.message || error.message}`,
+        error.response.data
+      );
+    }
+    throw new ShipDayError('Failed to send order to ShipDay', error);
   }
 }
 
@@ -64,9 +118,10 @@ async function formatOrderForShipDay(order, route) {
     'evening': '17:00-20:00'
   };
 
+  // Format the order according to ShipDay's API requirements
   return {
     order_number: order.id,
-    order_date: order.created_at,
+    order_date: new Date(order.created_at).toISOString(),
     delivery_date: route.date,
     delivery_window: timeSlotToWindow[route.time_slot] || '09:00-17:00',
     status: 'pending',
@@ -247,25 +302,16 @@ async function createTestOrder() {
       .insert([
         {
           order_id: order[0].id,
-          date: deliveryDate,
-          time_slot: timeSlot,
+          pickup_address: pickupAddress,
+          delivery_address: deliveryAddress,
+          pickup_lat: pickupLat,
+          pickup_lng: pickupLng,
+          delivery_lat: deliveryLat,
+          delivery_lng: deliveryLng,
           status: 'pending',
-          pickup_route: {
-            address: pickupAddress,
-            coordinates: [pickupLat, pickupLng],
-            contact_name: 'Seller Name',
-            contact_phone: sellerPhone,
-            pickup_instructions: 'Ring doorbell twice',
-            estimated_pickup_time: '9:00 AM'
-          },
-          delivery_route: {
-            address: deliveryAddress,
-            coordinates: [deliveryLat, deliveryLng],
-            contact_name: 'Test Customer',
-            contact_phone: customerPhone,
-            delivery_instructions: 'Please call upon arrival',
-            estimated_delivery_time: '10:30 AM'
-          }
+          scheduled_time: new Date(`${deliveryDate}T09:00:00Z`).toISOString(),
+          customer_name: 'Test Customer',
+          customer_phone: customerPhone
         }
       ])
       .select();
@@ -304,12 +350,30 @@ async function createTestOrder() {
     const shipDayOrder = await formatOrderForShipDay(order[0], route[0]);
     console.log('ShipDay formatted order:', JSON.stringify(shipDayOrder, null, 2));
 
+    // Send order to ShipDay
+    const shipDayResponse = await sendOrderToShipDay(shipDayOrder);
+    console.log('ShipDay API response:', shipDayResponse);
+
+    // Update order with ShipDay reference
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        shipday_order_id: shipDayResponse.order_id,
+        last_updated_by: order[0].seller_id
+      })
+      .eq('id', order[0].id);
+
+    if (updateError) {
+      console.warn('Failed to update order with ShipDay reference:', updateError);
+    }
+
     return {
       success: true,
       order: order[0],
       route: route[0],
       history: history[0],
-      shipDayOrder
+      shipDayOrder,
+      shipDayResponse
     };
 
   } catch (error) {
@@ -326,7 +390,7 @@ async function createTestOrder() {
 createTestOrder().then(result => {
   if (result.success) {
     console.log('Successfully created test order with all related records');
-    console.log('ShipDay formatted order is ready to be sent to the API');
+    console.log('Order sent to ShipDay successfully');
   } else {
     console.error(`Failed to create test order (${result.errorType}):`, result.error);
     process.exit(1);
