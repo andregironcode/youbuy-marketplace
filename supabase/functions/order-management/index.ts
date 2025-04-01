@@ -1,10 +1,91 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Shipday API configuration
+const SHIPDAY_API_KEY = Deno.env.get('SHIPDAY_API_KEY')
+if (!SHIPDAY_API_KEY) {
+  console.error('SHIPDAY_API_KEY is not set in environment variables')
+}
+const SHIPDAY_API_URL = 'https://app.shipday.com/api/v1'
+
+// Shipday API helper functions
+async function createShipdayOrder(orderData: any) {
+  if (!SHIPDAY_API_KEY) {
+    console.error('Cannot create Shipday order: API key not configured')
+    return null
+  }
+
+  try {
+    const response = await fetch(`${SHIPDAY_API_URL}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${SHIPDAY_API_KEY}`
+      },
+      body: JSON.stringify({
+        orderNumber: orderData.id,
+        customerName: orderData.buyer_name,
+        customerPhone: orderData.buyer_phone,
+        customerAddress: orderData.delivery_address,
+        customerLatitude: orderData.delivery_latitude,
+        customerLongitude: orderData.delivery_longitude,
+        pickupName: orderData.seller_name,
+        pickupPhone: orderData.seller_phone,
+        pickupAddress: orderData.pickup_address,
+        pickupLatitude: orderData.pickup_latitude,
+        pickupLongitude: orderData.pickup_longitude,
+        items: [{
+          name: orderData.product_title,
+          quantity: 1
+        }],
+        status: 'pending'
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Shipday API error: ${response.statusText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error creating Shipday order:', error)
+    return null
+  }
+}
+
+async function updateShipdayOrderStatus(orderNumber: string, status: string, notes?: string) {
+  if (!SHIPDAY_API_KEY) {
+    console.error('Cannot update Shipday order: API key not configured')
+    return null
+  }
+
+  try {
+    const response = await fetch(`${SHIPDAY_API_URL}/orders/${orderNumber}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${SHIPDAY_API_KEY}`
+      },
+      body: JSON.stringify({
+        status,
+        notes
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Shipday API error: ${response.statusText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error updating Shipday order status:', error)
+    return null
+  }
 }
 
 interface RequestBody {
@@ -73,7 +154,26 @@ serve(async (req) => {
       // First check if the user is authorized for this order
       const { data: orderData, error: orderError } = await supabaseClient
         .from('orders')
-        .select('seller_id, buyer_id')
+        .select(`
+          id,
+          seller_id,
+          buyer_id,
+          products:product_id (
+            title,
+            location,
+            latitude,
+            longitude
+          ),
+          delivery_details,
+          buyer:buyer_id (
+            full_name,
+            phone
+          ),
+          seller:seller_id (
+            full_name,
+            phone
+          )
+        `)
         .eq('id', orderId)
         .single()
       
@@ -94,8 +194,16 @@ serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+
+      try {
+        // Update Shipday order status
+        await updateShipdayOrderStatus(orderId, status, notes)
+      } catch (shipdayError) {
+        console.error('Error updating Shipday status:', shipdayError)
+        // Continue with local update even if Shipday update fails
+      }
       
-      // Update order status
+      // Update order status in Supabase
       const { data: statusData, error: statusError } = await supabaseClient.rpc(
         'update_order_status',
         {

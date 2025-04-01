@@ -23,6 +23,7 @@ import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import CheckoutPage from "@/pages/Checkout";
 import CategoriesPage from "@/pages/CategoriesPage";
+import TestPage from "@/pages/TestPage";
 import "./App.css";
 
 // Create a client
@@ -72,6 +73,7 @@ function App() {
                             <Route path="/messages/:chatId" element={<Messages />} />
                             <Route path="/favorites" element={<Favorites />} />
                             <Route path="/notifications" element={<Notifications />} />
+                            <Route path="/test" element={<TestPage />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </div>

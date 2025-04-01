@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -25,6 +24,21 @@ const statusUpdateSchema = z.object({
   }),
   notes: z.string().optional(),
 });
+
+// Map our status codes to Shipday status codes
+const SHIPDAY_STATUS_MAP: Record<string, string> = {
+  'pending': 'pending',
+  'confirmed': 'confirmed',
+  'preparing': 'preparing',
+  'pickup_scheduled': 'scheduled',
+  'picked_up': 'picked_up',
+  'in_transit': 'in_transit',
+  'out_for_delivery': 'out_for_delivery',
+  'delivered': 'delivered',
+  'completed': 'completed',
+  'cancelled': 'cancelled',
+  'returned': 'returned'
+};
 
 interface TrackingUpdateProps {
   orderId: string;
@@ -81,6 +95,16 @@ export const TrackingUpdate = ({
   }, [currentStatus, form]);
 
   const handleLocationSelect = (lat: number, lng: number) => {
+    // Validate coordinates
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      toast({
+        variant: "destructive",
+        title: "Invalid location",
+        description: "Please select a valid location on the map."
+      });
+      return;
+    }
+    
     setMapCoordinates({ lat, lng });
     setLocationSelected(true);
   };
@@ -89,13 +113,18 @@ export const TrackingUpdate = ({
     setIsSubmitting(true);
     
     try {
+      // Map the status to Shipday's format
+      const shipdayStatus = SHIPDAY_STATUS_MAP[values.status] || values.status;
+      
       console.log("Updating order status with values:", {
         orderId,
         status: values.status,
+        shipdayStatus,
         notes: values.notes,
         location: mapCoordinates
       });
       
+      // Update order status in Supabase
       const { error } = await supabase.rpc('update_order_status', {
         p_order_id: orderId,
         p_status: values.status,
@@ -112,6 +141,8 @@ export const TrackingUpdate = ({
       });
       
       form.reset();
+      setMapCoordinates(null);
+      setLocationSelected(false);
       onUpdateSuccess();
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -123,6 +154,15 @@ export const TrackingUpdate = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleMapError = (error: Error) => {
+    console.error("Map error:", error);
+    toast({
+      variant: "destructive",
+      title: "Map error",
+      description: "There was an error loading the map. Please try again."
+    });
   };
 
   return (
@@ -188,6 +228,7 @@ export const TrackingUpdate = ({
               showMarker={locationSelected}
               latitude={mapCoordinates?.lat}
               longitude={mapCoordinates?.lng}
+              onError={handleMapError}
             />
           </div>
           <p className="text-xs text-muted-foreground">

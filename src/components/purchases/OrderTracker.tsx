@@ -6,7 +6,9 @@ import {
   Clock, 
   Check, 
   MapPin, 
-  AlertCircle 
+  AlertCircle,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +16,15 @@ import { Button } from "@/components/ui/button";
 import { LocationMap } from "@/components/map/LocationMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
 
 interface OrderStage {
   code: string;
   name: string;
-  description: string;
   display_order: number;
 }
 
 interface StatusHistory {
-  id: string;
   status: string;
   notes: string | null;
   created_at: string;
@@ -33,295 +34,255 @@ interface StatusHistory {
 
 interface OrderTrackerProps {
   orderId: string;
-  currentStatus: string;
-  orderDate: string;
-  estimatedDelivery?: string | null;
-  orderAddress?: any;
+  mockData?: {
+    stages?: OrderStage[];
+    statusHistory?: StatusHistory[];
+  };
 }
 
-export const OrderTracker = ({ 
-  orderId, 
-  currentStatus, 
-  orderDate,
-  estimatedDelivery,
-  orderAddress
-}: OrderTrackerProps) => {
-  const [stages, setStages] = useState<OrderStage[]>([]);
-  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
+export const OrderTracker = ({ orderId, mockData }: OrderTrackerProps) => {
+  const [stages, setStages] = useState<OrderStage[]>(mockData?.stages || []);
+  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>(mockData?.statusHistory || []);
   const [currentStage, setCurrentStage] = useState<OrderStage | null>(null);
   const [progress, setProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [mapCoordinates, setMapCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchOrderTracking = async () => {
-      console.log("Fetching tracking info for order:", orderId, "with status:", currentStatus);
-      setIsLoading(true);
-      try {
-        // Get all delivery stages
-        const { data: stagesData, error: stagesError } = await supabase
-          .from("delivery_stages")
-          .select("*")
-          .order("display_order");
-          
-        if (stagesError) {
-          console.error("Error fetching stages:", stagesError);
-          throw stagesError;
-        }
-        
-        console.log("Got stages data:", stagesData);
-        
-        // Get order status history
-        const { data: historyData, error: historyError } = await supabase
-          .from("order_status_history")
-          .select("*")
-          .eq("order_id", orderId)
-          .order("created_at", { ascending: false });
-          
-        if (historyError) {
-          console.error("Error fetching history:", historyError);
-          throw historyError;
-        }
-        
-        console.log("Got history data:", historyData);
-        
-        // Get latest status with location if available
-        const latestWithLocation = historyData?.find(entry => 
-          entry.location_lat && entry.location_lng
-        );
-        
-        if (latestWithLocation && latestWithLocation.location_lat && latestWithLocation.location_lng) {
+  const fetchTrackingInfo = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch delivery stages
+      const { data: stagesData, error: stagesError } = await supabase
+        .from("delivery_stages")
+        .select("*")
+        .order("display_order");
+
+      if (stagesError) throw stagesError;
+      setStages(stagesData || []);
+
+      // Fetch order status history
+      const { data: historyData, error: historyError } = await supabase
+        .from("order_status_history")
+        .select("*")
+        .eq("order_id", orderId)
+        .order("created_at", { ascending: false });
+
+      if (historyError) throw historyError;
+      setStatusHistory(historyData || []);
+
+      // Get current status from the latest history entry
+      if (historyData && historyData.length > 0) {
+        const currentStatus = historyData[0].status;
+        const currentStage = stagesData.find(stage => stage.code === currentStatus);
+        setCurrentStage(currentStage || null);
+
+        // Calculate progress
+        const currentIndex = stagesData.findIndex(stage => stage.code === currentStatus);
+        const progress = (currentIndex / (stagesData.length - 1)) * 100;
+        setProgress(progress);
+
+        // Set map coordinates if available
+        if (historyData[0].location_lat && historyData[0].location_lng) {
           setMapCoordinates({
-            lat: latestWithLocation.location_lat,
-            lng: latestWithLocation.location_lng
+            lat: historyData[0].location_lat,
+            lng: historyData[0].location_lng
           });
-          console.log("Set map coordinates from history:", mapCoordinates);
-        } else if (orderAddress?.latitude && orderAddress?.longitude) {
-          // Fall back to delivery address
-          setMapCoordinates({
-            lat: orderAddress.latitude,
-            lng: orderAddress.longitude
-          });
-          console.log("Set map coordinates from address:", mapCoordinates);
         }
-        
-        // Find current stage
-        const current = stagesData?.find(stage => stage.code === currentStatus);
-        console.log("Current stage found:", current);
-        
-        if (current && stagesData) {
-          setCurrentStage(current);
-          
-          // Calculate progress percentage
-          const totalStages = stagesData.filter(s => 
-            s.display_order <= stagesData.find(ds => ds.code === 'delivered')!.display_order
-          ).length;
-          
-          const currentIndex = stagesData.findIndex(s => s.code === current.code);
-          
-          if (current.code === 'cancelled') {
-            setProgress(0);
-          } else if (current.code === 'delivered' || current.code === 'completed') {
-            setProgress(100);
-          } else {
-            const progressValue = Math.round((currentIndex / (totalStages - 1)) * 100);
-            setProgress(progressValue);
-          }
-          
-          console.log("Set progress to:", progress);
-        }
-        
-        setStages(stagesData || []);
-        setStatusHistory(historyData || []);
-      } catch (error) {
-        console.error("Error fetching order tracking:", error);
-        toast({
-          variant: "destructive",
-          title: "Error loading tracking information",
-          description: "Could not load the order status information."
-        });
-      } finally {
-        setIsLoading(false);
+      } else {
+        setCurrentStage(null);
+        setProgress(0);
+        setMapCoordinates(null);
       }
-    };
-    
-    if (orderId) {
-      fetchOrderTracking();
+    } catch (err) {
+      console.error("Error fetching tracking info:", err);
+      setError("Failed to load tracking information");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load tracking information. Please try again."
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [orderId, currentStatus, orderAddress, toast]);
-  
-  const getStageIcon = (code: string) => {
-    switch (code) {
+  };
+
+  useEffect(() => {
+    if (!mockData) {
+      fetchTrackingInfo();
+    }
+  }, [orderId]);
+
+  const handleMapError = (error: Error) => {
+    console.error("Map error:", error);
+    setMapError("Failed to load the map");
+    toast({
+      variant: "destructive",
+      title: "Map error",
+      description: "There was an error loading the map. Please try again."
+    });
+  };
+
+  const getStageIcon = (status: string) => {
+    switch (status) {
       case 'pending':
+        return '⏳';
       case 'confirmed':
-        return <Clock className="h-5 w-5" />;
+        return '✅';
       case 'preparing':
+        return '👨‍🍳';
       case 'pickup_scheduled':
-        return <Package className="h-5 w-5" />;
+        return '📅';
       case 'picked_up':
+        return '📦';
       case 'in_transit':
+        return '🚚';
       case 'out_for_delivery':
-        return <Truck className="h-5 w-5" />;
+        return '🛵';
       case 'delivered':
+        return '🏠';
       case 'completed':
-        return <Check className="h-5 w-5" />;
+        return '🎉';
       case 'cancelled':
+        return '❌';
       case 'returned':
-        return <AlertCircle className="h-5 w-5" />;
+        return '↩️';
       default:
-        return <Package className="h-5 w-5" />;
+        return '•';
     }
   };
-  
-  const getStageStatus = (stageCode: string) => {
-    if (!currentStage) return 'inactive';
-    
-    const stageOrder = stages.find(s => s.code === stageCode)?.display_order || 0;
-    const currentOrder = currentStage.display_order;
-    
-    if (currentStage.code === 'cancelled') {
-      return stageCode === 'cancelled' ? 'active' : 'inactive';
-    }
-    
-    if (stageOrder < currentOrder) return 'completed';
-    if (stageOrder === currentOrder) return 'active';
-    return 'inactive';
-  };
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return "bg-yellow-100 text-yellow-800";
+        return 'text-yellow-500';
       case 'confirmed':
+        return 'text-blue-500';
       case 'preparing':
-        return "bg-blue-100 text-blue-800";
+        return 'text-purple-500';
       case 'pickup_scheduled':
+        return 'text-indigo-500';
       case 'picked_up':
+        return 'text-green-500';
       case 'in_transit':
-        return "bg-purple-100 text-purple-800";
+        return 'text-blue-500';
       case 'out_for_delivery':
-        return "bg-indigo-100 text-indigo-800";
+        return 'text-orange-500';
       case 'delivered':
+        return 'text-green-500';
       case 'completed':
-        return "bg-green-100 text-green-800";
+        return 'text-green-500';
       case 'cancelled':
+        return 'text-red-500';
       case 'returned':
-        return "bg-red-100 text-red-800";
+        return 'text-red-500';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'text-gray-500';
     }
   };
-  
-  if (isLoading) {
+
+  if (loading) {
     return (
-      <div className="py-4 text-center">
-        <div className="animate-pulse h-4 bg-gray-200 rounded w-3/4 mx-auto mb-3"></div>
-        <div className="animate-pulse h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
-  
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-50 rounded-md">
+        <div className="flex items-center justify-between">
+          <p>{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchTrackingInfo}
+            disabled={loading}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {currentStage && getStageIcon(currentStage.code)}
-            <h3 className="font-medium">{currentStage?.name || "Processing Order"}</h3>
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Current Status</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchTrackingInfo}
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <span className={`text-xl ${getStatusColor(currentStage?.code || '')}`}>
+                {getStageIcon(currentStage?.code || '')}
+              </span>
+            </div>
           </div>
-          <Badge className={getStatusColor(currentStatus)}>
-            {currentStage?.name || currentStatus}
-          </Badge>
+          <p className="text-2xl font-bold">{currentStage?.name || 'No status updates yet'}</p>
+          <Progress value={progress} className="h-2" />
         </div>
-        
-        <Progress value={progress} className="h-2" />
-        
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Order placed</span>
-          <span>{currentStage?.code === 'cancelled' ? 'Cancelled' : 'Delivered'}</span>
-        </div>
-      </div>
-      
-      {estimatedDelivery && currentStage?.code !== 'cancelled' && (
-        <div className="bg-gray-50 p-3 rounded-md flex items-center gap-3">
-          <Clock className="h-5 w-5 text-gray-500" />
-          <div>
-            <p className="text-sm font-medium">Estimated Delivery</p>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(estimatedDelivery), "PPP")}
-            </p>
+      </Card>
+
+      {mapCoordinates && !mapError && (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Current Location</h3>
+          <div className="h-[300px] rounded-md overflow-hidden">
+            <LocationMap
+              height="100%"
+              zoom={13}
+              interactive={false}
+              showMarker={true}
+              latitude={mapCoordinates.lat}
+              longitude={mapCoordinates.lng}
+              onError={handleMapError}
+            />
           </div>
-        </div>
+        </Card>
       )}
-      
-      {mapCoordinates && (
-        <div className="rounded-md border overflow-hidden">
-          <div className="p-3 bg-gray-50 border-b">
-            <h4 className="font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              {currentStage?.code === 'delivered' ? 'Delivery Location' : 'Current Location'}
-            </h4>
-          </div>
-          <LocationMap
-            latitude={mapCoordinates.lat}
-            longitude={mapCoordinates.lng}
-            height="200px"
-            zoom={14}
-            showMarker={true}
-            interactive={false}
-          />
-        </div>
-      )}
-      
-      <div className="space-y-4">
-        <h4 className="font-medium">Order Timeline</h4>
+
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Status History</h3>
         <div className="space-y-4">
           {statusHistory.length > 0 ? (
-            <div className="space-y-3">
-              {statusHistory.map((status) => {
-                const stageName = stages.find(s => s.code === status.status)?.name || status.status;
-                return (
-                  <div key={status.id} className="flex items-start gap-3">
-                    <div className={`mt-1 p-1 rounded-full ${getStatusColor(status.status)}`}>
-                      {getStageIcon(status.status)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">{stageName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(status.created_at), "PPp")}
-                        </p>
-                      </div>
-                      {status.notes && (
-                        <p className="text-sm text-muted-foreground mt-1">{status.notes}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            statusHistory.map((status, index) => (
+              <div key={index} className="flex items-start space-x-4">
+                <span className={`text-xl ${getStatusColor(status.status)}`}>
+                  {getStageIcon(status.status)}
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">
+                    {stages.find(s => s.code === status.status)?.name || status.status}
+                  </p>
+                  {status.notes && (
+                    <p className="text-sm text-gray-500">{status.notes}</p>
+                  )}
+                  <p className="text-xs text-gray-400">
+                    {new Date(status.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))
           ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              <p>No detailed status updates available.</p>
-            </div>
+            <p className="text-muted-foreground text-center py-4">
+              No status updates available yet
+            </p>
           )}
         </div>
-        
-        <div className="flex items-start gap-3">
-          <div className="mt-1 p-1 rounded-full bg-gray-100">
-            <Package className="h-5 w-5 text-gray-600" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">Order Placed</p>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(orderDate), "PPp")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 };
