@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import axios from 'axios';
+import { Shipday } from 'shipday/integration';
 
 // Load environment variables
 dotenv.config();
@@ -9,9 +9,9 @@ dotenv.config();
 const requiredEnvVars = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'SHIPDAY_API_KEY',
-  'SHIPDAY_API_URL'
+  'SHIPDAY_API_KEY'
 ];
+
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
@@ -23,18 +23,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ShipDay API configuration
-const shipdayConfig = {
-  apiKey: process.env.SHIPDAY_API_KEY,
-  endpoints: {
-    orders: `${process.env.SHIPDAY_API_URL}/orders`,
-    notifications: `${process.env.SHIPDAY_API_URL}/notifications`
-  },
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.SHIPDAY_API_KEY}`
-  }
-};
+// Initialize Shipday client
+const shipdayClient = new Shipday(process.env.SHIPDAY_API_KEY);
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -67,100 +57,52 @@ class ShipDayError extends Error {
   }
 }
 
-// Send order to ShipDay API
+// Send order to ShipDay using SDK
 async function sendOrderToShipDay(order) {
-  // Array of different authentication methods to try
-  const authMethods = [
-    {
-      name: 'Bearer Token',
-      headers: {
-        'Authorization': `Bearer ${process.env.SHIPDAY_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    },
-    {
-      name: 'Basic Auth',
-      headers: {
-        'Authorization': `Basic ${Buffer.from(process.env.SHIPDAY_API_KEY).toString('base64')}`,
-        'Content-Type': 'application/json'
-      }
-    },
-    {
-      name: 'API Key',
-      headers: {
-        'X-API-Key': process.env.SHIPDAY_API_KEY,
-        'Content-Type': 'application/json'
-      }
-    },
-    {
-      name: 'Direct Token',
-      headers: {
-        'Authorization': process.env.SHIPDAY_API_KEY,
-        'Content-Type': 'application/json'
-      }
+  try {
+    // Validate required fields
+    if (!order.orderNumber || !order.customerName || !order.customerAddress) {
+      throw new ValidationError('Missing required fields for ShipDay order');
     }
-  ];
 
-  let lastError = null;
+    // Create order using SDK
+    const response = await shipdayClient.createOrder({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      deliveryDate: order.deliveryDate,
+      deliveryTime: order.deliveryWindow,
+      customerName: order.customer.name,
+      customerAddress: order.customer.address.street,
+      customerEmail: order.customer.email || '',
+      customerPhoneNumber: order.customer.phone,
+      restaurantName: order.pickup.name,
+      restaurantAddress: order.pickup.address.street,
+      restaurantPhoneNumber: order.pickup.phone,
+      pickupLatitude: order.pickup.address.latitude,
+      pickupLongitude: order.pickup.address.longitude,
+      deliveryLatitude: order.customer.address.latitude,
+      deliveryLongitude: order.customer.address.longitude,
+      orderAmount: order.amount || 0,
+      tip: 0,
+      tax: 0,
+      deliveryFee: order.deliveryFee || 0,
+      totalAmount: (order.amount || 0) + (order.deliveryFee || 0),
+      pickupInstruction: order.pickup.instructions || '',
+      deliveryInstruction: order.delivery.instructions || '',
+      orderSource: 'YouBuy Marketplace',
+      additionalId: order.additionalId || '',
+      items: order.items || [],
+      status: order.status || 'ORDERED'
+    });
 
-  // Try each authentication method
-  for (const method of authMethods) {
-    try {
-      console.log(`Trying authentication method: ${method.name}`);
-      
-      // Validate required fields
-      if (!order.order_number || !order.customer || !order.pickup || !order.delivery) {
-        throw new ValidationError('Missing required fields for ShipDay order');
-      }
-
-      // Validate customer information
-      if (!order.customer.name || !order.customer.phone || !order.customer.address) {
-        throw new ValidationError('Missing required customer information');
-      }
-
-      // Validate pickup information
-      if (!order.pickup.name || !order.pickup.address) {
-        throw new ValidationError('Missing required pickup information');
-      }
-
-      // Validate delivery information
-      if (!order.delivery.address) {
-        throw new ValidationError('Missing required delivery information');
-      }
-
-      // Make the API request
-      const response = await axios.post(
-        `${process.env.SHIPDAY_API_URL}/orders`,
-        order,
-        { headers: method.headers }
-      );
-
-      if (response.data && response.data.order_id) {
-        console.log(`Success with authentication method: ${method.name}`);
-        return response.data;
-      }
-    } catch (error) {
-      console.error(`Failed with authentication method ${method.name}:`, {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        headers: error.response?.headers
-      });
-      lastError = error;
-    }
+    return response;
+  } catch (error) {
+    console.error('ShipDay SDK Error:', error);
+    throw new ShipDayError('Failed to send order to ShipDay', error);
   }
-
-  // If we get here, all methods failed
-  if (lastError?.response) {
-    throw new ShipDayError(
-      `All authentication methods failed. Last error: ${lastError.response.data?.message || lastError.response.statusText}`,
-      lastError.response.status
-    );
-  }
-  throw new ShipDayError('Failed to send order to ShipDay after trying all authentication methods', lastError);
 }
 
-// Format order for ShipDay API
+// Format order for ShipDay SDK
 async function formatOrderForShipDay(order, route) {
   const deliveryDetails = order.delivery_details;
 
@@ -179,56 +121,39 @@ async function formatOrderForShipDay(order, route) {
     throw new ValidationError('Seller information not found');
   }
 
-  // Format the order according to ShipDay's API requirements
+  // Format the order according to ShipDay SDK requirements
   return {
-    order_number: order.id,
-    order_date: new Date(order.created_at).toISOString(),
-    delivery_date: new Date(route.scheduled_time).toISOString().split('T')[0],
-    delivery_window: deliveryDetails.preferred_delivery_window || '09:00-12:00',
-    status: 'pending',
-    customer: {
-      name: deliveryDetails.contact_name,
-      phone: deliveryDetails.contact_phone,
-      email: '', // We might want to add this to our schema
-      address: {
-        street: deliveryDetails.delivery_address,
-        city: 'Dubai', // We might want to add this to our schema
-        state: 'Dubai', // We might want to add this to our schema
-        country: 'UAE',
-        postal_code: '', // We might want to add this to our schema
-        latitude: deliveryDetails.delivery_coordinates[0],
-        longitude: deliveryDetails.delivery_coordinates[1]
-      }
-    },
-    pickup: {
-      name: seller.full_name || seller.username || 'Seller',
-      phone: seller.phone || deliveryDetails.contact_phone,
-      address: {
-        street: deliveryDetails.pickup_address,
-        city: 'Dubai', // We might want to add this to our schema
-        state: 'Dubai', // We might want to add this to our schema
-        country: 'UAE',
-        postal_code: '', // We might want to add this to our schema
-        latitude: deliveryDetails.pickup_coordinates[0],
-        longitude: deliveryDetails.pickup_coordinates[1]
-      },
-      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival',
-      window: deliveryDetails.preferred_delivery_window || '09:00-12:00'
-    },
-    delivery: {
-      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival',
-      signature_required: true,
-      proof_of_delivery: true
-    },
+    orderNumber: order.id,
+    orderDate: new Date(order.created_at).toISOString(),
+    deliveryDate: new Date(route.scheduled_time).toISOString().split('T')[0],
+    deliveryWindow: deliveryDetails.preferred_delivery_window || '09:00-12:00',
+    customerName: deliveryDetails.contact_name,
+    customerAddress: deliveryDetails.delivery_address,
+    customerPhoneNumber: deliveryDetails.contact_phone,
+    customerEmail: '',
+    restaurantName: seller.full_name || seller.username || 'Seller',
+    restaurantAddress: deliveryDetails.pickup_address,
+    restaurantPhoneNumber: seller.phone || deliveryDetails.contact_phone,
+    pickupLatitude: deliveryDetails.pickup_coordinates[0],
+    pickupLongitude: deliveryDetails.pickup_coordinates[1],
+    deliveryLatitude: deliveryDetails.delivery_coordinates[0],
+    deliveryLongitude: deliveryDetails.delivery_coordinates[1],
+    orderAmount: order.amount,
+    deliveryFee: deliveryDetails.delivery_cost,
+    totalAmount: order.amount + deliveryDetails.delivery_cost,
+    pickupInstruction: deliveryDetails.delivery_instructions || 'Please call upon arrival',
+    deliveryInstruction: deliveryDetails.delivery_instructions || 'Please call upon arrival',
+    orderSource: 'YouBuy Marketplace',
+    additionalId: order.id,
     items: [
       {
         name: 'Package',
         quantity: 1,
-        weight: deliveryDetails.package_weight || '1kg',
-        dimensions: deliveryDetails.package_dimensions || '30x20x15cm'
+        unitPrice: order.amount,
+        addon: `Weight: ${deliveryDetails.package_weight || '1kg'}, Dimensions: ${deliveryDetails.package_dimensions || '30x20x15cm'}`
       }
     ],
-    notes: `Order ID: ${order.id}\nProduct ID: ${order.product_id}\nDelivery Cost: ${deliveryDetails.delivery_cost}`
+    status: 'ORDERED'
   };
 }
 
