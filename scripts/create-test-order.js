@@ -9,7 +9,8 @@ dotenv.config();
 const requiredEnvVars = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'SHIPDAY_API_KEY'
+  'SHIPDAY_API_KEY',
+  'SHIPDAY_API_URL'
 ];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
@@ -65,32 +66,54 @@ class ShipDayError extends Error {
 // Send order to ShipDay API
 async function sendOrderToShipDay(order) {
   try {
-    // ShipDay's API endpoint
+    // Validate required fields
+    if (!order.order_number || !order.customer || !order.pickup || !order.delivery) {
+      throw new ValidationError('Missing required fields for ShipDay order');
+    }
+
+    // Validate customer information
+    if (!order.customer.name || !order.customer.phone || !order.customer.address) {
+      throw new ValidationError('Missing required customer information');
+    }
+
+    // Validate pickup information
+    if (!order.pickup.name || !order.pickup.address) {
+      throw new ValidationError('Missing required pickup information');
+    }
+
+    // Validate delivery information
+    if (!order.delivery.address) {
+      throw new ValidationError('Missing required delivery information');
+    }
+
+    // Make the API request
     const response = await axios.post(
-      'https://api.shipday.com/api/v1/orders',
+      `${process.env.SHIPDAY_API_URL}/orders`,
       order,
-      { 
-        headers: shipdayConfig.headers,
-        validateStatus: function (status) {
-          return status >= 200 && status < 300; // Accept any 2xx status code
+      {
+        headers: {
+          'Authorization': `Basic ${process.env.SHIPDAY_API_KEY}`,
+          'Content-Type': 'application/json'
         }
       }
     );
 
     if (!response.data || !response.data.order_id) {
-      throw new ShipDayError('Invalid response from ShipDay API', response.data);
+      throw new ShipDayError('Invalid response from ShipDay API');
     }
 
     return response.data;
   } catch (error) {
+    if (error instanceof ValidationError || error instanceof ShipDayError) {
+      throw error;
+    }
     if (error.response) {
-      console.error('ShipDay API Error Response:', error.response.data);
       throw new ShipDayError(
-        `ShipDay API error: ${error.response.data.message || error.message}`,
-        error.response.data
+        `ShipDay API error: ${error.response.data.message || error.response.statusText}`,
+        error.response.status
       );
     }
-    throw new ShipDayError('Failed to send order to ShipDay', error);
+    throw new ShipDayError('Failed to send order to ShipDay', 500);
   }
 }
 
@@ -251,11 +274,30 @@ function validateDeliveryDetails(details) {
 
 async function checkRouteOverlap(date, timeSlot) {
   try {
+    // Get the start and end times for the given date and time slot
+    let startTime, endTime;
+    switch (timeSlot) {
+      case 'morning':
+        startTime = new Date(`${date}T06:00:00Z`);
+        endTime = new Date(`${date}T12:00:00Z`);
+        break;
+      case 'afternoon':
+        startTime = new Date(`${date}T12:00:00Z`);
+        endTime = new Date(`${date}T18:00:00Z`);
+        break;
+      case 'evening':
+        startTime = new Date(`${date}T18:00:00Z`);
+        endTime = new Date(`${date}T23:59:59Z`);
+        break;
+      default:
+        throw new ValidationError('Invalid time slot');
+    }
+
     const { data: existingRoutes, error } = await supabase
       .from('delivery_routes')
       .select('*')
-      .eq('date', date)
-      .eq('time_slot', timeSlot);
+      .gte('created_at', startTime.toISOString())
+      .lt('created_at', endTime.toISOString());
     
     if (error) {
       throw new DatabaseError('Failed to check route overlap', error);
@@ -340,14 +382,14 @@ async function createTestOrder() {
           delivery_lat: deliveryDetails.delivery_coordinates[0],
           delivery_lng: deliveryDetails.delivery_coordinates[1],
           status: 'pending',
-          scheduled_time: new Date(`${deliveryDate}T09:00:00Z`).toISOString(),
-          contact_name: deliveryDetails.contact_name,
-          contact_phone: deliveryDetails.contact_phone
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
       ])
       .select();
 
     if (routeError) {
+      console.error('Route creation error details:', routeError);
       // Rollback by deleting the order
       await supabase.from('orders').delete().eq('id', order[0].id);
       throw new DatabaseError('Failed to create delivery route', routeError);
