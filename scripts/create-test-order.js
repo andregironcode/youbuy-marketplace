@@ -40,6 +40,82 @@ class DatabaseError extends Error {
   }
 }
 
+// Format order for ShipDay API
+async function formatOrderForShipDay(order, route) {
+  const deliveryDetails = order.delivery_details;
+  const pickupRoute = route.pickup_route;
+  const deliveryRoute = route.delivery_route;
+
+  // Fetch seller information
+  const { data: seller, error: sellerError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', order.seller_id)
+    .single();
+
+  if (sellerError) {
+    throw new DatabaseError('Failed to fetch seller information', sellerError);
+  }
+
+  // Convert time slot to ShipDay time window
+  const timeSlotToWindow = {
+    'morning': '09:00-12:00',
+    'afternoon': '13:00-16:00',
+    'evening': '17:00-20:00'
+  };
+
+  return {
+    order_number: order.id,
+    order_date: order.created_at,
+    delivery_date: route.date,
+    delivery_window: timeSlotToWindow[route.time_slot] || '09:00-17:00',
+    status: 'pending',
+    customer: {
+      name: deliveryDetails.contact_name,
+      phone: deliveryDetails.contact_phone,
+      email: '', // We might want to add this to our schema
+      address: {
+        street: deliveryDetails.delivery_address,
+        city: 'Dubai', // We might want to add this to our schema
+        state: 'Dubai', // We might want to add this to our schema
+        country: 'UAE',
+        postal_code: '', // We might want to add this to our schema
+        latitude: deliveryDetails.delivery_coordinates[0],
+        longitude: deliveryDetails.delivery_coordinates[1]
+      }
+    },
+    pickup: {
+      name: seller.full_name || seller.username || 'Seller', // Use seller's full name or username
+      phone: seller.phone || pickupRoute.contact_phone, // Use seller's phone if available
+      address: {
+        street: pickupRoute.address,
+        city: 'Dubai', // We might want to add this to our schema
+        state: 'Dubai', // We might want to add this to our schema
+        country: 'UAE',
+        postal_code: '', // We might want to add this to our schema
+        latitude: pickupRoute.coordinates[0],
+        longitude: pickupRoute.coordinates[1]
+      },
+      instructions: pickupRoute.pickup_instructions,
+      window: timeSlotToWindow[route.time_slot] || '09:00-17:00'
+    },
+    delivery: {
+      instructions: deliveryDetails.delivery_instructions,
+      signature_required: true,
+      proof_of_delivery: true
+    },
+    items: [
+      {
+        name: 'Package',
+        quantity: 1,
+        weight: deliveryDetails.package_weight,
+        dimensions: deliveryDetails.package_dimensions
+      }
+    ],
+    notes: `Order ID: ${order.id}\nProduct ID: ${order.product_id}\nDelivery Cost: ${deliveryDetails.delivery_cost}`
+  };
+}
+
 // Validation functions
 function validateCoordinates(lat, lng) {
   if (!lat || !lng) {
@@ -224,11 +300,16 @@ async function createTestOrder() {
     }
     console.log('Created status history:', history);
 
+    // After successful creation, format for ShipDay
+    const shipDayOrder = await formatOrderForShipDay(order[0], route[0]);
+    console.log('ShipDay formatted order:', JSON.stringify(shipDayOrder, null, 2));
+
     return {
       success: true,
       order: order[0],
       route: route[0],
-      history: history[0]
+      history: history[0],
+      shipDayOrder
     };
 
   } catch (error) {
@@ -245,6 +326,7 @@ async function createTestOrder() {
 createTestOrder().then(result => {
   if (result.success) {
     console.log('Successfully created test order with all related records');
+    console.log('ShipDay formatted order is ready to be sent to the API');
   } else {
     console.error(`Failed to create test order (${result.errorType}):`, result.error);
     process.exit(1);
