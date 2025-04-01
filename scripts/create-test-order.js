@@ -86,13 +86,13 @@ async function sendOrderToShipDay(order) {
       throw new ValidationError('Missing required delivery information');
     }
 
-    // Make the API request
+    // Make the API request with the correct authentication
     const response = await axios.post(
       `${process.env.SHIPDAY_API_URL}/orders`,
       order,
       {
         headers: {
-          'Authorization': `Basic ${process.env.SHIPDAY_API_KEY}`,
+          'Authorization': process.env.SHIPDAY_API_KEY,
           'Content-Type': 'application/json'
         }
       }
@@ -108,12 +108,19 @@ async function sendOrderToShipDay(order) {
       throw error;
     }
     if (error.response) {
+      // Log more details about the error
+      console.error('ShipDay API Error Details:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
       throw new ShipDayError(
-        `ShipDay API error: ${error.response.data.message || error.response.statusText}`,
+        `ShipDay API error: ${error.response.data?.message || error.response.statusText}`,
         error.response.status
       );
     }
-    throw new ShipDayError('Failed to send order to ShipDay', 500);
+    throw new ShipDayError('Failed to send order to ShipDay', error);
   }
 }
 
