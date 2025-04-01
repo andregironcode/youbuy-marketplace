@@ -300,14 +300,30 @@ export const useMessages = (chatId?: string) => {
       setMessages(messagesData || []);
 
       // Mark messages as read
-      if (messagesData && messagesData.length > 0) {
-        const unreadMessages = messagesData.filter(msg => 
-          msg.receiver_id === user.id && !msg.read
-        );
+      await markMessagesAsRead(user.id, chatData.product_id);
+
+      // Also mark notifications for this chat as read
+      try {
+        const { data: notifications, error: notifError } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('related_id', id)
+          .eq('read', false);
+          
+        if (notifError) throw notifError;
         
-        if (unreadMessages.length > 0) {
-          await markMessagesAsRead(user.id, chatData.product_id);
+        // Mark each notification as read
+        if (notifications && notifications.length > 0) {
+          for (const notification of notifications) {
+            await supabase
+              .from('notifications')
+              .update({ read: true })
+              .eq('id', notification.id);
+          }
         }
+      } catch (notifUpdateError) {
+        console.error("Error updating notifications:", notifUpdateError);
       }
 
     } catch (error) {
