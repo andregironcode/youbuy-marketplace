@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { Shipday } from 'shipday/integration';
+import fetch from 'node-fetch';
+import { createRequire } from 'module';
+
+// Create require function for importing CommonJS modules
+const require = createRequire(import.meta.url);
 
 // Load environment variables
 dotenv.config();
@@ -8,13 +12,30 @@ dotenv.config();
 // Validate required environment variables
 const requiredEnvVars = [
   'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'SHIPDAY_API_KEY'
+  'SUPABASE_SERVICE_ROLE_KEY'
 ];
 
+// Optional environment variables
+const optionalEnvVars = [
+  'SHIPDAY_API_KEY',
+  'SHIPDAY_API_URL'
+];
+
+// Check required env vars
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
+
+// Check if ShipDay integration is available
+const isShipDayEnabled = optionalEnvVars.every(envVar => !!process.env[envVar]);
+if (!isShipDayEnabled) {
+  console.warn('ShipDay integration is disabled. Some environment variables are missing:');
+  for (const envVar of optionalEnvVars) {
+    if (!process.env[envVar]) {
+      console.warn(`- Missing ${envVar}`);
+    }
   }
 }
 
@@ -22,9 +43,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-// Initialize Shipday client
-const shipdayClient = new Shipday(process.env.SHIPDAY_API_KEY);
 
 // Custom error classes for better error handling
 class ValidationError extends Error {
@@ -57,48 +75,151 @@ class ShipDayError extends Error {
   }
 }
 
-// Send order to ShipDay using SDK
+function parseAddress(addressString) {
+  // Split address into components
+  const parts = addressString.split(',').map(part => part.trim());
+  return {
+    unit: '', // Optional
+    street: parts[0] || '',
+    city: parts[1] || 'Dubai',
+    state: parts[2] || 'Dubai',
+    zip: '', // Optional
+    country: parts[3] || 'UAE'
+  };
+}
+
+// Send order to ShipDay using the API directly
 async function sendOrderToShipDay(order) {
+  // Skip ShipDay integration if disabled
+  if (!isShipDayEnabled) {
+    console.log('ShipDay integration is disabled. Skipping API call.');
+    return { 
+      success: false, 
+      message: 'ShipDay integration is disabled',
+      disabled: true
+    };
+  }
+
   try {
-    // Validate required fields
-    if (!order.orderNumber || !order.customerName || !order.customerAddress) {
-      throw new ValidationError('Missing required fields for ShipDay order');
+    // Get the first order from the array if it's an array
+    const orderData = Array.isArray(order) ? order[0] : order;
+    
+    console.log('Order data for ShipDay:', JSON.stringify(orderData, null, 2));
+    
+    // Create ShipDay order payload based on their API documentation
+    const payload = {
+      orderNumber: orderData.orderNumber,
+      customerName: orderData.customer.name,
+      customerAddress: orderData.customer.address.street,
+      customerEmail: orderData.customer.email || 'test@example.com',
+      customerPhoneNumber: orderData.customer.phone,
+      restaurantName: orderData.pickup.name,
+      restaurantAddress: orderData.pickup.address.street,
+      restaurantPhoneNumber: orderData.pickup.phone,
+      expectedDeliveryDate: orderData.deliveryDate,
+      expectedDeliveryTime: '12:00:00',
+      pickupLatitude: orderData.pickup.address.latitude,
+      pickupLongitude: orderData.pickup.address.longitude,
+      deliveryLatitude: orderData.customer.address.latitude,
+      deliveryLongitude: orderData.customer.address.longitude,
+      totalOrderCost: orderData.orderAmount,
+      deliveryFee: orderData.deliveryFee,
+      deliveryInstruction: orderData.delivery.instructions,
+      orderSource: orderData.orderSource,
+      items: orderData.items
+    };
+    
+    // The base URL from the env is https://api.shipday.com/v1
+    // According to docs, the endpoint for orders should be directly at /orders
+    // So let's try both versions (with and without the /v1 prefix)
+    const apiBaseUrl = process.env.SHIPDAY_API_URL;
+    const apiUrlWithoutV1 = apiBaseUrl.replace('/v1', '');
+    
+    console.log('ShipDay API Base URL:', apiBaseUrl);
+    console.log('ShipDay API Key (first 5 chars):', process.env.SHIPDAY_API_KEY?.substring(0, 5));
+    
+    // Using HTTP Basic Authentication per ShipDay documentation
+    // https://docs.shipday.com/reference/authentication
+    console.log('Calling ShipDay API with correct Basic authentication...');
+    
+    try {
+      // First try with the original URL
+      console.log('Trying endpoint with /v1:', `${apiBaseUrl}/orders`);
+      let response = await fetch(`${apiBaseUrl}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${process.env.SHIPDAY_API_KEY}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      // If that fails with 404, try without /v1
+      if (response.status === 404) {
+        console.log('First endpoint returned 404, trying without /v1:', `${apiUrlWithoutV1}/orders`);
+        response = await fetch(`${apiUrlWithoutV1}/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${process.env.SHIPDAY_API_KEY}`
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('ShipDay order created successfully:', responseData);
+        return {
+          success: true,
+          order_id: responseData.orderId || responseData.id
+        };
+      }
+      
+      // Handle error
+      const status = response.status;
+      let errorText = '';
+      
+      try {
+        errorText = await response.text();
+      } catch (e) {
+        errorText = 'Could not read error details';
+      }
+      
+      console.error(`ShipDay API request failed with status ${status}:`, errorText);
+      
+      if (status === 401 || status === 403) {
+        console.error('Authentication error. Please check your ShipDay API key and ensure it is correctly formatted.');
+        console.error('The key should be used directly with the "Basic" prefix in the Authorization header.');
+      } else if (status === 400) {
+        console.error('Bad request. Please check the payload format.');
+      } else if (status === 404) {
+        console.error('Endpoint not found. Please verify the ShipDay API URL.');
+      } else if (status >= 500) {
+        console.error('Server error. Please try again later.');
+      }
+      
+      return {
+        success: false,
+        status,
+        error: errorText,
+        message: `ShipDay API request failed with status ${status}`
+      };
+    } catch (apiError) {
+      console.error('ShipDay API network error:', apiError);
+      return {
+        success: false,
+        error: apiError.message,
+        message: 'ShipDay API network error'
+      };
     }
-
-    // Create order using SDK
-    const response = await shipdayClient.createOrder({
-      orderNumber: order.orderNumber,
-      orderDate: order.orderDate,
-      deliveryDate: order.deliveryDate,
-      deliveryTime: order.deliveryWindow,
-      customerName: order.customer.name,
-      customerAddress: order.customer.address.street,
-      customerEmail: order.customer.email || '',
-      customerPhoneNumber: order.customer.phone,
-      restaurantName: order.pickup.name,
-      restaurantAddress: order.pickup.address.street,
-      restaurantPhoneNumber: order.pickup.phone,
-      pickupLatitude: order.pickup.address.latitude,
-      pickupLongitude: order.pickup.address.longitude,
-      deliveryLatitude: order.customer.address.latitude,
-      deliveryLongitude: order.customer.address.longitude,
-      orderAmount: order.amount || 0,
-      tip: 0,
-      tax: 0,
-      deliveryFee: order.deliveryFee || 0,
-      totalAmount: (order.amount || 0) + (order.deliveryFee || 0),
-      pickupInstruction: order.pickup.instructions || '',
-      deliveryInstruction: order.delivery.instructions || '',
-      orderSource: 'YouBuy Marketplace',
-      additionalId: order.additionalId || '',
-      items: order.items || [],
-      status: order.status || 'ORDERED'
-    });
-
-    return response;
   } catch (error) {
-    console.error('ShipDay SDK Error:', error);
-    throw new ShipDayError('Failed to send order to ShipDay', error);
+    console.error('ShipDay API error:', error);
+    return {
+      success: false,
+      error: error.message,
+      message: 'Error preparing ShipDay order data'
+    };
   }
 }
 
@@ -127,22 +248,33 @@ async function formatOrderForShipDay(order, route) {
     orderDate: new Date(order.created_at).toISOString(),
     deliveryDate: new Date(route.scheduled_time).toISOString().split('T')[0],
     deliveryWindow: deliveryDetails.preferred_delivery_window || '09:00-12:00',
-    customerName: deliveryDetails.contact_name,
-    customerAddress: deliveryDetails.delivery_address,
-    customerPhoneNumber: deliveryDetails.contact_phone,
-    customerEmail: '',
-    restaurantName: seller.full_name || seller.username || 'Seller',
-    restaurantAddress: deliveryDetails.pickup_address,
-    restaurantPhoneNumber: seller.phone || deliveryDetails.contact_phone,
-    pickupLatitude: deliveryDetails.pickup_coordinates[0],
-    pickupLongitude: deliveryDetails.pickup_coordinates[1],
-    deliveryLatitude: deliveryDetails.delivery_coordinates[0],
-    deliveryLongitude: deliveryDetails.delivery_coordinates[1],
-    orderAmount: order.amount,
-    deliveryFee: deliveryDetails.delivery_cost,
-    totalAmount: order.amount + deliveryDetails.delivery_cost,
-    pickupInstruction: deliveryDetails.delivery_instructions || 'Please call upon arrival',
-    deliveryInstruction: deliveryDetails.delivery_instructions || 'Please call upon arrival',
+    customer: {
+      name: deliveryDetails.contact_name || 'Unknown',
+      address: {
+        street: deliveryDetails.delivery_address || 'Unknown Address',
+        latitude: deliveryDetails.delivery_coordinates[0],
+        longitude: deliveryDetails.delivery_coordinates[1]
+      },
+      phone: deliveryDetails.contact_phone || 'Unknown Phone',
+      email: ''
+    },
+    pickup: {
+      name: seller.full_name || seller.username || 'Seller',
+      address: {
+        street: deliveryDetails.pickup_address,
+        latitude: deliveryDetails.pickup_coordinates[0],
+        longitude: deliveryDetails.pickup_coordinates[1]
+      },
+      phone: seller.phone || deliveryDetails.contact_phone,
+      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival'
+    },
+    delivery: {
+      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival'
+    },
+    amount: order.amount || 0,
+    orderAmount: order.amount || 0,
+    deliveryFee: deliveryDetails.delivery_cost || 0,
+    totalAmount: (order.amount || 0) + (deliveryDetails.delivery_cost || 0),
     orderSource: 'YouBuy Marketplace',
     additionalId: order.id,
     items: [
@@ -353,8 +485,8 @@ async function createTestOrder() {
           scheduled_time: new Date().toISOString(),
           customer_name: deliveryDetails.contact_name,
           customer_phone: deliveryDetails.contact_phone,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          date: new Date().toISOString(),
+          time_slot: 'morning'
         }
       ])
       .select();
@@ -398,17 +530,21 @@ async function createTestOrder() {
     const shipDayResponse = await sendOrderToShipDay(shipDayOrder);
     console.log('ShipDay API response:', shipDayResponse);
 
-    // Update order with ShipDay reference
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        shipday_order_id: shipDayResponse.order_id,
-        last_updated_by: order[0].seller_id
-      })
-      .eq('id', order[0].id);
+    // Update order with ShipDay reference if successful
+    if (shipDayResponse.success && shipDayResponse.order_id) {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          shipday_order_id: shipDayResponse.order_id,
+          last_updated_by: order[0].seller_id
+        })
+        .eq('id', order[0].id);
 
-    if (updateError) {
-      console.warn('Failed to update order with ShipDay reference:', updateError);
+      if (updateError) {
+        console.warn('Failed to update order with ShipDay reference:', updateError);
+      }
+    } else {
+      console.warn('ShipDay integration was not successful. Order created in database only.');
     }
 
     return {
