@@ -26,6 +26,10 @@ const supabase = createClient(
 // ShipDay API configuration
 const shipdayConfig = {
   apiKey: process.env.SHIPDAY_API_KEY,
+  endpoints: {
+    orders: `${process.env.SHIPDAY_API_URL}/orders`,
+    notifications: `${process.env.SHIPDAY_API_URL}/notifications`
+  },
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${process.env.SHIPDAY_API_KEY}`
@@ -65,63 +69,95 @@ class ShipDayError extends Error {
 
 // Send order to ShipDay API
 async function sendOrderToShipDay(order) {
-  try {
-    // Validate required fields
-    if (!order.order_number || !order.customer || !order.pickup || !order.delivery) {
-      throw new ValidationError('Missing required fields for ShipDay order');
-    }
-
-    // Validate customer information
-    if (!order.customer.name || !order.customer.phone || !order.customer.address) {
-      throw new ValidationError('Missing required customer information');
-    }
-
-    // Validate pickup information
-    if (!order.pickup.name || !order.pickup.address) {
-      throw new ValidationError('Missing required pickup information');
-    }
-
-    // Validate delivery information
-    if (!order.delivery.address) {
-      throw new ValidationError('Missing required delivery information');
-    }
-
-    // Make the API request with the correct authentication
-    const response = await axios.post(
-      `${process.env.SHIPDAY_API_URL}/orders`,
-      order,
-      {
-        headers: {
-          'Authorization': process.env.SHIPDAY_API_KEY,
-          'Content-Type': 'application/json'
-        }
+  // Array of different authentication methods to try
+  const authMethods = [
+    {
+      name: 'Bearer Token',
+      headers: {
+        'Authorization': `Bearer ${process.env.SHIPDAY_API_KEY}`,
+        'Content-Type': 'application/json'
       }
-    );
-
-    if (!response.data || !response.data.order_id) {
-      throw new ShipDayError('Invalid response from ShipDay API');
+    },
+    {
+      name: 'Basic Auth',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(process.env.SHIPDAY_API_KEY).toString('base64')}`,
+        'Content-Type': 'application/json'
+      }
+    },
+    {
+      name: 'API Key',
+      headers: {
+        'X-API-Key': process.env.SHIPDAY_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    },
+    {
+      name: 'Direct Token',
+      headers: {
+        'Authorization': process.env.SHIPDAY_API_KEY,
+        'Content-Type': 'application/json'
+      }
     }
+  ];
 
-    return response.data;
-  } catch (error) {
-    if (error instanceof ValidationError || error instanceof ShipDayError) {
-      throw error;
-    }
-    if (error.response) {
-      // Log more details about the error
-      console.error('ShipDay API Error Details:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-      throw new ShipDayError(
-        `ShipDay API error: ${error.response.data?.message || error.response.statusText}`,
-        error.response.status
+  let lastError = null;
+
+  // Try each authentication method
+  for (const method of authMethods) {
+    try {
+      console.log(`Trying authentication method: ${method.name}`);
+      
+      // Validate required fields
+      if (!order.order_number || !order.customer || !order.pickup || !order.delivery) {
+        throw new ValidationError('Missing required fields for ShipDay order');
+      }
+
+      // Validate customer information
+      if (!order.customer.name || !order.customer.phone || !order.customer.address) {
+        throw new ValidationError('Missing required customer information');
+      }
+
+      // Validate pickup information
+      if (!order.pickup.name || !order.pickup.address) {
+        throw new ValidationError('Missing required pickup information');
+      }
+
+      // Validate delivery information
+      if (!order.delivery.address) {
+        throw new ValidationError('Missing required delivery information');
+      }
+
+      // Make the API request
+      const response = await axios.post(
+        `${process.env.SHIPDAY_API_URL}/orders`,
+        order,
+        { headers: method.headers }
       );
+
+      if (response.data && response.data.order_id) {
+        console.log(`Success with authentication method: ${method.name}`);
+        return response.data;
+      }
+    } catch (error) {
+      console.error(`Failed with authentication method ${method.name}:`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+      lastError = error;
     }
-    throw new ShipDayError('Failed to send order to ShipDay', error);
   }
+
+  // If we get here, all methods failed
+  if (lastError?.response) {
+    throw new ShipDayError(
+      `All authentication methods failed. Last error: ${lastError.response.data?.message || lastError.response.statusText}`,
+      lastError.response.status
+    );
+  }
+  throw new ShipDayError('Failed to send order to ShipDay after trying all authentication methods', lastError);
 }
 
 // Format order for ShipDay API
