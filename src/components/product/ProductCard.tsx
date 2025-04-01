@@ -63,8 +63,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden group h-full">
-      <Link to={`/product/${product.id}`}>
+    <Card className="overflow-hidden group h-full flex flex-col">
+      <Link to={`/product/${product.id}`} className="flex-shrink-0">
         <div className="relative aspect-square">
           <img
             src={product.image}
@@ -88,7 +88,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
       </Link>
       
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-grow flex flex-col">
         <div className="flex justify-between items-start gap-2">
           <Link to={`/product/${product.id}`} className="flex-1">
             <h3 className="font-medium text-base line-clamp-1">{product.title}</h3>
@@ -97,33 +97,35 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="mt-1">
           <p className="text-xl font-bold text-price">AED {product.price.toFixed(2)}</p>
         </div>
-        <div className="mt-1 text-sm text-muted-foreground flex items-center">
+        <div className="mt-1 text-sm text-muted-foreground line-clamp-1 min-h-[1.5rem]">
           <span>{product.location}</span>
           <span className="mx-1">•</span>
           <span>{product.timeAgo}</span>
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <Button
-            onClick={handleBuyNow}
-            variant="success"
-            size="sm"
-            className="flex-1"
-          >
-            <ShoppingBag className="h-4 w-4" /> {isOwnProduct ? "View Details" : "Buy Now"}
-          </Button>
-          {!isOwnProduct && (
-            <MessageButton product={product} size="sm" variant="outline" />
-          )}
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            <div className="flex items-center">
-              <Heart className="h-3 w-3 mr-1" /> 
-              <span>{likes}</span>
-            </div>
-            <div className="flex items-center">
-              <Eye className="h-3 w-3 mr-1" /> 
-              <span>{product.viewCount || 0}</span>
+        <div className="mt-auto pt-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleBuyNow}
+              variant="success"
+              size="sm"
+              className="flex-1"
+            >
+              <ShoppingBag className="h-4 w-4" /> {isOwnProduct ? "View Details" : "Buy Now"}
+            </Button>
+            {!isOwnProduct && (
+              <MessageButton product={product} size="sm" variant="outline" />
+            )}
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <div className="flex items-center">
+                <Heart className="h-3 w-3 mr-1" /> 
+                <span>{likes}</span>
+              </div>
+              <div className="flex items-center">
+                <Eye className="h-3 w-3 mr-1" /> 
+                <span>{product.viewCount || 0}</span>
+              </div>
             </div>
           </div>
         </div>

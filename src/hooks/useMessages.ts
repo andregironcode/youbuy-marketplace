@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -327,7 +326,8 @@ export const useMessages = (chatId?: string) => {
   // Fetch chats on initial load
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      // Don't immediately redirect - the auth state might still be loading
+      // This was causing the refresh issue
       return;
     }
 
