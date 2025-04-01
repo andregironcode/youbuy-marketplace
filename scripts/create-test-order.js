@@ -97,8 +97,6 @@ async function sendOrderToShipDay(order) {
 // Format order for ShipDay API
 async function formatOrderForShipDay(order, route) {
   const deliveryDetails = order.delivery_details;
-  const pickupRoute = route.pickup_route;
-  const deliveryRoute = route.delivery_route;
 
   // Fetch seller information
   const { data: seller, error: sellerError } = await supabase
@@ -111,19 +109,16 @@ async function formatOrderForShipDay(order, route) {
     throw new DatabaseError('Failed to fetch seller information', sellerError);
   }
 
-  // Convert time slot to ShipDay time window
-  const timeSlotToWindow = {
-    'morning': '09:00-12:00',
-    'afternoon': '13:00-16:00',
-    'evening': '17:00-20:00'
-  };
+  if (!seller) {
+    throw new ValidationError('Seller information not found');
+  }
 
   // Format the order according to ShipDay's API requirements
   return {
     order_number: order.id,
     order_date: new Date(order.created_at).toISOString(),
-    delivery_date: route.date,
-    delivery_window: timeSlotToWindow[route.time_slot] || '09:00-17:00',
+    delivery_date: new Date(route.scheduled_time).toISOString().split('T')[0],
+    delivery_window: deliveryDetails.preferred_delivery_window || '09:00-12:00',
     status: 'pending',
     customer: {
       name: deliveryDetails.contact_name,
@@ -140,22 +135,22 @@ async function formatOrderForShipDay(order, route) {
       }
     },
     pickup: {
-      name: seller.full_name || seller.username || 'Seller', // Use seller's full name or username
-      phone: seller.phone || pickupRoute.contact_phone, // Use seller's phone if available
+      name: seller.full_name || seller.username || 'Seller',
+      phone: seller.phone || deliveryDetails.contact_phone,
       address: {
-        street: pickupRoute.address,
+        street: deliveryDetails.pickup_address,
         city: 'Dubai', // We might want to add this to our schema
         state: 'Dubai', // We might want to add this to our schema
         country: 'UAE',
         postal_code: '', // We might want to add this to our schema
-        latitude: pickupRoute.coordinates[0],
-        longitude: pickupRoute.coordinates[1]
+        latitude: deliveryDetails.pickup_coordinates[0],
+        longitude: deliveryDetails.pickup_coordinates[1]
       },
-      instructions: pickupRoute.pickup_instructions,
-      window: timeSlotToWindow[route.time_slot] || '09:00-17:00'
+      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival',
+      window: deliveryDetails.preferred_delivery_window || '09:00-12:00'
     },
     delivery: {
-      instructions: deliveryDetails.delivery_instructions,
+      instructions: deliveryDetails.delivery_instructions || 'Please call upon arrival',
       signature_required: true,
       proof_of_delivery: true
     },
@@ -163,8 +158,8 @@ async function formatOrderForShipDay(order, route) {
       {
         name: 'Package',
         quantity: 1,
-        weight: deliveryDetails.package_weight,
-        dimensions: deliveryDetails.package_dimensions
+        weight: deliveryDetails.package_weight || '1kg',
+        dimensions: deliveryDetails.package_dimensions || '30x20x15cm'
       }
     ],
     notes: `Order ID: ${order.id}\nProduct ID: ${order.product_id}\nDelivery Cost: ${deliveryDetails.delivery_cost}`
@@ -176,6 +171,9 @@ function validateCoordinates(lat, lng) {
   if (!lat || !lng) {
     throw new ValidationError('Coordinates are required');
   }
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    throw new ValidationError('Coordinates must be numbers');
+  }
   if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) {
     throw new ValidationError('Invalid coordinates: must be within valid ranges');
   }
@@ -184,24 +182,70 @@ function validateCoordinates(lat, lng) {
 
 function validateTimeSlot(timeSlot) {
   const validTimeSlots = ['morning', 'afternoon', 'evening'];
-  if (!validTimeSlots.includes(timeSlot)) {
+  if (!timeSlot || typeof timeSlot !== 'string') {
+    throw new ValidationError('Time slot is required and must be a string');
+  }
+  if (!validTimeSlots.includes(timeSlot.toLowerCase())) {
     throw new ValidationError(`Invalid time slot: must be one of ${validTimeSlots.join(', ')}`);
   }
   return true;
 }
 
 function validateAddress(address) {
-  if (!address || address.length < 5) {
+  if (!address || typeof address !== 'string') {
+    throw new ValidationError('Address is required and must be a string');
+  }
+  if (address.length < 5) {
     throw new ValidationError('Invalid address: must be at least 5 characters');
   }
   return true;
 }
 
 function validatePhoneNumber(phone) {
+  if (!phone || typeof phone !== 'string') {
+    throw new ValidationError('Phone number is required and must be a string');
+  }
   const phoneRegex = /^\+[1-9]\d{1,14}$/;
   if (!phoneRegex.test(phone)) {
     throw new ValidationError('Invalid phone number: must be in E.164 format (e.g., +971501234567)');
   }
+  return true;
+}
+
+function validateDeliveryDetails(details) {
+  if (!details || typeof details !== 'object') {
+    throw new ValidationError('Delivery details are required and must be an object');
+  }
+
+  // Required fields
+  const requiredFields = [
+    'pickup_address',
+    'delivery_address',
+    'pickup_coordinates',
+    'delivery_coordinates',
+    'contact_name',
+    'contact_phone'
+  ];
+
+  for (const field of requiredFields) {
+    if (!details[field]) {
+      throw new ValidationError(`Missing required delivery detail: ${field}`);
+    }
+  }
+
+  // Validate coordinates arrays
+  if (!Array.isArray(details.pickup_coordinates) || details.pickup_coordinates.length !== 2) {
+    throw new ValidationError('Pickup coordinates must be an array with [latitude, longitude]');
+  }
+  if (!Array.isArray(details.delivery_coordinates) || details.delivery_coordinates.length !== 2) {
+    throw new ValidationError('Delivery coordinates must be an array with [latitude, longitude]');
+  }
+
+  // Validate other fields
+  validateAddress(details.pickup_address);
+  validateAddress(details.delivery_address);
+  validatePhoneNumber(details.contact_phone);
+
   return true;
 }
 
@@ -234,27 +278,26 @@ async function createTestOrder() {
     const productId = '6b72e227-c4a2-4726-874d-8f30eced0622';
 
     // Delivery information
-    const pickupAddress = '123 Pickup St, Dubai, UAE';
-    const deliveryAddress = '456 Delivery Ave, Dubai, UAE';
-    const pickupLat = 25.2048;
-    const pickupLng = 55.2708;
-    const deliveryLat = 25.1972;
-    const deliveryLng = 55.2744;
-    const timeSlot = 'morning';
-    const deliveryDate = new Date().toISOString().split('T')[0];
-    const customerPhone = '+971501234567';
-    const sellerPhone = '+971509876543';
+    const deliveryDetails = {
+      pickup_address: '123 Pickup St, Dubai, UAE',
+      delivery_address: '456 Delivery Ave, Dubai, UAE',
+      pickup_coordinates: [25.2048, 55.2708],
+      delivery_coordinates: [25.1972, 55.2744],
+      contact_name: 'Test Customer',
+      contact_phone: '+971501234567',
+      delivery_instructions: 'Please call upon arrival',
+      package_weight: '2.5kg',
+      package_dimensions: '30x20x15cm',
+      delivery_cost: 25.00,
+      preferred_delivery_window: '9:00 AM - 12:00 PM'
+    };
 
-    // Validate all input data
-    validateCoordinates(pickupLat, pickupLng);
-    validateCoordinates(deliveryLat, deliveryLng);
-    validateTimeSlot(timeSlot);
-    validateAddress(pickupAddress);
-    validateAddress(deliveryAddress);
-    validatePhoneNumber(customerPhone);
-    validatePhoneNumber(sellerPhone);
+    // Validate delivery details
+    validateDeliveryDetails(deliveryDetails);
 
     // Check for route overlaps
+    const deliveryDate = new Date().toISOString().split('T')[0];
+    const timeSlot = 'morning';
     const overlappingRoutes = await checkRouteOverlap(deliveryDate, timeSlot);
     if (overlappingRoutes > 5) {
       throw new RouteOverlapError(`Time slot is full: ${overlappingRoutes} existing routes`);
@@ -272,19 +315,7 @@ async function createTestOrder() {
           status: 'pending',
           payment_status: 'paid',
           current_stage: 'pending',
-          delivery_details: {
-            pickup_address: pickupAddress,
-            delivery_address: deliveryAddress,
-            pickup_coordinates: [pickupLat, pickupLng],
-            delivery_coordinates: [deliveryLat, deliveryLng],
-            contact_name: 'Test Customer',
-            contact_phone: customerPhone,
-            delivery_instructions: 'Please call upon arrival',
-            package_weight: '2.5kg',
-            package_dimensions: '30x20x15cm',
-            delivery_cost: 25.00,
-            preferred_delivery_window: '9:00 AM - 12:00 PM'
-          },
+          delivery_details: deliveryDetails,
           estimated_delivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           last_updated_by: sellerId
         }
@@ -302,16 +333,16 @@ async function createTestOrder() {
       .insert([
         {
           order_id: order[0].id,
-          pickup_address: pickupAddress,
-          delivery_address: deliveryAddress,
-          pickup_lat: pickupLat,
-          pickup_lng: pickupLng,
-          delivery_lat: deliveryLat,
-          delivery_lng: deliveryLng,
+          pickup_address: deliveryDetails.pickup_address,
+          delivery_address: deliveryDetails.delivery_address,
+          pickup_lat: deliveryDetails.pickup_coordinates[0],
+          pickup_lng: deliveryDetails.pickup_coordinates[1],
+          delivery_lat: deliveryDetails.delivery_coordinates[0],
+          delivery_lng: deliveryDetails.delivery_coordinates[1],
           status: 'pending',
           scheduled_time: new Date(`${deliveryDate}T09:00:00Z`).toISOString(),
-          customer_name: 'Test Customer',
-          customer_phone: customerPhone
+          contact_name: deliveryDetails.contact_name,
+          contact_phone: deliveryDetails.contact_phone
         }
       ])
       .select();
@@ -331,8 +362,8 @@ async function createTestOrder() {
           order_id: order[0].id,
           status: 'pending',
           notes: 'Order created and scheduled for delivery',
-          location_lat: pickupLat,
-          location_lng: pickupLng,
+          location_lat: deliveryDetails.pickup_coordinates[0],
+          location_lng: deliveryDetails.pickup_coordinates[1],
           created_by: sellerId
         }
       ])
