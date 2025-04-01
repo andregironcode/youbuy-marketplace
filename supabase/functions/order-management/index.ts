@@ -237,53 +237,58 @@ serve(async (req) => {
       throw new Error('Seller not found')
     }
 
-    // IMPORTANT: Use extremely simple addresses as baseline test
-    const simpleCustomerAddress = "123 Main St";
+    // Instead of using simple hardcoded addresses, use the actual address data
+    console.log('DELIVERY DETAILS FROM ORDER:', {
+      address: deliveryDetails.address,
+      city: deliveryDetails.city,
+      state: deliveryDetails.state,
+      country: deliveryDetails.country,
+      postal_code: deliveryDetails.postal_code,
+      latitude: deliveryDetails.latitude,
+      longitude: deliveryDetails.longitude,
+      instructions: deliveryDetails.instructions
+    });
+    
+    // Build proper address strings from the data
+    const actualCustomerAddress = [
+      deliveryDetails.address,
+      deliveryDetails.city,
+      deliveryDetails.state,
+      deliveryDetails.country,
+      deliveryDetails.postal_code
+    ].filter(Boolean).join(', ');
+    
+    // For restaurant address, we'll still use a simple one since we confirmed the customer address works
     const simpleRestaurantAddress = "456 Market St";
     
-    // Format addresses but don't filter characters
-    const customerAddress = formatAddress(
-      deliveryDetails.address,
-      deliveryDetails.city || '',
-      deliveryDetails.state || '',
-      deliveryDetails.country || '',
-      deliveryDetails.postal_code || ''
-    );
+    console.log('Using actual customer address:', actualCustomerAddress);
     
-    const restaurantAddress = formatAddress(
-      product.location || 'Pickup Location',
-      product.city || '',
-      product.state || '',
-      product.postal_code || '',
-      product.country || ''
-    );
-    
-    console.log('COMPARING ADDRESSES:');
-    console.log('Simple customer address:', simpleCustomerAddress);
-    console.log('Formatted customer address:', customerAddress);
-    console.log('Simple restaurant address:', simpleRestaurantAddress);
-    console.log('Formatted restaurant address:', restaurantAddress);
-    
-    // Create payload based on known working format from test order
-    // Include ONLY the fields that the test script includes - nothing more, nothing less
+    // Create payload with actual address data
     const payload = {
       orderNumber: orderId.toString(),
       customerName: buyer.full_name || buyer.username || 'Customer',
-      customerAddress: deliveryDetails.address, // Use JUST the street address, not the full formatted one
+      customerAddress: actualCustomerAddress, // Use the actual address
       customerEmail: buyer.email || 'test@example.com',
       customerPhoneNumber: buyer.phone || '',
+      // Restaurant information
       restaurantName: seller.full_name || seller.username || 'Restaurant',
-      restaurantAddress: product.location || "456 Restaurant St", // Use JUST the location field
+      restaurantAddress: simpleRestaurantAddress,
       restaurantPhoneNumber: seller.phone || '',
-      expectedDeliveryDate: new Date().toISOString().split('T')[0],
-      expectedDeliveryTime: '12:00:00',
+      // Pickup information - critical for showing address
+      pickupAddress: simpleRestaurantAddress,
+      pickupName: seller.full_name || seller.username || 'Restaurant',
+      pickupPhoneNumber: seller.phone || '',
+      // Map coordinates
       pickupLatitude: product.latitude || 0,
       pickupLongitude: product.longitude || 0,
       deliveryLatitude: deliveryDetails.latitude || 0,
       deliveryLongitude: deliveryDetails.longitude || 0,
+      // Other required fields
+      expectedDeliveryDate: new Date().toISOString().split('T')[0],
+      expectedDeliveryTime: '12:00:00',
       totalOrderCost: amount,
       deliveryFee: 0,
-      deliveryInstruction: 'Please call upon arrival',
+      deliveryInstruction: deliveryDetails.instructions || 'Please call upon arrival',
       orderSource: 'YouBuy Marketplace',
       items: [{
         name: product.title || 'Product',
@@ -291,46 +296,14 @@ serve(async (req) => {
       }]
     };
     
-    console.log('Final payload (exact test match format):', JSON.stringify(payload, null, 2));
+    console.log('Final payload (using actual addresses):', JSON.stringify(payload, null, 2));
     
     // Log environment variables
     console.log('SHIPDAY_API_URL:', SHIPDAY_API_URL);
     console.log('Using API Key (first 5 chars):', SHIPDAY_API_KEY?.substring(0, 5));
     
-    // Validate by sending a GET request first to see the format of existing orders
-    console.log('Fetching existing orders to validate format...');
-    try {
-      const validateResponse = await fetch(`${SHIPDAY_API_URL}/orders`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${SHIPDAY_API_KEY}`
-        }
-      });
-      
-      if (validateResponse.ok) {
-        const existingOrders = await validateResponse.json();
-        console.log('Found existing orders:', JSON.stringify(existingOrders, null, 2));
-        if (existingOrders && existingOrders.length > 0) {
-          console.log('Sample order format:', JSON.stringify(existingOrders[0], null, 2));
-          // Check if restaurantAddress is present and what field names are used
-          const addressFields = [];
-          for (const key in existingOrders[0]) {
-            if (key.toLowerCase().includes('address') || key.toLowerCase().includes('location')) {
-              addressFields.push(key);
-            }
-          }
-          console.log('Fields containing address or location:', addressFields);
-        }
-      } else {
-        console.log('Failed to fetch existing orders:', await validateResponse.text());
-      }
-    } catch (e) {
-      console.error('Error fetching existing orders:', e);
-    }
-    
     // Use HTTP Basic Authentication per ShipDay documentation exactly as in test script
-    console.log('Calling ShipDay API with correct Basic authentication...');
+    console.log('Calling ShipDay API with original authentication...');
     
     let response = await fetch(`${SHIPDAY_API_URL}/orders`, {
       method: 'POST',
