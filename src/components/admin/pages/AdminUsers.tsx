@@ -40,6 +40,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Update the MessageType interface to better match our implementation
+type MessageType = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  product_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+  type: 'sent' | 'received';
+  sender?: {
+    id?: string;
+    full_name?: string;
+  };
+  receiver?: {
+    id?: string;
+    full_name?: string;
+  };
+};
+
 type UserWithProfile = {
   id: string;
   email: string;
@@ -70,7 +90,7 @@ export const AdminUsers = () => {
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
-  const [userMessages, setUserMessages] = useState<any[]>([]);
+  const [userMessages, setUserMessages] = useState<MessageType[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const { toast } = useToast();
 
@@ -280,6 +300,7 @@ export const AdminUsers = () => {
   const handleViewMessages = async (user: UserWithProfile) => {
     setSelectedUser(user);
     setIsLoadingMessages(true);
+    setUserMessages([]);
     setIsMessageDialogOpen(true);
 
     try {
@@ -301,19 +322,53 @@ export const AdminUsers = () => {
       if (sentError) throw sentError;
       if (receivedError) throw receivedError;
 
-      // Process messages
+      // Fetch related user profiles for display names
+      const userIds = new Set<string>();
+      sentMessages?.forEach(msg => userIds.add(msg.receiver_id));
+      receivedMessages?.forEach(msg => userIds.add(msg.sender_id));
+      
+      const userIdsArray = Array.from(userIds);
+      const userProfiles: Record<string, { id: string; full_name?: string }> = {};
+      
+      if (userIdsArray.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIdsArray);
+          
+        if (profiles) {
+          profiles.forEach(profile => {
+            userProfiles[profile.id] = { 
+              id: profile.id,
+              full_name: profile.full_name
+            };
+          });
+        }
+      }
+
+      // Process messages with user names
+      const processedSentMessages = (sentMessages || []).map(msg => ({
+        ...msg,
+        type: "sent" as const,
+        receiver: userProfiles[msg.receiver_id] || { id: msg.receiver_id }
+      }));
+      
+      const processedReceivedMessages = (receivedMessages || []).map(msg => ({
+        ...msg,
+        type: "received" as const,
+        sender: userProfiles[msg.sender_id] || { id: msg.sender_id }
+      }));
+
+      // Combine and sort messages
       const allMessages = [
-        ...(sentMessages || []).map((msg) => ({ ...msg, type: "sent" })),
-        ...(receivedMessages || []).map((msg) => ({
-          ...msg,
-          type: "received",
-        })),
+        ...processedSentMessages,
+        ...processedReceivedMessages
       ].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      setUserMessages(allMessages);
+      setUserMessages(allMessages as MessageType[]);
     } catch (error) {
       console.error("Error fetching user messages:", error);
       toast({
@@ -323,6 +378,36 @@ export const AdminUsers = () => {
       });
     } finally {
       setIsLoadingMessages(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!messageId) return;
+    
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .delete()
+        .eq("id", messageId);
+        
+      if (error) throw error;
+      
+      // Update the list of messages by removing the deleted one
+      setUserMessages(prevMessages => 
+        prevMessages.filter(msg => msg.id !== messageId)
+      );
+      
+      toast({
+        title: "Message deleted",
+        description: "The message has been removed successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description: "There was an error deleting the message.",
+      });
     }
   };
 
@@ -733,7 +818,7 @@ export const AdminUsers = () => {
               No messages found for this user
             </div>
           ) : (
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
               {userMessages.map((msg) => (
                 <div
                   key={msg.id}
@@ -741,17 +826,28 @@ export const AdminUsers = () => {
                     msg.type === "sent"
                       ? "bg-blue-50 border border-blue-100"
                       : "bg-gray-50 border border-gray-100"
-                  }`}
+                  } relative group`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="font-medium">
-                      {msg.type === "sent" ? "Sent to" : "Received from"} #
+                      {msg.type === "sent" ? "Sent to" : "Received from"}{" "}
                       {msg.type === "sent"
-                        ? msg.receiver_id.substring(0, 8)
-                        : msg.sender_id.substring(0, 8)}
+                        ? msg.receiver?.full_name || msg.receiver_id.substring(0, 8)
+                        : msg.sender?.full_name || msg.sender_id.substring(0, 8)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(msg.created_at).toLocaleString()}
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(msg.created_at).toLocaleString()}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <span className="sr-only">Delete Message</span>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                   <div className="text-sm whitespace-pre-wrap">
@@ -759,13 +855,16 @@ export const AdminUsers = () => {
                       <img
                         src={msg.content.substring(6)}
                         className="max-h-40 rounded"
+                        alt="Message image"
+                        onClick={() => window.open(msg.content.substring(6), '_blank')}
+                        style={{ cursor: "pointer" }}
                       />
                     ) : (
                       msg.content
                     )}
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground flex justify-between">
-                    <span>Product: #{msg.product_id.substring(0, 8)}</span>
+                    <span>Product: #{msg.product_id?.substring(0, 8) || 'Unknown'}</span>
                     {msg.type === "received" && (
                       <span
                         className={
@@ -782,7 +881,7 @@ export const AdminUsers = () => {
           )}
 
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => setIsMessageDialogOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
