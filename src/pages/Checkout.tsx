@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -107,6 +106,53 @@ const CheckoutPage = () => {
       });
 
       if (orderError) throw orderError;
+
+      // Create Shipday order with retry mechanism
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('No active session');
+        }
+
+        // Add a small delay to ensure the order is available in the database
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const shipdayResponse = await fetch('https://epkpqlkvhuqnfepfpscd.supabase.co/functions/v1/order-management/create-shipday-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            orderId: orderData,
+            productId: id,
+            buyerId: user.id,
+            sellerId: product.seller.id,
+            amount: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+            deliveryDetails: deliveryDetails
+          })
+        });
+
+        if (!shipdayResponse.ok) {
+          const errorText = await shipdayResponse.text();
+          console.error('Failed to create Shipday order:', errorText);
+          // Don't throw here, just log the error and continue
+        } else {
+          const shipdayData = await shipdayResponse.json();
+          // Update order with Shipday reference
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ shipday_order_id: shipdayData.order_id })
+            .eq('id', orderData);
+
+          if (updateError) {
+            console.error('Failed to update order with Shipday reference:', updateError);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating Shipday order:', error);
+        // Continue with the order creation even if Shipday fails
+      }
 
       const { error: productError } = await supabase
         .from("products")
