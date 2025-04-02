@@ -351,7 +351,13 @@ serve(async (req) => {
       deliveryAddress: actualCustomerAddress,
       deliveryLatitude: deliveryDetails.latitude || 0,
       deliveryLongitude: deliveryDetails.longitude || 0,
-      // Pickup information
+      // Restaurant/Pickup information - ensure name is set
+      restaurantName: seller.full_name || seller.username || 'Restaurant',
+      restaurantPhone: seller.phone || '',
+      restaurantAddress: actualRestaurantAddress,
+      restaurantLatitude: product.latitude || 0,
+      restaurantLongitude: product.longitude || 0,
+      // Pickup information (for backward compatibility)
       pickupName: seller.full_name || seller.username || 'Restaurant',
       pickupPhone: seller.phone || '',
       pickupAddress: actualRestaurantAddress,
