@@ -296,26 +296,21 @@ serve(async (req) => {
     // Create payload with actual address data
     const payload = {
       orderNumber: orderId.toString(),
+      // Customer information
       customerName: buyer.full_name || buyer.username || 'Customer',
-      customerAddress: actualCustomerAddress,
+      customerPhone: buyer.phone || '',
       customerEmail: buyer.email || 'test@example.com',
-      customerPhoneNumber: buyer.phone || '',
-      // Restaurant information
-      restaurantName: seller.full_name || seller.username || 'Restaurant',
-      restaurantAddress: actualRestaurantAddress,
-      restaurantPhoneNumber: seller.phone || '',
-      // Pickup information
-      pickupAddress: actualRestaurantAddress,
-      pickupName: seller.full_name || seller.username || 'Restaurant',
-      pickupPhoneNumber: seller.phone || '',
-      // Delivery information - explicitly set delivery address
+      // Delivery information - using Shipday's expected field names
       deliveryAddress: actualCustomerAddress,
-      // Map coordinates
-      pickupLatitude: product.latitude || 0,
-      pickupLongitude: product.longitude || 0,
       deliveryLatitude: deliveryDetails.latitude || 0,
       deliveryLongitude: deliveryDetails.longitude || 0,
-      // Other required fields
+      // Pickup information
+      pickupName: seller.full_name || seller.username || 'Restaurant',
+      pickupPhone: seller.phone || '',
+      pickupAddress: actualRestaurantAddress,
+      pickupLatitude: product.latitude || 0,
+      pickupLongitude: product.longitude || 0,
+      // Order details
       expectedDeliveryDate: new Date().toISOString().split('T')[0],
       expectedDeliveryTime: '12:00:00',
       totalOrderCost: amount,
@@ -334,10 +329,10 @@ serve(async (req) => {
     console.log('SHIPDAY_API_URL:', SHIPDAY_API_URL);
     console.log('Using API Key (first 5 chars):', SHIPDAY_API_KEY?.substring(0, 5));
     
-    // Use HTTP Basic Authentication per ShipDay documentation exactly as in test script
+    // Use HTTP Basic Authentication per ShipDay documentation
     console.log('Calling ShipDay API with original authentication...');
     
-    let response = await fetch(`${SHIPDAY_API_URL}/orders`, {
+    const response = await fetch(`${SHIPDAY_API_URL}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
