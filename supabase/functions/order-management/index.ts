@@ -348,21 +348,15 @@ serve(async (req) => {
       customerPhone: deliveryDetails.phone || buyer.phone || '',
       customerEmail: buyer.email || 'test@example.com',
       // Delivery information - using Shipday's expected field names
-      deliveryAddress: actualCustomerAddress,
-      deliveryLatitude: deliveryDetails.latitude || 0,
-      deliveryLongitude: deliveryDetails.longitude || 0,
-      // Restaurant/Pickup information - ensure name is set
+      customerAddress: actualCustomerAddress,
+      customerLatitude: deliveryDetails.latitude || 0,
+      customerLongitude: deliveryDetails.longitude || 0,
+      // Restaurant/Pickup information
       restaurantName: seller.full_name || seller.username || 'Restaurant',
       restaurantPhone: seller.phone || '',
       restaurantAddress: actualRestaurantAddress,
       restaurantLatitude: product.latitude || 0,
       restaurantLongitude: product.longitude || 0,
-      // Pickup information (for backward compatibility)
-      pickupName: seller.full_name || seller.username || 'Restaurant',
-      pickupPhone: seller.phone || '',
-      pickupAddress: actualRestaurantAddress,
-      pickupLatitude: product.latitude || 0,
-      pickupLongitude: product.longitude || 0,
       // Order details
       expectedDeliveryDate: new Date().toISOString().split('T')[0],
       expectedDeliveryTime: formatDeliveryTime(deliveryDetails.deliveryTime),
