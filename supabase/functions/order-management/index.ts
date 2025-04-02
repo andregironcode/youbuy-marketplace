@@ -168,12 +168,26 @@ serve(async (req) => {
     // Get order data from request
     const { orderId, productId, buyerId, sellerId, amount, deliveryDetails } = await req.json() as OrderRequest
     console.log('Received request with data:', { orderId, productId, buyerId, sellerId, amount });
-    console.log('Delivery details received:', JSON.stringify(deliveryDetails, null, 2));
+    console.log('Raw delivery details from request:', JSON.stringify(deliveryDetails, null, 2));
+    console.log('Delivery details type:', typeof deliveryDetails);
+    console.log('Delivery details keys:', Object.keys(deliveryDetails));
 
     // Validate required fields
     if (!orderId || !productId || !buyerId || !sellerId || !amount || !deliveryDetails) {
       console.error('Missing required fields in request');
       throw new Error('Missing required fields')
+    }
+
+    // Validate delivery details structure
+    if (!deliveryDetails.address || !deliveryDetails.city || !deliveryDetails.state || !deliveryDetails.country || !deliveryDetails.postal_code) {
+      console.error('Missing required delivery details fields:', {
+        hasAddress: !!deliveryDetails.address,
+        hasCity: !!deliveryDetails.city,
+        hasState: !!deliveryDetails.state,
+        hasCountry: !!deliveryDetails.country,
+        hasPostalCode: !!deliveryDetails.postal_code
+      });
+      throw new Error('Missing required delivery details fields');
     }
 
     // Create Supabase client
@@ -257,6 +271,15 @@ serve(async (req) => {
       deliveryDetails.country,
       deliveryDetails.postal_code
     ].filter(Boolean).join(', ');
+    
+    console.log('Formatted customer address:', actualCustomerAddress);
+    console.log('Address components:', {
+      address: deliveryDetails.address,
+      city: deliveryDetails.city,
+      state: deliveryDetails.state,
+      country: deliveryDetails.country,
+      postal_code: deliveryDetails.postal_code
+    });
     
     // Build restaurant address from product location
     const actualRestaurantAddress = [
