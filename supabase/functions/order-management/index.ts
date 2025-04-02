@@ -68,6 +68,30 @@ if (!SHIPDAY_API_KEY) {
 }
 const SHIPDAY_API_URL = 'https://api.shipday.com'
 
+// Helper function to format delivery time
+function formatDeliveryTime(deliveryTime: string): string {
+  // Map delivery time preferences to specific times
+  const timeMap: { [key: string]: string } = {
+    'morning': '09:00:00',
+    'afternoon': '14:00:00',
+    'evening': '18:00:00',
+    'night': '21:00:00'
+  };
+
+  // If the delivery time is already in HH:mm:ss format, return it
+  if (/^\d{2}:\d{2}:\d{2}$/.test(deliveryTime)) {
+    return deliveryTime;
+  }
+
+  // If it's a preference like 'morning', 'afternoon', etc., map it to a specific time
+  if (timeMap[deliveryTime.toLowerCase()]) {
+    return timeMap[deliveryTime.toLowerCase()];
+  }
+
+  // Default to 14:00:00 if no valid time is provided
+  return '14:00:00';
+}
+
 // Helper function to format complete address string
 function formatAddress(address: string, city: string, state: string, country: string, postal_code: string): string {
   const parts = [address, city, state, postal_code, country].filter(Boolean);
@@ -335,7 +359,7 @@ serve(async (req) => {
       pickupLongitude: product.longitude || 0,
       // Order details
       expectedDeliveryDate: new Date().toISOString().split('T')[0],
-      expectedDeliveryTime: deliveryDetails.deliveryTime || '12:00:00',
+      expectedDeliveryTime: formatDeliveryTime(deliveryDetails.deliveryTime),
       totalOrderCost: amount,
       deliveryFee: 0,
       deliveryInstruction: deliveryDetails.instructions || 'Please call upon arrival',
