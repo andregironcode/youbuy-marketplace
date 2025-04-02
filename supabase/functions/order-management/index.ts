@@ -258,10 +258,17 @@ serve(async (req) => {
       deliveryDetails.postal_code
     ].filter(Boolean).join(', ');
     
-    // For restaurant address, we'll still use a simple one since we confirmed the customer address works
-    const simpleRestaurantAddress = "456 Market St";
+    // Build restaurant address from product location
+    const actualRestaurantAddress = [
+      product.address || product.location,
+      product.city,
+      product.state,
+      product.country,
+      product.postal_code
+    ].filter(Boolean).join(', ');
     
     console.log('Using actual customer address:', actualCustomerAddress);
+    console.log('Using actual restaurant address:', actualRestaurantAddress);
     
     // Create payload with actual address data
     const payload = {
@@ -272,10 +279,10 @@ serve(async (req) => {
       customerPhoneNumber: buyer.phone || '',
       // Restaurant information
       restaurantName: seller.full_name || seller.username || 'Restaurant',
-      restaurantAddress: simpleRestaurantAddress,
+      restaurantAddress: actualRestaurantAddress,
       restaurantPhoneNumber: seller.phone || '',
       // Pickup information - critical for showing address
-      pickupAddress: simpleRestaurantAddress,
+      pickupAddress: actualRestaurantAddress,
       pickupName: seller.full_name || seller.username || 'Restaurant',
       pickupPhoneNumber: seller.phone || '',
       // Map coordinates
