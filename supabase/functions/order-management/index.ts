@@ -166,28 +166,57 @@ serve(async (req) => {
 
   try {
     // Get order data from request
-    const { orderId, productId, buyerId, sellerId, amount, deliveryDetails } = await req.json() as OrderRequest
-    console.log('Received request with data:', { orderId, productId, buyerId, sellerId, amount });
-    console.log('Raw delivery details from request:', JSON.stringify(deliveryDetails, null, 2));
-    console.log('Delivery details type:', typeof deliveryDetails);
-    console.log('Delivery details keys:', Object.keys(deliveryDetails));
+    const requestData = await req.json();
+    console.log('Raw request data:', JSON.stringify(requestData, null, 2));
+    
+    const { orderId, productId, buyerId, sellerId, amount, deliveryDetails } = requestData as OrderRequest;
+    console.log('Parsed request data:', {
+      orderId,
+      productId,
+      buyerId,
+      sellerId,
+      amount,
+      hasDeliveryDetails: !!deliveryDetails,
+      deliveryDetailsType: typeof deliveryDetails,
+      deliveryDetailsKeys: deliveryDetails ? Object.keys(deliveryDetails) : []
+    });
 
     // Validate required fields
-    if (!orderId || !productId || !buyerId || !sellerId || !amount || !deliveryDetails) {
-      console.error('Missing required fields in request');
-      throw new Error('Missing required fields')
+    if (!orderId || !productId || !buyerId || !sellerId || !amount) {
+      console.error('Missing required fields in request:', {
+        hasOrderId: !!orderId,
+        hasProductId: !!productId,
+        hasBuyerId: !!buyerId,
+        hasSellerId: !!sellerId,
+        hasAmount: !!amount
+      });
+      throw new Error('Missing required fields in request');
     }
 
     // Validate delivery details structure
-    if (!deliveryDetails.address || !deliveryDetails.city || !deliveryDetails.state || !deliveryDetails.country || !deliveryDetails.postal_code) {
-      console.error('Missing required delivery details fields:', {
-        hasAddress: !!deliveryDetails.address,
-        hasCity: !!deliveryDetails.city,
-        hasState: !!deliveryDetails.state,
-        hasCountry: !!deliveryDetails.country,
-        hasPostalCode: !!deliveryDetails.postal_code
+    if (!deliveryDetails) {
+      console.error('Delivery details are missing from request');
+      throw new Error('Delivery details are required for order creation');
+    }
+
+    // Log the full delivery details object for debugging
+    console.log('Full delivery details object:', JSON.stringify(deliveryDetails, null, 2));
+
+    // Check each field individually and provide specific error messages
+    const missingFields: string[] = [];
+    if (!deliveryDetails.address) missingFields.push('address');
+    if (!deliveryDetails.city) missingFields.push('city');
+    if (!deliveryDetails.state) missingFields.push('state');
+    if (!deliveryDetails.country) missingFields.push('country');
+    if (!deliveryDetails.postal_code) missingFields.push('postal_code');
+
+    if (missingFields.length > 0) {
+      console.error('Missing delivery details fields:', {
+        missingFields,
+        receivedFields: Object.keys(deliveryDetails),
+        deliveryDetailsValues: deliveryDetails
       });
-      throw new Error('Missing required delivery details fields');
+      throw new Error(`Missing required delivery details fields: ${missingFields.join(', ')}`);
     }
 
     // Create Supabase client
