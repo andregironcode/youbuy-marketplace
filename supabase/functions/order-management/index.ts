@@ -3,14 +3,19 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface DeliveryDetails {
-  address: string
-  city: string
-  state: string
-  country: string
-  postal_code: string
-  latitude?: number
-  longitude?: number
-  instructions?: string
+  fullName: string
+  locationType: string
+  houseNumber: string
+  buildingName: string
+  apartmentNumber: string
+  floor: string
+  additionalInfo: string
+  phone: string
+  deliveryTime: string
+  instructions: string
+  latitude: number
+  longitude: number
+  formattedAddress: string
 }
 
 interface OrderRequest {
@@ -67,6 +72,31 @@ const SHIPDAY_API_URL = 'https://api.shipday.com'
 function formatAddress(address: string, city: string, state: string, country: string, postal_code: string): string {
   const parts = [address, city, state, postal_code, country].filter(Boolean);
   return parts.join(', ');
+}
+
+// Helper function to parse formatted address
+function parseFormattedAddress(formattedAddress: string): { address: string, city: string, state: string, country: string, postal_code: string } {
+  const parts = formattedAddress.split(',').map(part => part.trim());
+  
+  // Handle the case where we have a full address with all components
+  if (parts.length >= 4) {
+    return {
+      address: parts[0],
+      city: parts[1],
+      state: parts[2],
+      country: parts[3],
+      postal_code: parts[4] || '' // Postal code might not be present
+    };
+  }
+  
+  // Fallback if we don't have enough parts
+  return {
+    address: formattedAddress,
+    city: '',
+    state: '',
+    country: '',
+    postal_code: ''
+  };
 }
 
 // Shipday API helper functions
@@ -202,22 +232,9 @@ serve(async (req) => {
     // Log the full delivery details object for debugging
     console.log('Full delivery details object:', JSON.stringify(deliveryDetails, null, 2));
 
-    // Check each field individually and provide specific error messages
-    const missingFields: string[] = [];
-    if (!deliveryDetails.address) missingFields.push('address');
-    if (!deliveryDetails.city) missingFields.push('city');
-    if (!deliveryDetails.state) missingFields.push('state');
-    if (!deliveryDetails.country) missingFields.push('country');
-    if (!deliveryDetails.postal_code) missingFields.push('postal_code');
-
-    if (missingFields.length > 0) {
-      console.error('Missing delivery details fields:', {
-        missingFields,
-        receivedFields: Object.keys(deliveryDetails),
-        deliveryDetailsValues: deliveryDetails
-      });
-      throw new Error(`Missing required delivery details fields: ${missingFields.join(', ')}`);
-    }
+    // Parse the formatted address into components
+    const addressComponents = parseFormattedAddress(deliveryDetails.formattedAddress);
+    console.log('Parsed address components:', addressComponents);
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -280,35 +297,12 @@ serve(async (req) => {
       throw new Error('Seller not found')
     }
 
-    // Instead of using simple hardcoded addresses, use the actual address data
-    console.log('DELIVERY DETAILS FROM ORDER:', {
-      address: deliveryDetails.address,
-      city: deliveryDetails.city,
-      state: deliveryDetails.state,
-      country: deliveryDetails.country,
-      postal_code: deliveryDetails.postal_code,
-      latitude: deliveryDetails.latitude,
-      longitude: deliveryDetails.longitude,
-      instructions: deliveryDetails.instructions
-    });
-    
     // Build proper address strings from the data
     const actualCustomerAddress = [
-      deliveryDetails.address,
-      deliveryDetails.city,
-      deliveryDetails.state,
-      deliveryDetails.country,
-      deliveryDetails.postal_code
+      deliveryDetails.formattedAddress
     ].filter(Boolean).join(', ');
     
     console.log('Formatted customer address:', actualCustomerAddress);
-    console.log('Address components:', {
-      address: deliveryDetails.address,
-      city: deliveryDetails.city,
-      state: deliveryDetails.state,
-      country: deliveryDetails.country,
-      postal_code: deliveryDetails.postal_code
-    });
     
     // Build restaurant address from product location
     const actualRestaurantAddress = [
@@ -326,8 +320,8 @@ serve(async (req) => {
     const payload = {
       orderNumber: orderId.toString(),
       // Customer information
-      customerName: buyer.full_name || buyer.username || 'Customer',
-      customerPhone: buyer.phone || '',
+      customerName: deliveryDetails.fullName || buyer.full_name || buyer.username || 'Customer',
+      customerPhone: deliveryDetails.phone || buyer.phone || '',
       customerEmail: buyer.email || 'test@example.com',
       // Delivery information - using Shipday's expected field names
       deliveryAddress: actualCustomerAddress,
@@ -341,7 +335,7 @@ serve(async (req) => {
       pickupLongitude: product.longitude || 0,
       // Order details
       expectedDeliveryDate: new Date().toISOString().split('T')[0],
-      expectedDeliveryTime: '12:00:00',
+      expectedDeliveryTime: deliveryDetails.deliveryTime || '12:00:00',
       totalOrderCost: amount,
       deliveryFee: 0,
       deliveryInstruction: deliveryDetails.instructions || 'Please call upon arrival',
