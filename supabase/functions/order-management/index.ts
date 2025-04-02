@@ -274,17 +274,19 @@ serve(async (req) => {
     const payload = {
       orderNumber: orderId.toString(),
       customerName: buyer.full_name || buyer.username || 'Customer',
-      customerAddress: actualCustomerAddress, // Use the actual address
+      customerAddress: actualCustomerAddress,
       customerEmail: buyer.email || 'test@example.com',
       customerPhoneNumber: buyer.phone || '',
       // Restaurant information
       restaurantName: seller.full_name || seller.username || 'Restaurant',
       restaurantAddress: actualRestaurantAddress,
       restaurantPhoneNumber: seller.phone || '',
-      // Pickup information - critical for showing address
+      // Pickup information
       pickupAddress: actualRestaurantAddress,
       pickupName: seller.full_name || seller.username || 'Restaurant',
       pickupPhoneNumber: seller.phone || '',
+      // Delivery information - explicitly set delivery address
+      deliveryAddress: actualCustomerAddress,
       // Map coordinates
       pickupLatitude: product.latitude || 0,
       pickupLongitude: product.longitude || 0,
