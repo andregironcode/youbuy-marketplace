@@ -318,11 +318,13 @@ export function ProfileSettings() {
   };
 
   return (
-    <div className="container max-w-5xl py-8">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+    <div className="flex-1 -mt-6">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
       
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
+        <TabsList className="grid grid-cols-4 mb-6">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <UserCircle className="h-4 w-4" />
             <span>Profile</span>
@@ -341,202 +343,199 @@ export function ProfileSettings() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="profile" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your profile information and how others see you on the platform.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="flex flex-col md:flex-row gap-8">
-                    {/* Avatar upload section */}
-                    <div className="flex-shrink-0">
-                      <FormLabel>Profile Picture</FormLabel>
-                      <div className="mt-2 flex flex-col items-center gap-4">
-                        <Avatar className="h-24 w-24 border-2 border-muted">
-                          <AvatarImage src={avatarUrl || undefined} alt={form.getValues("full_name")} />
-                          <AvatarFallback className="text-lg bg-green-100 text-green-800">
-                            {uploadingAvatar ? <Loader2 className="h-6 w-6 animate-spin" /> : getInitials()}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div>
-                          <label htmlFor="avatar-upload" className="cursor-pointer">
-                            <div className="rounded-md bg-green-50 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-100">
-                              Change Avatar
-                            </div>
-                            <input
-                              id="avatar-upload"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleAvatarUpload}
-                              disabled={uploadingAvatar}
-                              className="sr-only"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Profile form fields */}
-                    <div className="flex-1 space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="full_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        <TabsContent value="profile" className="mt-0">
+          <div className="bg-white rounded-md p-8">
+            <h2 className="text-xl font-bold mb-2">Profile Information</h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              Update your profile information and how others see you on the platform.
+            </p>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* Avatar upload section */}
+                  <div className="flex-shrink-0">
+                    <div className="text-sm font-medium mb-2">Profile Picture</div>
+                    <div className="flex flex-col items-center gap-4">
+                      <Avatar className="h-24 w-24 border-2 border-muted">
+                        <AvatarImage src={avatarUrl || undefined} alt={form.getValues("full_name")} />
+                        <AvatarFallback className="text-lg bg-green-100 text-green-800">
+                          {uploadingAvatar ? <Loader2 className="h-6 w-6 animate-spin" /> : getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
                       
-                      <FormField
-                        control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Username" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              This is your public username.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Email" {...field} readOnly />
-                            </FormControl>
-                            <FormDescription>
-                              Contact support to change your email address.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="bio"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bio</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Tell us a little about yourself"
-                                className="resize-none h-20"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              {field.value?.length || 0}/300 characters
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="location"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Location</FormLabel>
-                              <FormControl>
-                                <Input placeholder="City, Country" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Phone</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Phone number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      <div>
+                        <label htmlFor="avatar-upload" className="cursor-pointer">
+                          <div className="rounded-md bg-green-50 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-100">
+                            Change Avatar
+                          </div>
+                          <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            disabled={uploadingAvatar}
+                            className="sr-only"
+                          />
+                        </label>
                       </div>
                     </div>
                   </div>
                   
-                  <Separator />
-                  
-                  <div>
+                  {/* Profile form fields */}
+                  <div className="flex-1 space-y-4">
                     <FormField
                       control={form.control}
-                      name="currency"
+                      name="full_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Preferred Currency</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a currency" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="AED">AED (Arab Emirates Dirham)</SelectItem>
-                              <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                              <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                              <SelectItem value="GBP">GBP (British Pound)</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your full name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Username" {...field} />
+                          </FormControl>
                           <FormDescription>
-                            This is the currency that will be used throughout the platform.
+                            This is your public username.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      type="submit" 
-                      disabled={loading || uploadingAvatar} 
-                      className="flex items-center gap-2"
-                    >
-                      {loading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
+                    
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Email" {...field} readOnly />
+                          </FormControl>
+                          <FormDescription>
+                            Contact support to change your email address.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      Save Changes
-                    </Button>
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bio</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Tell us a little about yourself"
+                              className="resize-none h-20"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {field.value?.length || 0}/300 characters
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                              <Input placeholder="City, Country" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Phone number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Currency</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="AED">AED (Arab Emirates Dirham)</SelectItem>
+                            <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                            <SelectItem value="GBP">GBP (British Pound)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          This is the currency that will be used throughout the platform.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={loading || uploadingAvatar} 
+                    className="flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
         </TabsContent>
         
         <TabsContent value="notifications" className="space-y-6">

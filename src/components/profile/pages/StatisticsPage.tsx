@@ -183,8 +183,8 @@ export const StatisticsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="flex-1 -mt-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold tracking-tight">Statistics</h1>
         <p className="text-muted-foreground">
           View detailed insights about your buying and selling activities

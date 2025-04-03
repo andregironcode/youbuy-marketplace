@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { TicketForm } from "@/components/support/TicketForm";
 import { UserTickets } from "@/components/support/UserTickets";
@@ -20,9 +19,9 @@ export const SupportPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Support Center</h1>
+    <div className="flex-1 -mt-6">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">Support Center</h1>
         <p className="text-muted-foreground mt-1">
           Get help with your orders or report issues with the platform
         </p>

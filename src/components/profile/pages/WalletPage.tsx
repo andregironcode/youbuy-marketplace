@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Wallet, 
@@ -95,8 +94,8 @@ export const WalletPage = () => {
   };
 
   return (
-    <div className="h-full p-6 overflow-hidden">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="flex-1 -mt-6">
+      <div className="mb-4 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Wallet className="h-6 w-6 text-youbuy" />
@@ -108,7 +107,7 @@ export const WalletPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="h-[calc(100%-80px)]" onValueChange={setActiveTab}>
+      <Tabs defaultValue="overview" onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="fund">Fund Wallet</TabsTrigger>
@@ -116,7 +115,7 @@ export const WalletPage = () => {
           <TabsTrigger value="history">Transaction History</TabsTrigger>
         </TabsList>
 
-        <div className="h-[calc(100%-50px)] overflow-hidden">
+        <div className="mt-4">
           <TabsContent value="overview" className="h-full space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border border-youbuy/20 shadow-sm">
