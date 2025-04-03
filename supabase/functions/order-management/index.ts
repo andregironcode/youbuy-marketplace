@@ -314,8 +314,8 @@ serve(async (req) => {
       .from('profiles')
       .select('*')
       .eq('id', sellerId)
-      .single()
-
+        .single()
+      
     if (sellerError || !seller) {
       console.error('Error fetching seller:', sellerError);
       throw new Error('Seller not found')
@@ -429,7 +429,7 @@ serve(async (req) => {
           status: 200
         });
       }
-    } else {
+      } else {
       // Handle error response
       const errorText = await response.text();
       console.error(`Error details: ${response.status} ${errorText}`);
