@@ -224,39 +224,36 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Navigation and Breadcrumbs */}
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mb-4" 
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/" className="hover:underline">Home</Link>
-          <span>/</span>
-          <Link 
-            to={`/category/${product.category}`} 
-            className="hover:underline"
-          >
-            {getCategoryById(product.category)?.name || "Category"}
-          </Link>
-          <span>/</span>
-          <Link 
-            to={`/category/${product.category}`} 
-            className="hover:underline"
-          >
-            {product.subcategory || "Subcategory"}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-medium truncate max-w-[200px]">
-            {product.title}
-          </span>
+      <div className="mb-6 w-full">
+        <div className="flex flex-wrap items-center justify-between w-full">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <Link to="/" className="hover:underline">Home</Link>
+            <span>/</span>
+            <Link 
+              to={`/category/${product.category}`} 
+              className="hover:underline"
+            >
+              {getCategoryById(product.category)?.name || "Category"}
+            </Link>
+            <span>/</span>
+            <Link 
+              to={`/category/${product.category}`} 
+              className="hover:underline"
+            >
+              {product.subcategory || "Subcategory"}
+            </Link>
+            <span>/</span>
+            <span className="text-foreground font-medium truncate max-w-[200px]">
+              {product.title}
+            </span>
+          </div>
+          
+          <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 px-3 py-1 text-xs font-medium">
+            <Tag className="h-3 w-3 mr-1.5" />
+            FEATURED
+          </Badge>
         </div>
       </div>
       
@@ -264,28 +261,13 @@ export default function ProductDetail() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Left Column - Product Images */}
         <div className="flex-1 md:max-w-[55%]">
-          {/* Highlighted Label */}
-          <div className="mb-4">
-            <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 px-3 py-1 text-xs font-medium">
-              <Tag className="h-3 w-3 mr-1.5" />
-              FEATURED
-            </Badge>
-          </div>
-          
-          {/* Image Navigation - Now Outside */}
-          <div className="flex items-center justify-center mb-3 px-2">
-            <div className="bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
-              {product.images ? (product.images.findIndex(img => img === currentImage) + 1) : 1} / {product.images?.length || 1}
-            </div>
-          </div>
-          
           {/* Image Container with Outside Arrows */}
           <div className="relative max-w-lg mx-auto">
             {/* Left Arrow - Outside */}
             <Button 
-              variant="secondary" 
+              variant="ghost" 
               size="icon" 
-              className="absolute -left-16 top-1/2 -translate-y-1/2 bg-white hover:bg-white/90 rounded-full shadow-md z-10"
+              className="absolute -left-10 md:-left-16 top-1/2 -translate-y-1/2 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-md z-10"
               onClick={() => {
                 if (product.images && product.images.length > 1) {
                   const currentIndex = product.images.findIndex(img => img === currentImage);
@@ -294,7 +276,7 @@ export default function ProductDetail() {
                 }
               }}
             >
-              <ArrowLeft className="h-5 w-5 text-pink-500" />
+              <ArrowLeft className="h-5 w-5 text-white" />
             </Button>
             
             {/* Main Product Image */}
@@ -317,21 +299,21 @@ export default function ProductDetail() {
               <Button 
                 variant="secondary"
                 size="icon"
-                className="absolute bottom-2 right-2 bg-white/80 hover:bg-white rounded-full shadow-md"
+                className="absolute bottom-2 right-2 bg-pink-500 hover:bg-pink-600 rounded-full shadow-md"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsLightboxOpen(true);
                 }}
               >
-                <Maximize className="h-4 w-4 text-pink-500" />
+                <Maximize className="h-4 w-4 text-white" />
               </Button>
             </div>
             
             {/* Right Arrow - Outside */}
             <Button 
-              variant="secondary" 
+              variant="ghost" 
               size="icon" 
-              className="absolute -right-16 top-1/2 -translate-y-1/2 bg-white hover:bg-white/90 rounded-full shadow-md z-10"
+              className="absolute -right-10 md:-right-16 top-1/2 -translate-y-1/2 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-md z-10"
               onClick={() => {
                 if (product.images && product.images.length > 1) {
                   const currentIndex = product.images.findIndex(img => img === currentImage);
@@ -340,7 +322,7 @@ export default function ProductDetail() {
                 }
               }}
             >
-              <ArrowLeft className="h-5 w-5 text-pink-500 transform rotate-180" />
+              <ArrowLeft className="h-5 w-5 text-white transform rotate-180" />
             </Button>
           </div>
           
@@ -350,7 +332,7 @@ export default function ProductDetail() {
               <div
                 key={index}
                 className={`aspect-square rounded-lg border cursor-pointer overflow-hidden transition-colors ${
-                  currentImage === image ? 'ring-2 ring-youbuy' : 'hover:border-youbuy/50'
+                  currentImage === image ? 'ring-2 ring-pink-500' : 'hover:border-pink-500/50'
                 }`}
                 onClick={() => setCurrentImage(image)}
               >
