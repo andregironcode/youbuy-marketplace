@@ -3,7 +3,6 @@
 
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { ProfileLayout } from "@/components/profile/ProfileLayout";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { PurchasesPage } from "./pages/PurchasesPage";
@@ -22,25 +21,23 @@ import { StatisticsPage } from "./pages/StatisticsPage";
 
 export const ProfileRoutes = () => {
   return (
-    <ProfileLayout>
-      <Routes>
-        <Route index element={<PrivateAccountRedirect />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="purchases" element={<PurchasesPage />} />
-        <Route path="purchases/:tab" element={<PurchasesPage />} />
-        <Route path="sales" element={<SalesPage />} />
-        <Route path="sales/:tab" element={<SalesPage />} />
-        <Route path="wallet" element={<WalletPage />} />
-        <Route path="help" element={<HelpPage />} />
-        <Route path="help/:category" element={<HelpPage />} />
-        <Route path="premium" element={<PremiumPage />} />
-        <Route path="seller" element={<SellerAccountRedirect />} />
-        <Route path="seller/sales" element={<SalesRedirect />} />
-        <Route path="seller/purchases" element={<PurchasesRedirect />} />
-        <Route path="support" element={<SupportPage />} />
-        <Route path="statistics" element={<StatisticsPage />} />
-      </Routes>
-    </ProfileLayout>
+    <Routes>
+      <Route index element={<PrivateAccountRedirect />} />
+      <Route path="settings" element={<SettingsPage />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="purchases" element={<PurchasesPage />} />
+      <Route path="purchases/:tab" element={<PurchasesPage />} />
+      <Route path="sales" element={<SalesPage />} />
+      <Route path="sales/:tab" element={<SalesPage />} />
+      <Route path="wallet" element={<WalletPage />} />
+      <Route path="help" element={<HelpPage />} />
+      <Route path="help/:category" element={<HelpPage />} />
+      <Route path="premium" element={<PremiumPage />} />
+      <Route path="seller" element={<SellerAccountRedirect />} />
+      <Route path="seller/sales" element={<SalesRedirect />} />
+      <Route path="seller/purchases" element={<PurchasesRedirect />} />
+      <Route path="support" element={<SupportPage />} />
+      <Route path="statistics" element={<StatisticsPage />} />
+    </Routes>
   );
 };
