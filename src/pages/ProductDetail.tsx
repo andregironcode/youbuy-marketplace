@@ -228,15 +228,15 @@ export default function ProductDetail() {
       {/* Navigation and Breadcrumbs */}
       <div className="mb-6 w-full">
         <div className="flex flex-wrap items-center justify-between w-full">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:underline">Home</Link>
-            <span>/</span>
-            <Link 
-              to={`/category/${product.category}`} 
-              className="hover:underline"
-            >
-              {getCategoryById(product.category)?.name || "Category"}
-            </Link>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <Link to="/" className="hover:underline">Home</Link>
+          <span>/</span>
+          <Link 
+            to={`/category/${product.category}`} 
+            className="hover:underline"
+          >
+            {getCategoryById(product.category)?.name || "Category"}
+          </Link>
             <span>/</span>
             <Link 
               to={`/category/${product.category}`} 
@@ -244,10 +244,10 @@ export default function ProductDetail() {
             >
               {product.subcategory || "Subcategory"}
             </Link>
-            <span>/</span>
-            <span className="text-foreground font-medium truncate max-w-[200px]">
-              {product.title}
-            </span>
+          <span>/</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">
+            {product.title}
+          </span>
           </div>
           
           <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 px-3 py-1 text-xs font-medium">
@@ -284,16 +284,16 @@ export default function ProductDetail() {
               className="relative aspect-square overflow-hidden rounded-xl border bg-white mb-4 cursor-pointer"
               onClick={() => setIsLightboxOpen(true)}
             >
-              <img
-                src={currentImage || product.images?.[0] || product.image}
-                alt={product.title}
-                className="h-full w-full object-contain"
-              />
-              {product.status === 'sold' && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">SOLD</span>
-                </div>
-              )}
+            <img
+              src={currentImage || product.images?.[0] || product.image}
+              alt={product.title}
+              className="h-full w-full object-contain"
+            />
+            {product.status === 'sold' && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <span className="text-white text-2xl font-bold">SOLD</span>
+              </div>
+            )}
               
               {/* Enlarge Button */}
               <Button 
@@ -461,8 +461,8 @@ export default function ProductDetail() {
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>Delivered directly to your home</span>
-                  </div>
-                  
+              </div>
+              
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                     <span>Home delivery available</span>
@@ -489,15 +489,15 @@ export default function ProductDetail() {
                   height="160px"
                   interactive={false}
                   approximate={true}
-                />
-              ) : (
+                      />
+                    ) : (
                 <div className="h-full w-full bg-muted/30 flex items-center justify-center">
                   <p className="text-sm text-muted-foreground">Map location unavailable</p>
+                    </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-          
+                
           {/* Sharing Options */}
           <div className="space-y-2">
             <div className="text-sm font-medium">Share this listing</div>
@@ -510,8 +510,8 @@ export default function ProductDetail() {
               </button>
               
               <button 
-                onClick={() => {
-                  toast({
+                  onClick={() => {
+                      toast({
                     title: "Link copied!",
                   });
                   navigator.clipboard.writeText(window.location.href);

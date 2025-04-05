@@ -149,7 +149,7 @@ export function ProfileSettings() {
             .catch(console.error); // Ignore errors for old file deletion
         }
       }
-
+      
       // Upload the file
       console.log('Uploading file...');
       const { error: uploadError } = await supabase.storage
@@ -321,7 +321,7 @@ export function ProfileSettings() {
     <div className="flex-1 -mt-6">
       <div className="mb-4">
         <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
+            </div>
       
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-6">
@@ -362,105 +362,105 @@ export function ProfileSettings() {
                         <AvatarFallback className="text-lg bg-green-100 text-green-800">
                           {uploadingAvatar ? <Loader2 className="h-6 w-6 animate-spin" /> : getInitials()}
                         </AvatarFallback>
-                      </Avatar>
+                    </Avatar>
                       
                       <div>
                         <label htmlFor="avatar-upload" className="cursor-pointer">
                           <div className="rounded-md bg-green-50 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-100">
                             Change Avatar
-                          </div>
+                  </div>
                           <input
                             id="avatar-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleAvatarUpload}
-                            disabled={uploadingAvatar}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
                             className="sr-only"
                           />
                         </label>
                       </div>
-                    </div>
                   </div>
-                  
+                </div>
+
                   {/* Profile form fields */}
                   <div className="flex-1 space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="full_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
                             <Input placeholder="Your full name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
                             <Input placeholder="Username" {...field} />
-                          </FormControl>
-                          <FormDescription>
+                        </FormControl>
+                        <FormDescription>
                             This is your public username.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
                             <Input placeholder="Email" {...field} readOnly />
-                          </FormControl>
-                          <FormDescription>
+                        </FormControl>
+                        <FormDescription>
                             Contact support to change your email address.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                       name="bio"
-                      render={({ field }) => (
-                        <FormItem>
+                    render={({ field }) => (
+                      <FormItem>
                           <FormLabel>Bio</FormLabel>
-                          <FormControl>
+                        <FormControl>
                             <Textarea
                               placeholder="Tell us a little about yourself"
                               className="resize-none h-20"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
                             {field.value?.length || 0}/300 characters
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <FormControl>
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
                               <Input placeholder="City, Country" {...field} />
                             </FormControl>
                             <FormMessage />
@@ -476,33 +476,33 @@ export function ProfileSettings() {
                             <FormLabel>Phone</FormLabel>
                             <FormControl>
                               <Input placeholder="Phone number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                   </div>
                 </div>
                 
                 <Separator />
-                
+
                 <div>
-                  <FormField
-                    control={form.control}
+                <FormField
+                  control={form.control}
                     name="currency"
-                    render={({ field }) => (
-                      <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                         <FormLabel>Preferred Currency</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
-                          <FormControl>
+                      <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a currency" />
                             </SelectTrigger>
-                          </FormControl>
+                      </FormControl>
                           <SelectContent>
                             <SelectItem value="AED">AED (Arab Emirates Dirham)</SelectItem>
                             <SelectItem value="USD">USD (US Dollar)</SelectItem>
@@ -513,12 +513,12 @@ export function ProfileSettings() {
                         <FormDescription>
                           This is the currency that will be used throughout the platform.
                         </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 </div>
-                
+
                 <div className="flex justify-end">
                   <Button 
                     type="submit" 
@@ -669,8 +669,8 @@ export function ProfileSettings() {
                   <Button variant="outline">View Activity Log</Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+        </CardContent>
+      </Card>
         </TabsContent>
       </Tabs>
     </div>
