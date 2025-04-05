@@ -12,6 +12,7 @@ import CategoryPage from "@/pages/CategoryPage";
 import SearchPage from "@/pages/SearchPage";
 import SellerProfile from "@/pages/SellerProfile";
 import Auth from "@/pages/Auth";
+import AuthCallback from "@/pages/AuthCallback";
 import AdminAuth from "@/pages/AdminAuth";
 import AdminPage from "@/pages/AdminPage";
 import Sell from "@/pages/Sell";
@@ -54,6 +55,7 @@ function App() {
                           <Routes>
                             <Route path="/" element={<Index />} />
                             <Route path="/auth" element={<Auth />} />
+                            <Route path="/auth/callback" element={<AuthCallback />} />
                             {/* Fixed route here to ensure parameter is named 'id' */}
                             <Route path="/product/:id" element={<ProductDetail />} />
                             <Route path="/checkout/:id" element={<CheckoutPage />} />
