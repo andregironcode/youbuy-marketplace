@@ -1,34 +1,27 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { ExtendedUser } from "@/types/user";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   User,
   Package,
   ShoppingBag,
+  Store,
+  MessageCircle,
+  BarChart2,
   CreditCard,
+  HeadphonesIcon,
   HelpCircle,
   Crown,
-  Store,
-  MessageSquare,
-  HeadphonesIcon,
   LogOut,
-  MessageCircle,
-  BarChart2
 } from "lucide-react";
-
-interface UserProfile {
-  full_name?: string;
-  avatar_url?: string;
-}
-
-interface ExtendedUser {
-  id: string;
-  email?: string;
-  profile?: UserProfile;
-}
 
 export const ProfileSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const extendedUser = user as ExtendedUser;
   
@@ -36,7 +29,6 @@ export const ProfileSidebar = () => {
     return location.pathname.includes(path);
   };
 
-  // Get avatar URL from either profile or user metadata
   const getAvatarUrl = () => {
     if (extendedUser?.profile?.avatar_url) {
       return `${extendedUser.profile.avatar_url}?t=${Date.now()}`;
@@ -108,74 +100,56 @@ export const ProfileSidebar = () => {
       href: "/profile/premium",
       active: isActive("/premium"),
     },
-    {
-      icon: LogOut,
-      label: "Sign Out",
-      onClick: signOut,
-      active: false,
-    },
   ];
-  
+
   return (
-    <aside className="w-60 border-r border-gray-200 bg-white fixed top-0 left-0 h-full z-10 flex flex-col pt-16 shadow-sm transition-all">
-      <div className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-3">
-          {getAvatarUrl() ? (
-            <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
-              <img
-                src={getAvatarUrl()}
-                alt="Avatar"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <User className="h-4 w-4 text-gray-500" />
-            </div>
-          )}
-          <div className="flex flex-col">
-            <span className="font-bold text-md">
-              {extendedUser?.profile?.full_name || "My Account"}
-            </span>
-            <div className="flex items-center text-xs text-gray-400">
-              <span className="truncate max-w-[160px]">{extendedUser?.email}</span>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* User Profile */}
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-card border">
+        <Avatar className="h-10 w-10 shrink-0">
+          <AvatarImage src={getAvatarUrl() || undefined} alt={user?.email || "User"} />
+          <AvatarFallback className="bg-primary/10 text-primary">
+            {user?.email?.charAt(0).toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <h3 className="font-medium truncate">{user?.email}</h3>
+          <p className="text-sm text-muted-foreground">Manage your account</p>
         </div>
       </div>
 
-      <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent no-scrollbar">
-        <nav className="py-4">
-          <ul className="space-y-1 px-2">
-            {items.map((item) => (
-              <li key={item.label}>
-                {item.href ? (
-                  <Link
-                    to={item.href}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
-                      item.active
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                ) : (
-                  <button
-                    onClick={item.onClick}
-                    className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full text-left"
-                  >
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </aside>
+      {/* Navigation */}
+      <nav className="space-y-1">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Button
+              key={item.label}
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-2 truncate",
+                item.active && "bg-primary/10 text-primary hover:bg-primary/20"
+              )}
+              onClick={() => item.href ? navigate(item.href) : item.onClick?.()}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </Button>
+          );
+        })}
+      </nav>
+
+      <Separator />
+
+      {/* Sign Out */}
+      <Button
+        variant="ghost"
+        className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={signOut}
+      >
+        <LogOut className="h-4 w-4 shrink-0" />
+        <span className="truncate">Sign Out</span>
+      </Button>
+    </div>
   );
 };
