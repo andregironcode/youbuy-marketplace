@@ -145,10 +145,7 @@ export const ProfileSidebar = () => {
       <Button
         variant="ghost"
         className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={async () => {
-          await signOut();
-          navigate('/');
-        }}
+        onClick={signOut}
       >
         <LogOut className="h-4 w-4 shrink-0" />
         <span className="truncate">Sign Out</span>

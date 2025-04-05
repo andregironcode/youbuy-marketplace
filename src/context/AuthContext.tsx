@@ -213,8 +213,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    setIsAdmin(false);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      }
+      // Clear user state explicitly
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      // Force page reload to clear any cached state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error("Unexpected error during sign out:", error);
+    }
   }
 
   const value = {
