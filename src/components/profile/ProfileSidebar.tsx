@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Crown,
   LogOut,
+  Wallet,
 } from "lucide-react";
 
 export const ProfileSidebar = () => {
@@ -77,9 +78,9 @@ export const ProfileSidebar = () => {
       active: isActive("/statistics"),
     },
     {
-      icon: CreditCard,
+      icon: Wallet,
       label: "Wallet",
-      href: "/profile/wallet",
+      href: "/wallet",
       active: isActive("/wallet"),
     },
     {
