@@ -77,7 +77,7 @@ export const SalesPage = () => {
         </Card>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Your Sales History</h2>
+          <h2 className="text-lg font-semibold"></h2>
           <SalesHistory />
         </div>
       </div>
