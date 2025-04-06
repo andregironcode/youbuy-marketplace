@@ -268,6 +268,7 @@ export function ProfileSettings() {
           location: data.location,
           avatar_url: data.avatar_url,
           phone: data.phone,
+          currency: data.currency,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -318,236 +319,260 @@ export function ProfileSettings() {
   };
 
   return (
-    <div className="flex-1 -mt-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
-            </div>
-      
+    <div className="flex-1">
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-6">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <UserCircle className="h-4 w-4" />
-            <span>Profile</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span>Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span>Payments</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span>Security</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="profile" className="mt-0">
-          <div className="bg-white rounded-md p-8">
-            <h2 className="text-xl font-bold mb-2">Profile Information</h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              Update your profile information and how others see you on the platform.
-            </p>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-8">
-                  {/* Avatar upload section */}
-                  <div className="flex-shrink-0">
-                    <div className="text-sm font-medium mb-2">Profile Picture</div>
-                    <div className="flex flex-col items-center gap-4">
-                      <Avatar className="h-24 w-24 border-2 border-muted">
-                        <AvatarImage src={avatarUrl || undefined} alt={form.getValues("full_name")} />
-                        <AvatarFallback className="text-lg bg-green-100 text-green-800">
-                          {uploadingAvatar ? <Loader2 className="h-6 w-6 animate-spin" /> : getInitials()}
-                        </AvatarFallback>
-                    </Avatar>
-                      
-                      <div>
-                        <label htmlFor="avatar-upload" className="cursor-pointer">
-                          <div className="rounded-md bg-green-50 px-3 py-1.5 text-sm font-medium text-green-600 hover:bg-green-100">
-                            Change Avatar
+        <div className="flex-1">
+          <TabsContent value="profile" className="space-y-6">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Profile Information</CardTitle>
+                    <CardDescription>
+                      Update your profile information and preferences.
+                    </CardDescription>
                   </div>
-                          <input
-                            id="avatar-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        disabled={uploadingAvatar}
-                            className="sr-only"
+                  <div className="flex gap-2">
+                    <TabsList className="flex gap-1">
+                      <TabsTrigger value="profile" className="flex items-center justify-center p-2">
+                        <UserCircle className="h-4 w-4" />
+                      </TabsTrigger>
+                      <TabsTrigger value="notifications" className="flex items-center justify-center p-2">
+                        <Bell className="h-4 w-4" />
+                      </TabsTrigger>
+                      <TabsTrigger value="payments" className="flex items-center justify-center p-2">
+                        <CreditCard className="h-4 w-4" />
+                      </TabsTrigger>
+                      <TabsTrigger value="security" className="flex items-center justify-center p-2">
+                        <Shield className="h-4 w-4" />
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-center gap-2">
+                          <Avatar className="h-24 w-24">
+                            <AvatarImage src={avatarUrl || undefined} alt={user?.email || "User"} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                              {getInitials()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('avatar-upload')?.click()}
+                              disabled={uploadingAvatar}
+                            >
+                              {uploadingAvatar ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <User className="mr-2 h-4 w-4" />
+                              )}
+                              Change
+                            </Button>
+                            {avatarUrl && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  form.setValue('avatar_url', '');
+                                  setAvatarUrl(null);
+                                }}
+                              >
+                                <User className="mr-2 h-4 w-4" />
+                                Remove
+                              </Button>
+                            )}
+                            <input
+                              id="avatar-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleAvatarUpload}
+                              aria-label="Upload profile picture"
+                              title="Upload profile picture"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Choose a username" {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                  This is your public display name.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
                           />
-                        </label>
+                          <FormField
+                            control={form.control}
+                            name="full_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Full Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter your full name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
-                  </div>
-                </div>
 
-                  {/* Profile form fields */}
-                  <div className="flex-1 space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="full_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Your full name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your email" {...field} disabled />
+                              </FormControl>
+                              <FormDescription>
+                                Your email address cannot be changed.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your phone number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Username" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                            This is your public username.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Email" {...field} readOnly />
-                        </FormControl>
-                        <FormDescription>
-                            Contact support to change your email address.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                      name="bio"
-                    render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Bio</FormLabel>
-                        <FormControl>
-                            <Textarea
-                              placeholder="Tell us a little about yourself"
-                              className="resize-none h-20"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                            {field.value?.length || 0}/300 characters
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                              <Input placeholder="City, Country" {...field} />
+                      <FormField
+                        control={form.control}
+                        name="bio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bio</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Tell us a little bit about yourself"
+                                className="resize-none"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Phone number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                  </div>
-                </div>
-                
-                <Separator />
 
-                <div>
-                <FormField
-                  control={form.control}
-                    name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Preferred Currency</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Location</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your location" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preferred Currency</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a currency" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="AED">AED (UAE Dirham)</SelectItem>
+                                  <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                                  <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                                  <SelectItem value="GBP">GBP (British Pound)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button 
+                          type="submit" 
+                          disabled={loading || uploadingAvatar} 
+                          className="flex items-center gap-2"
                         >
-                      <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a currency" />
-                            </SelectTrigger>
-                      </FormControl>
-                          <SelectContent>
-                            <SelectItem value="AED">AED (Arab Emirates Dirham)</SelectItem>
-                            <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                            <SelectItem value="GBP">GBP (British Pound)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          This is the currency that will be used throughout the platform.
-                        </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          {loading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          Save Changes
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Notification Preferences</CardTitle>
+                  <CardDescription>
+                    Manage how and when you receive notifications.
+                  </CardDescription>
                 </div>
-
-                <div className="flex justify-end">
-                  <Button 
-                    type="submit" 
-                    disabled={loading || uploadingAvatar} 
-                    className="flex items-center gap-2"
-                  >
-                    {loading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Save Changes
-                  </Button>
+                <div className="flex gap-2">
+                  <TabsList className="flex gap-1">
+                    <TabsTrigger value="profile" className="flex items-center justify-center p-2">
+                      <UserCircle className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="flex items-center justify-center p-2">
+                      <Bell className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="payments" className="flex items-center justify-center p-2">
+                      <CreditCard className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="flex items-center justify-center p-2">
+                      <Shield className="h-4 w-4" />
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-              </form>
-            </Form>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Manage how and when you receive notifications.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Email Notifications</h3>
                   
@@ -587,91 +612,127 @@ export function ProfileSettings() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="payments" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Methods</CardTitle>
-              <CardDescription>
-                Manage your payment methods and transaction history.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="rounded-lg border p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-slate-100 p-2 rounded-md">
-                      <CreditCard className="h-6 w-6 text-slate-500" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="payments" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Payment Methods</CardTitle>
+                  <CardDescription>
+                    Manage your payment methods and transaction history.
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <TabsList className="flex gap-1">
+                    <TabsTrigger value="profile" className="flex items-center justify-center p-2">
+                      <UserCircle className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="flex items-center justify-center p-2">
+                      <Bell className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="payments" className="flex items-center justify-center p-2">
+                      <CreditCard className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="flex items-center justify-center p-2">
+                      <Shield className="h-4 w-4" />
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="rounded-lg border p-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-slate-100 p-2 rounded-md">
+                        <CreditCard className="h-6 w-6 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">•••• •••• •••• 4242</p>
+                        <p className="text-sm text-muted-foreground">Expires 12/2025</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">•••• •••• •••• 4242</p>
-                      <p className="text-sm text-muted-foreground">Expires 12/2025</p>
+                    <Button variant="outline" size="sm">Manage</Button>
+                  </div>
+                  <Button variant="outline" className="w-full">Add Payment Method</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Security Settings</CardTitle>
+                  <CardDescription>
+                    Manage your account security and privacy settings.
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <TabsList className="flex gap-1">
+                    <TabsTrigger value="profile" className="flex items-center justify-center p-2">
+                      <UserCircle className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="flex items-center justify-center p-2">
+                      <Bell className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="payments" className="flex items-center justify-center p-2">
+                      <CreditCard className="h-4 w-4" />
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="flex items-center justify-center p-2">
+                      <Shield className="h-4 w-4" />
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Change Password</h3>
+                    <div className="space-y-4">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Current Password</label>
+                        <Input type="password" placeholder="••••••••" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">New Password</label>
+                        <Input type="password" placeholder="••••••••" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Confirm Password</label>
+                        <Input type="password" placeholder="••••••••" />
+                      </div>
+                      <Button>Update Password</Button>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">Manage</Button>
-                </div>
-                <Button variant="outline" className="w-full">Add Payment Method</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Manage your account security and privacy settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Change Password</h3>
-                  <div className="space-y-4">
-                    <div className="grid gap-2">
-                      <label className="text-sm font-medium">Current Password</label>
-                      <Input type="password" placeholder="••••••••" />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm font-medium">New Password</label>
-                      <Input type="password" placeholder="••••••••" />
-                    </div>
-                    <div className="grid gap-2">
-                      <label className="text-sm font-medium">Confirm Password</label>
-                      <Input type="password" placeholder="••••••••" />
-                    </div>
-                    <Button>Update Password</Button>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Two-Factor Authentication</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Add an extra layer of security to your account by enabling two-factor authentication.
+                    </p>
+                    <Button variant="outline">Set Up Two-Factor</Button>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Account Activity</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      View your recent account activity and sessions.
+                    </p>
+                    <Button variant="outline">View Activity Log</Button>
                   </div>
                 </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Two-Factor Authentication</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add an extra layer of security to your account by enabling two-factor authentication.
-                  </p>
-                  <Button variant="outline">Set Up Two-Factor</Button>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Account Activity</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    View your recent account activity and sessions.
-                  </p>
-                  <Button variant="outline">View Activity Log</Button>
-                </div>
-              </div>
-        </CardContent>
-      </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
