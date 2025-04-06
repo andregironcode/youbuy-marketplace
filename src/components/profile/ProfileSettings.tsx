@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Save, Shield, Bell, CreditCard, UserCircle, Settings } from "lucide-react";
+import { Loader2, User, Mail, Save, Shield, Bell, CreditCard, UserCircle, Settings, CheckCircle2, Edit, X, Upload, Plus, Eye, EyeOff } from "lucide-react";
 import { initializeStorage } from "@/integrations/supabase/storage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +39,9 @@ export function ProfileSettings() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Set up form with default values
   const form = useForm<ProfileFormValues>({
@@ -695,15 +698,84 @@ export function ProfileSettings() {
                     <div className="space-y-4">
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Current Password</label>
-                        <Input type="password" placeholder="••••••••" />
+                        <div className="relative">
+                          <Input 
+                            type={showCurrentPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            tabIndex={-1}
+                          >
+                            {showCurrentPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="sr-only">
+                              {showCurrentPassword ? "Hide password" : "Show password"}
+                            </span>
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">New Password</label>
-                        <Input type="password" placeholder="••••••••" />
+                        <div className="relative">
+                          <Input 
+                            type={showNewPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            tabIndex={-1}
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="sr-only">
+                              {showNewPassword ? "Hide password" : "Show password"}
+                            </span>
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Confirm Password</label>
-                        <Input type="password" placeholder="••••••••" />
+                        <div className="relative">
+                          <Input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            tabIndex={-1}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="sr-only">
+                              {showConfirmPassword ? "Hide password" : "Show password"}
+                            </span>
+                          </Button>
+                        </div>
                       </div>
                       <Button>Update Password</Button>
                     </div>
