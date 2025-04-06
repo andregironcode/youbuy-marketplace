@@ -13,6 +13,11 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { useLocation } from "react-router-dom";
 import { CategoryDropdown } from "@/components/category/CategoryDropdown";
 
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 export const Navbar = () => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -171,7 +176,7 @@ export const Navbar = () => {
                   <Link to="/wallet">
                     <Button variant="ghost" size="sm" className="gap-2 h-9" aria-label="Wallet">
                       <Wallet className="h-4 w-4" />
-                      <span className="text-xs font-medium">${balance.toFixed(2)}</span>
+                      <span className="text-xs font-medium">AED {formatCurrency(balance)}</span>
                     </Button>
                   </Link>
                   <Link to="/profile" className="flex items-center">
@@ -237,7 +242,7 @@ export const Navbar = () => {
                     <Wallet className="h-4 w-4 mr-2" />
                     Wallet
                   </div>
-                  <span className="font-medium">${balance.toFixed(2)}</span>
+                  <span className="font-medium">AED {formatCurrency(balance)}</span>
                 </Link>
                 <Link to="/profile" className="py-2 px-3 hover:bg-muted rounded-md">
                   Profile

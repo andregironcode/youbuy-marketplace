@@ -34,6 +34,11 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import { parseISO, format } from 'date-fns';
 
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 const WalletPage: React.FC = () => {
   const { user } = useAuth();
   const { 
@@ -164,7 +169,7 @@ const WalletPage: React.FC = () => {
           <CardContent>
             <div className="flex flex-col items-center justify-center py-6">
               <WalletIcon className="h-12 w-12 text-primary mb-4" />
-              <div className="text-3xl font-bold">${balance.toFixed(2)}</div>
+              <div className="text-3xl font-bold">AED {formatCurrency(balance)}</div>
               <p className="text-sm text-muted-foreground mt-2">
                 Available for purchases
               </p>
@@ -187,7 +192,7 @@ const WalletPage: React.FC = () => {
               <TabsContent value="balance" className="space-y-4">
                 <div className="flex flex-col space-y-2 py-4">
                   <label htmlFor="amount" className="text-sm font-medium">
-                    Amount to Add ($)
+                    Amount to Add (AED)
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -215,7 +220,7 @@ const WalletPage: React.FC = () => {
               <TabsContent value="withdraw" className="space-y-4">
                 <div className="flex flex-col space-y-2 py-4">
                   <label htmlFor="withdrawAmount" className="text-sm font-medium">
-                    Amount to Withdraw ($)
+                    Amount to Withdraw (AED)
                   </label>
                   <div className="flex space-x-2">
                     <Input
@@ -280,7 +285,7 @@ const WalletPage: React.FC = () => {
                         : 'text-red-600 font-medium'
                     }>
                       {transaction.type === 'deposit' ? '+' : '-'}
-                      ${transaction.amount.toFixed(2)}
+                      AED {formatCurrency(transaction.amount)}
                     </TableCell>
                     <TableCell>{transaction.description}</TableCell>
                     <TableCell>{formatDate(transaction.created_at)}</TableCell>

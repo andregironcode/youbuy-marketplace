@@ -11,6 +11,11 @@ interface PaymentFormProps {
   totalAmount: number;
 }
 
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 export function PaymentForm({ onSuccess, totalAmount }: PaymentFormProps) {
   const { balance, makePayment } = useWallet();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,13 +31,13 @@ export function PaymentForm({ onSuccess, totalAmount }: PaymentFormProps) {
       if (paymentMethod === 'wallet') {
         // Check if wallet has sufficient funds
         if (balance < totalAmount) {
-          setErrorMessage(`Insufficient wallet balance. Available: $${balance.toFixed(2)}, Required: $${totalAmount.toFixed(2)}`);
+          setErrorMessage(`Insufficient wallet balance. Available: AED ${formatCurrency(balance)}, Required: AED ${formatCurrency(totalAmount)}`);
           setIsProcessing(false);
           return;
         }
 
         // Process the payment directly here for wallet
-        const paymentResult = await makePayment(totalAmount, `Order payment for $${totalAmount.toFixed(2)}`);
+        const paymentResult = await makePayment(totalAmount, `Order payment for AED ${formatCurrency(totalAmount)}`);
         
         if (!paymentResult) {
           setErrorMessage('Wallet payment failed. Please try again or use a different payment method.');
@@ -42,7 +47,7 @@ export function PaymentForm({ onSuccess, totalAmount }: PaymentFormProps) {
 
         toast({
           title: "Payment Successful",
-          description: `$${totalAmount.toFixed(2)} has been deducted from your wallet.`,
+          description: `AED ${formatCurrency(totalAmount)} has been deducted from your wallet.`,
         });
       } else {
         // Simulate payment processing delay for cash on delivery
@@ -72,7 +77,7 @@ export function PaymentForm({ onSuccess, totalAmount }: PaymentFormProps) {
             <Label htmlFor="wallet" className="flex items-center cursor-pointer">
               <Wallet className="h-4 w-4 mr-2" />
               <span className="font-medium">Pay with Wallet</span>
-              <span className="ml-auto text-sm font-semibold">${balance.toFixed(2)} available</span>
+              <span className="ml-auto text-sm font-semibold">AED {formatCurrency(balance)}</span>
             </Label>
           </div>
           

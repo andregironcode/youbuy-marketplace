@@ -3,6 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from '@/components/ui/use-toast';
 
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 // Types for wallet transactions
 export type TransactionType = 'deposit' | 'withdrawal' | 'payment';
 
@@ -61,7 +66,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Initialize wallet (create if doesn't exist)
+  // Initialize the wallet
   const initializeWallet = async () => {
     try {
       setIsLoading(true);
@@ -69,60 +74,53 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       if (!user) return;
 
-      // First, check if the wallet exists
-      const { data: existingWallet, error: fetchError } = await supabase
-        .from('wallets')
+      // Check if user already has a wallet
+      const { data: existingWallet, error: walletError } = await supabase
+        .from('wallets' as any)
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // PGRST116 is the error for "no rows returned" which is expected
-        // if the user doesn't have a wallet yet
-        throw new Error(fetchError.message);
+      if (walletError && walletError.code !== 'PGRST116') {
+        throw walletError;
       }
 
       if (existingWallet) {
-        setWallet(existingWallet as Wallet);
+        setWallet(existingWallet as unknown as Wallet);
       } else {
-        // Create a new wallet for the user
+        // Create a new wallet if one doesn't exist
         const { data: newWallet, error: createError } = await supabase
-          .from('wallets')
+          .from('wallets' as any)
           .insert([{ user_id: user.id, balance: 0 }])
           .select('*')
           .single();
 
-        if (createError) throw new Error(createError.message);
-
-        setWallet(newWallet as Wallet);
+        if (createError) throw createError;
+        
+        setWallet(newWallet as unknown as Wallet);
       }
     } catch (err: any) {
       console.error('Error initializing wallet:', err);
       setError(err.message);
-      toast({
-        title: 'Error initializing wallet',
-        description: err.message,
-        variant: 'destructive'
-      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load user transactions
+  // Load transactions
   const loadTransactions = async () => {
     try {
       if (!user) return;
 
-      const { data, error: txError } = await supabase
-        .from('wallet_transactions')
+      const { data, error } = await supabase
+        .from('wallet_transactions' as any)
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (txError) throw new Error(txError.message);
+      if (error) throw error;
 
-      setTransactions(data as WalletTransaction[] || []);
+      setTransactions(data as unknown as WalletTransaction[]);
     } catch (err: any) {
       console.error('Error loading transactions:', err);
       setError(err.message);
@@ -144,7 +142,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Call the make_deposit RPC function
-      const { data, error } = await supabase.rpc('make_deposit', {
+      const { data, error } = await supabase.rpc('make_deposit' as any, {
         p_user_id: user.id,
         p_amount: amount,
         p_description: 'Deposit to wallet'
@@ -165,7 +163,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Funds added successfully',
-        description: `$${amount.toFixed(2)} has been added to your wallet`,
+        description: `AED ${formatCurrency(amount)} has been added to your wallet`,
       });
 
       return true;
@@ -202,7 +200,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Call the make_withdrawal RPC function
-      const { data, error } = await supabase.rpc('make_withdrawal', {
+      const { data, error } = await supabase.rpc('make_withdrawal' as any, {
         p_user_id: user.id,
         p_amount: amount,
         p_description: 'Withdrawal from wallet'
@@ -221,7 +219,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Withdrawal successful',
-        description: `$${amount.toFixed(2)} has been withdrawn from your wallet`,
+        description: `AED ${formatCurrency(amount)} has been withdrawn from your wallet`,
       });
 
       return true;
@@ -258,7 +256,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Call the make_payment RPC function
-      const { data, error } = await supabase.rpc('make_payment', {
+      const { data, error } = await supabase.rpc('make_payment' as any, {
         p_user_id: user.id,
         p_amount: amount,
         p_description: description
@@ -277,7 +275,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Payment successful',
-        description: `$${amount.toFixed(2)} has been paid from your wallet`,
+        description: `AED ${formatCurrency(amount)} has been paid from your wallet`,
       });
 
       return true;
@@ -304,14 +302,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       if (!user) return;
 
       const { data: walletData, error: walletError } = await supabase
-        .from('wallets')
+        .from('wallets' as any)
         .select('*')
         .eq('user_id', user.id)
         .single();
 
       if (walletError) throw new Error(walletError.message);
       
-      setWallet(walletData as Wallet);
+      setWallet(walletData as unknown as Wallet);
 
       // Refresh transactions
       await loadTransactions();
