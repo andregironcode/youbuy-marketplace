@@ -17,7 +17,7 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
-  const { convertPrice } = useCurrency();
+  const { convertPrice, formatCurrency } = useCurrency();
   const productIsFavorite = isFavorite(product.id);
   const [likes, setLikes] = useState(product.likeCount || 0);
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </Link>
         </div>
         <div className="mt-1">
-          <p className="text-xl font-bold text-price">AED {product.price.toFixed(2)}</p>
+          <p className="text-xl font-bold text-price">AED {formatCurrency(product.price)}</p>
         </div>
         <div className="mt-1 text-sm text-muted-foreground line-clamp-1 min-h-[1.5rem]">
           <span>{product.location}</span>

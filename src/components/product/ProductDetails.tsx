@@ -10,6 +10,7 @@ import { Tag, Check, AlertTriangle, Info, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface ProductDetailsProps {
   product: ProductType;
@@ -23,6 +24,7 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatCurrency } = useCurrency();
   
   const handleVariationSelect = (variationId: string, optionId: string) => {
     const newSelections = { ...selectedVariations, [variationId]: optionId };
@@ -220,11 +222,11 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
       
       <div className="flex items-baseline">
         <span className="text-3xl font-bold text-price">
-          AED {price.toFixed(2)}
+          AED {formatCurrency(price)}
         </span>
         {product.variations && Object.keys(selectedVariations).length > 0 && (
           <span className="ml-2 text-sm text-muted-foreground">
-            (Base price: AED {product.price.toFixed(2)})
+            (Base price: AED {formatCurrency(product.price)})
           </span>
         )}
       </div>

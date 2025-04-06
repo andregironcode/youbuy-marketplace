@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { ExtendedUser } from "@/types/user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,28 +18,34 @@ import {
   LogOut,
   Wallet,
 } from "lucide-react";
+import { LucideIcon } from "lucide-react";
+
+interface NavigationItem {
+  icon: LucideIcon;
+  label: string;
+  href?: string;
+  active: boolean;
+  className?: string;
+  onClick?: () => void;
+}
 
 export const ProfileSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const extendedUser = user as ExtendedUser;
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
   };
 
   const getAvatarUrl = () => {
-    if (extendedUser?.profile?.avatar_url) {
-      return `${extendedUser.profile.avatar_url}?t=${Date.now()}`;
-    }
     if (user?.user_metadata?.avatar_url) {
       return `${user.user_metadata.avatar_url}?t=${Date.now()}`;
     }
     return null;
   };
 
-  const items = [
+  const items: NavigationItem[] = [
     {
       icon: User,
       label: "Account",
@@ -100,6 +105,7 @@ export const ProfileSidebar = () => {
       label: "Premium",
       href: "/profile/premium",
       active: isActive("/premium"),
+      className: "text-amber-500",
     },
   ];
 
@@ -129,11 +135,12 @@ export const ProfileSidebar = () => {
               variant="ghost"
               className={cn(
                 "w-full justify-start gap-2 truncate",
-                item.active && "bg-primary/10 text-primary hover:bg-primary/20"
+                item.active && "bg-primary/10 text-primary hover:bg-primary/20",
+                item.className
               )}
               onClick={() => item.href ? navigate(item.href) : item.onClick?.()}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className={cn("h-4 w-4 shrink-0", item.label === "Premium" && "text-amber-500")} />
               <span className="truncate">{item.label}</span>
             </Button>
           );
@@ -145,10 +152,10 @@ export const ProfileSidebar = () => {
       {/* Sign Out */}
       <Button
         variant="ghost"
-        className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
         onClick={signOut}
       >
-        <LogOut className="h-4 w-4 shrink-0" />
+        <LogOut className="h-4 w-4 shrink-0 text-red-500" />
         <span className="truncate">Sign Out</span>
       </Button>
     </div>

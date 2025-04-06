@@ -6,6 +6,7 @@ type CurrencyContextType = {
   currency: string;
   setCurrency: (currency: string) => void;
   convertPrice: (price: number) => string;
+  formatCurrency: (amount: number) => string;
 };
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -42,15 +43,30 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     loadCurrency();
   }, [user]);
 
+  // Format number with thousand separators
+  const formatCurrency = (amount: number): string => {
+    return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
   // Convert price to selected currency
   const convertPrice = (price: number) => {
     const rate = exchangeRates[currency] || 1;
     const convertedPrice = price * rate;
+    
+    if (currency === "AED") {
+      return `AED ${formatCurrency(convertedPrice)}`;
+    }
+    
     return `${currency} ${convertedPrice.toFixed(2)}`;
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, convertPrice }}>
+    <CurrencyContext.Provider value={{ 
+      currency, 
+      setCurrency, 
+      convertPrice,
+      formatCurrency 
+    }}>
       {children}
     </CurrencyContext.Provider>
   );
