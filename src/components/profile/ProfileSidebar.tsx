@@ -92,8 +92,8 @@ export const ProfileSidebar = () => {
     {
       icon: Wallet,
       label: "Wallet",
-      href: "/wallet",
-      active: isActive("/wallet"),
+      href: "/profile/wallet",
+      active: isActive("/profile/wallet"),
     },
     {
       icon: HeadphonesIcon,

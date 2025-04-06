@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useWallet } from "@/context/WalletContext";
 import { PageHeader } from "../PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,18 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CreditCard, Plus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { CreditCard, Plus, ArrowUpRight, ArrowDownLeft, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
+
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
 
 export const WalletPage = () => {
   const { user } = useAuth();
+  const { balance, transactions, addFunds, withdrawFunds, refreshWallet, isLoading } = useWallet();
   const [activeTab, setActiveTab] = useState("overview");
-  const [balance] = useState(1234.56);
-  const [transactions] = useState([
-    { id: 1, type: "deposit", amount: 500, date: "2024-04-01" },
-    { id: 2, type: "withdrawal", amount: 200, date: "2024-03-28" },
-    { id: 3, type: "deposit", amount: 1000, date: "2024-03-25" },
-  ]);
+  const [amount, setAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -36,17 +40,92 @@ export const WalletPage = () => {
     return type === "deposit" ? "text-green-600" : "text-red-600";
   };
 
+  const handleRefresh = async () => {
+    await refreshWallet();
+    toast({
+      title: "Wallet refreshed",
+      description: "Your wallet balance and transactions have been updated."
+    });
+  };
+
+  const handleAddFunds = async () => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid amount greater than 0.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    const success = await addFunds(Number(amount));
+    setIsProcessing(false);
+    
+    if (success) {
+      setAmount("");
+      setActiveTab("overview");
+      toast({
+        title: "Funds added",
+        description: `AED ${formatCurrency(Number(amount))} has been added to your wallet.`
+      });
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid amount greater than 0.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (Number(amount) > balance) {
+      toast({
+        title: "Insufficient funds",
+        description: "You don't have enough funds in your wallet.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    const success = await withdrawFunds(Number(amount));
+    setIsProcessing(false);
+    
+    if (success) {
+      setAmount("");
+      setActiveTab("overview");
+      toast({
+        title: "Funds withdrawn",
+        description: `AED ${formatCurrency(Number(amount))} has been withdrawn from your wallet.`
+      });
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Wallet"
         description="Manage your balance, add funds, or withdraw to your bank account"
-      />
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </PageHeader>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 w-full max-w-md mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="fund">Fund Wallet</TabsTrigger>
+          <TabsTrigger value="fund">Add Funds</TabsTrigger>
           <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
         </TabsList>
 
@@ -59,7 +138,7 @@ export const WalletPage = () => {
                   <CardDescription>Your available funds</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">AED {balance.toFixed(2)}</div>
+                  <div className="text-3xl font-bold">AED {formatCurrency(balance)}</div>
                 </CardContent>
               </Card>
 
@@ -70,11 +149,19 @@ export const WalletPage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-auto flex flex-col items-center gap-2 p-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-auto flex flex-col items-center gap-2 p-4"
+                      onClick={() => setActiveTab("fund")}
+                    >
                       <Plus className="h-6 w-6" />
                       <span>Add Funds</span>
                     </Button>
-                    <Button variant="outline" className="h-auto flex flex-col items-center gap-2 p-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-auto flex flex-col items-center gap-2 p-4"
+                      onClick={() => setActiveTab("withdraw")}
+                    >
                       <CreditCard className="h-6 w-6" />
                       <span>Withdraw</span>
                     </Button>
@@ -88,56 +175,64 @@ export const WalletPage = () => {
                   <CardDescription>Your latest wallet activity</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[300px] pr-4">
-                    <div className="space-y-4">
-                      {transactions.map((transaction) => {
-                        const Icon = getTransactionIcon(transaction.type);
-                        return (
-                          <div
-                            key={transaction.id}
-                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
+                  {transactions.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No transactions yet
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[300px] pr-4">
+                      <div className="space-y-4">
+                        {transactions.map((transaction) => {
+                          const Icon = getTransactionIcon(transaction.type);
+                          return (
+                            <div
+                              key={transaction.id}
+                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={cn(
+                                    "p-2 rounded-full",
+                                    transaction.type === "deposit"
+                                      ? "bg-green-100"
+                                      : "bg-red-100"
+                                  )}
+                                >
+                                  <Icon
+                                    className={cn(
+                                      "h-4 w-4",
+                                      getTransactionColor(transaction.type)
+                                    )}
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-medium">
+                                    {transaction.type === "deposit"
+                                      ? "Added Funds"
+                                      : transaction.type === "withdrawal"
+                                      ? "Withdrawal"
+                                      : "Payment"}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {formatDate(transaction.created_at)}
+                                  </div>
+                                </div>
+                              </div>
                               <div
                                 className={cn(
-                                  "p-2 rounded-full",
-                                  transaction.type === "deposit"
-                                    ? "bg-green-100"
-                                    : "bg-red-100"
+                                  "font-medium",
+                                  getTransactionColor(transaction.type)
                                 )}
                               >
-                                <Icon
-                                  className={cn(
-                                    "h-4 w-4",
-                                    getTransactionColor(transaction.type)
-                                  )}
-                                />
-                              </div>
-                              <div>
-                                <div className="font-medium">
-                                  {transaction.type === "deposit"
-                                    ? "Added Funds"
-                                    : "Withdrawal"}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {formatDate(transaction.date)}
-                                </div>
+                                {transaction.type === "deposit" ? "+" : "-"} AED{" "}
+                                {formatCurrency(transaction.amount)}
                               </div>
                             </div>
-                            <div
-                              className={cn(
-                                "font-medium",
-                                getTransactionColor(transaction.type)
-                              )}
-                            >
-                              {transaction.type === "deposit" ? "+" : "-"} AED{" "}
-                              {transaction.amount.toFixed(2)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -158,12 +253,18 @@ export const WalletPage = () => {
                     id="amount"
                     placeholder="Enter amount"
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
                   />
                 </div>
-                <Button className="w-full bg-youbuy hover:bg-youbuy/90 text-white">
-                  Continue to Payment
+                <Button 
+                  className="w-full bg-youbuy hover:bg-youbuy/90 text-white"
+                  onClick={handleAddFunds}
+                  disabled={isProcessing || !amount || Number(amount) <= 0}
+                >
+                  {isProcessing ? "Processing..." : "Add Funds"}
                 </Button>
               </CardContent>
             </Card>
@@ -184,16 +285,22 @@ export const WalletPage = () => {
                     id="withdraw-amount"
                     placeholder="Enter amount"
                     type="number"
-                    min="0"
-                    max={balance}
+                    min="0.01"
                     step="0.01"
+                    max={balance}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Available balance: AED {balance.toFixed(2)}
+                    Available balance: AED {formatCurrency(balance)}
                   </p>
                 </div>
-                <Button className="w-full bg-youbuy hover:bg-youbuy/90 text-white">
-                  Withdraw to Bank Account
+                <Button 
+                  className="w-full bg-youbuy hover:bg-youbuy/90 text-white"
+                  onClick={handleWithdraw}
+                  disabled={isProcessing || !amount || Number(amount) <= 0 || Number(amount) > balance}
+                >
+                  {isProcessing ? "Processing..." : "Withdraw to Bank Account"}
                 </Button>
               </CardContent>
             </Card>

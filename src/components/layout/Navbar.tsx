@@ -173,7 +173,7 @@ export const Navbar = () => {
                       <UnreadBadge count={unreadCount} />
                     </Button>
                   </Link>
-                  <Link to="/wallet">
+                  <Link to="/profile/wallet">
                     <Button variant="ghost" size="sm" className="gap-2 h-9" aria-label="Wallet">
                       <Wallet className="h-4 w-4" />
                       <span className="text-xs font-medium">AED {formatCurrency(balance)}</span>
@@ -237,7 +237,7 @@ export const Navbar = () => {
                     <Badge className="bg-youbuy">{unreadCount}</Badge>
                   )}
                 </Link>
-                <Link to="/wallet" className="py-2 px-3 hover:bg-muted rounded-md flex justify-between items-center">
+                <Link to="/profile/wallet" className="py-2 px-3 hover:bg-muted rounded-md flex justify-between items-center">
                   <div className="flex items-center">
                     <Wallet className="h-4 w-4 mr-2" />
                     Wallet

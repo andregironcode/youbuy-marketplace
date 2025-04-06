@@ -26,7 +26,6 @@ import Notifications from "@/pages/Notifications";
 import CheckoutPage from "@/pages/Checkout";
 import CategoriesPage from "@/pages/CategoriesPage";
 import TestPage from "@/pages/TestPage";
-import WalletPage from "@/pages/WalletPage";
 import "./App.css";
 
 // Create a client
@@ -72,7 +71,6 @@ function App() {
                               <Route path="/search" element={<SearchPage />} />
                               <Route path="/seller/:id" element={<SellerProfile />} />
                               <Route path="/sell" element={<Sell />} />
-                              <Route path="/wallet" element={<WalletPage />} />
                               <Route path="/profile/*" element={<Profile />} />
                               <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
                               <Route path="/messages" element={<Messages />} />
