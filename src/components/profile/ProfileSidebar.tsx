@@ -17,6 +17,7 @@ import {
   Crown,
   LogOut,
   Wallet,
+  Heart,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
@@ -69,6 +70,12 @@ export const ProfileSidebar = () => {
       label: "Sales",
       href: "/profile/sales",
       active: isActive("/sales"),
+    },
+    {
+      icon: Heart,
+      label: "Favorites",
+      href: "/profile/favorites",
+      active: isActive("/favorites"),
     },
     {
       icon: MessageCircle,

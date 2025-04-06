@@ -442,7 +442,7 @@ export default function ProductDetail() {
             <CardContent className="p-6">
               <div className="flex items-baseline mb-6">
                 <span className="text-3xl font-bold text-youbuy">
-                  {product.price.toFixed(2)} €
+                  AED {product.price.toFixed(2)} 
                 </span>
               </div>
               

@@ -18,6 +18,7 @@ import {
 } from "./pages/RedirectPages";
 import { SupportPage } from "./pages/SupportPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
+import { FavoritesPage } from "./pages/FavoritesPage";
 
 export const ProfileRoutes = () => {
   return (
@@ -38,6 +39,7 @@ export const ProfileRoutes = () => {
       <Route path="seller/purchases" element={<PurchasesRedirect />} />
       <Route path="support" element={<SupportPage />} />
       <Route path="statistics" element={<StatisticsPage />} />
+      <Route path="favorites" element={<FavoritesPage />} />
     </Routes>
   );
 };
