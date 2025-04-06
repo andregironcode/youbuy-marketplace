@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { categories } from "@/data/categories";
+import { ChevronDown } from "lucide-react";
+
+// Add custom styles to remove underline from AccordionTrigger
+import "./category-filter.css";
 
 interface CategoryFilterProps {
   categoryId?: string;
@@ -26,72 +30,89 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     (subsubcat) => subsubcat.id === subSubcategoryId
   );
 
+  // Make all categories have the same behavior
+  const defaultAccordionValue = categoryId ? [categoryId] : [];
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Categories</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <Accordion type="single" collapsible defaultValue={categoryId}>
+        <Accordion type="multiple" defaultValue={defaultAccordionValue} className="accordion-no-underline">
           {categories.map((category) => (
             <AccordionItem key={category.id} value={category.id}>
-              <AccordionTrigger className="text-sm">
+              <AccordionTrigger className="text-base font-medium">
                 {category.name}
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-2">
+                <ul className="list-none pl-0 space-y-3">
                   {category.subCategories.map((subCategory) => (
-                    <div key={subCategory.id} className="ml-4">
+                    <li key={subCategory.id} className="ml-4">
                       {subCategory.subSubCategories ? (
-                        <Accordion type="single" collapsible defaultValue={subcategoryId}>
-                          <AccordionItem value={subCategory.id} className="border-none">
-                            <AccordionTrigger className="text-sm py-1">
-                              {subCategory.name}
+                        <Accordion type="single" collapsible className="accordion-no-underline">
+                          <AccordionItem value="item-1" className="border-0">
+                            <AccordionTrigger className="p-0 h-auto">
+                              <Button
+                                variant="ghost"
+                                className={`w-full justify-start text-base min-h-9 px-4 font-normal text-left ${
+                                  subcategoryId === subCategory.id
+                                    ? "text-primary bg-primary-foreground"
+                                    : "text-foreground"
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent accordion from toggling
+                                  onCategoryChange(category.id, subCategory.id);
+                                }}
+                              >
+                                <span className="line-clamp-2">{subCategory.name}</span>
+                              </Button>
                             </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-2 ml-4">
+                            <AccordionContent className="pt-2 pb-0">
+                              <ul className="list-none pl-4 space-y-3">
                                 {subCategory.subSubCategories.map((subSubCategory) => (
-                                  <Button
-                                    key={subSubCategory.id}
-                                    variant="ghost"
-                                    className={`w-full justify-start text-sm ${
-                                      subSubcategoryId === subSubCategory.id
-                                        ? "text-youbuy"
-                                        : "text-muted-foreground"
-                                    }`}
-                                    onClick={() =>
-                                      onCategoryChange(
-                                        category.id,
-                                        subCategory.id,
-                                        subSubCategory.id
-                                      )
-                                    }
-                                  >
-                                    {subSubCategory.name}
-                                  </Button>
+                                  <li key={subSubCategory.id}>
+                                    <Button
+                                      variant="ghost"
+                                      className={`w-full justify-start text-sm min-h-9 px-4 ${
+                                        subSubcategoryId === subSubCategory.id
+                                          ? "text-primary bg-primary-foreground"
+                                          : "text-muted-foreground"
+                                      }`}
+                                      onClick={() =>
+                                        onCategoryChange(
+                                          category.id,
+                                          subCategory.id,
+                                          subSubCategory.id
+                                        )
+                                      }
+                                    >
+                                      <span className="line-clamp-2">{subSubCategory.name}</span>
+                                    </Button>
+                                  </li>
                                 ))}
-                              </div>
+                              </ul>
                             </AccordionContent>
                           </AccordionItem>
                         </Accordion>
                       ) : (
                         <Button
                           variant="ghost"
-                          className={`w-full justify-start text-sm ${
+                          className={`w-full justify-start text-base min-h-9 px-4 font-normal ${
                             subcategoryId === subCategory.id
-                              ? "text-youbuy"
-                              : "text-muted-foreground"
+                              ? "text-primary bg-primary-foreground"
+                              : "text-foreground"
                           }`}
                           onClick={() =>
                             onCategoryChange(category.id, subCategory.id)
                           }
                         >
-                          {subCategory.name}
+                          <span className="line-clamp-2">{subCategory.name}</span>
                         </Button>
                       )}
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </AccordionContent>
             </AccordionItem>
           ))}

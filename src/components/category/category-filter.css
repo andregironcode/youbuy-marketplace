@@ -1,0 +1,40 @@
+/* Remove underline from accordion triggers */
+.accordion-no-underline [data-state="open"] > button,
+.accordion-no-underline [data-state="closed"] > button {
+  text-decoration: none !important;
+}
+
+/* Normal button state */
+.accordion-no-underline button {
+  min-height: 36px !important;
+  height: auto !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  text-decoration: none !important;
+  border-radius: 4px !important;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+/* Hover state */
+.accordion-no-underline button:hover:not(.text-primary) {
+  background-color: rgba(236, 72, 153, 0.05) !important;
+  color: rgb(236, 72, 153) !important;
+  text-decoration: none !important;
+}
+
+/* Selected state */
+.accordion-no-underline .text-primary {
+  background-color: rgb(252, 231, 243) !important;
+  color: rgb(236, 72, 153) !important;
+  font-weight: 500 !important;
+}
+
+/* Style for line-clamp-2 text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+} 

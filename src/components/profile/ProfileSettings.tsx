@@ -324,13 +324,13 @@ export function ProfileSettings() {
         <div className="flex-1">
           <TabsContent value="profile" className="space-y-6">
             <div className="space-y-6">
-              <Card>
+      <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>
+          <CardDescription>
                       Update your profile information and preferences.
-                    </CardDescription>
+          </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <TabsList className="flex gap-1">
@@ -348,18 +348,18 @@ export function ProfileSettings() {
                       </TabsTrigger>
                     </TabsList>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        </CardHeader>
+        <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <div className="flex items-center gap-6">
                         <div className="flex flex-col items-center gap-2">
-                          <Avatar className="h-24 w-24">
+                    <Avatar className="h-24 w-24">
                             <AvatarImage src={avatarUrl || undefined} alt={user?.email || "User"} />
                             <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                               {getInitials()}
                             </AvatarFallback>
-                          </Avatar>
+                    </Avatar>
                           <div className="flex gap-2">
                             <Button
                               type="button"
@@ -391,32 +391,32 @@ export function ProfileSettings() {
                             )}
                             <input
                               id="avatar-upload"
-                              type="file"
-                              accept="image/*"
+                        type="file"
+                        accept="image/*"
                               className="hidden"
-                              onChange={handleAvatarUpload}
+                        onChange={handleAvatarUpload}
                               aria-label="Upload profile picture"
                               title="Upload profile picture"
-                            />
-                          </div>
-                        </div>
+                      />
+                  </div>
+                </div>
                         <div className="flex-1 space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="username"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
                                   <Input placeholder="Choose a username" {...field} />
-                                </FormControl>
-                                <FormDescription>
+                        </FormControl>
+                        <FormDescription>
                                   This is your public display name.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                           <FormField
                             control={form.control}
                             name="full_name"
@@ -434,54 +434,54 @@ export function ProfileSettings() {
                       </div>
 
                       <div className="grid gap-4 md:grid-cols-2">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
                                 <Input placeholder="Enter your email" {...field} disabled />
-                              </FormControl>
-                              <FormDescription>
+                        </FormControl>
+                        <FormDescription>
                                 Your email address cannot be changed.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
                               <FormLabel>Phone Number</FormLabel>
-                              <FormControl>
+                        <FormControl>
                                 <Input placeholder="Enter your phone number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                      <FormField
-                        control={form.control}
-                        name="bio"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bio</FormLabel>
-                            <FormControl>
-                              <Textarea
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea 
                                 placeholder="Tell us a little bit about yourself"
                                 className="resize-none"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <FormField
@@ -525,22 +525,22 @@ export function ProfileSettings() {
                         />
                       </div>
 
-                      <div className="flex justify-end">
-                        <Button 
-                          type="submit" 
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
                           disabled={loading || uploadingAvatar} 
                           className="flex items-center gap-2"
-                        >
+                  >
                           {loading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
                             <Save className="h-4 w-4" />
-                          )}
-                          Save Changes
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
+                    )}
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </Form>
                 </CardContent>
               </Card>
             </div>
@@ -729,8 +729,8 @@ export function ProfileSettings() {
                     <Button variant="outline">View Activity Log</Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+        </CardContent>
+      </Card>
           </TabsContent>
         </div>
       </Tabs>
