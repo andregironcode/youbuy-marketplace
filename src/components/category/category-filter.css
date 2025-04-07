@@ -31,20 +31,20 @@
 /* Selected state - distinct appearance */
 .accordion-no-underline .text-primary {
   background-color: transparent !important;
-  color: rgb(236, 72, 153) !important;
+  color: rgb(34, 197, 94) !important;
   font-weight: 500 !important;
   box-shadow: none !important;
 }
 
 /* Enhanced active category highlight */
 .accordion-no-underline [data-state="open"].active-category {
-  background-color: rgba(236, 72, 153, 0.08) !important;
+  background-color: rgba(34, 197, 94, 0.08) !important;
   border-radius: 0 !important;
   position: relative !important;
 }
 
 .accordion-no-underline [data-state="open"].active-category > button {
-  color: rgb(236, 72, 153) !important;
+  color: rgb(34, 197, 94) !important;
   font-weight: 600 !important;
   background-color: transparent !important;
 }
@@ -56,7 +56,7 @@
   top: 0 !important;
   bottom: 0 !important;
   width: 4px !important;
-  background-color: rgb(236, 72, 153) !important;
+  background-color: rgb(34, 197, 94) !important;
 }
 
 /* Style for line-clamp-2 text */
@@ -71,7 +71,7 @@
 .accordion-no-underline [data-state] {
   margin-bottom: 0 !important;
   position: relative !important;
-  border-bottom: 1px solid rgba(236, 72, 153, 0.05) !important;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.05) !important;
 }
 
 /* Improved accordion appearance */
@@ -125,7 +125,7 @@
 /* Chevron icon styling */
 .accordion-no-underline [data-state="open"] > button > svg,
 .accordion-no-underline [data-state="closed"] > button > svg {
-  color: rgb(236, 72, 153) !important;
+  color: rgb(34, 197, 94) !important;
   opacity: 0.8 !important;
   height: 16px !important;
   width: 16px !important;
@@ -142,15 +142,15 @@
   padding-bottom: 0 !important;
 }
 
-/* See more button styling - Pink version */
+/* See more button styling - Green version */
 .see-more-button {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
   padding: 10px !important;
-  background-color: rgba(236, 72, 153, 0.08) !important;
-  color: rgb(236, 72, 153) !important;
+  background-color: rgba(34, 197, 94, 0.08) !important;
+  color: rgb(34, 197, 94) !important;
   border-radius: 4px !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
@@ -161,7 +161,7 @@
 }
 
 .see-more-button:hover {
-  background-color: rgba(236, 72, 153, 0.12) !important;
+  background-color: rgba(34, 197, 94, 0.12) !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -170,7 +170,7 @@
   margin-left: 4px !important;
   height: 16px !important;
   width: 16px !important;
-  color: rgb(236, 72, 153) !important;
+  color: rgb(34, 197, 94) !important;
 }
 
 .accordion-no-underline [data-state="open"]::after {
@@ -191,7 +191,7 @@
 }
 
 .active-category {
-  background-color: rgba(236, 72, 153, 0.08) !important;
+  background-color: rgba(34, 197, 94, 0.08) !important;
   border-radius: 0 !important;
   position: relative;
 }
@@ -204,7 +204,7 @@
   bottom: 0;
   width: 4px;
   height: 100%;
-  background-color: rgb(236, 72, 153) !important;
+  background-color: rgb(34, 197, 94) !important;
   border-radius: 0;
 }
 
@@ -241,5 +241,5 @@
 
 /* Sub-subcategory hover effect */
 .subsub-list li button:hover span {
-  color: rgb(236, 72, 153) !important;
+  color: rgb(34, 197, 94) !important;
 } 

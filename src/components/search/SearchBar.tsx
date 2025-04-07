@@ -1,9 +1,9 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchResults } from "./SearchResults";
+import { useNavigate } from "react-router-dom";
 
 interface SearchBarProps {
   className?: string;
@@ -21,6 +21,7 @@ export const SearchBar = ({
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,19 +68,20 @@ export const SearchBar = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSearch && query.trim()) {
-      onSearch(query);
+    if (query.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      setIsOpen(false);
     }
   };
 
   return (
     <div className={`relative ${className}`} ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative">
-        <Search className={`absolute left-2.5 ${size === 'lg' ? 'top-3.5 h-5 w-5' : 'top-2.5 h-4 w-4'} text-muted-foreground`} />
+        <Search className={`absolute left-3 ${size === 'lg' ? 'top-3 h-6 w-6' : 'top-2 h-5 w-5'} text-green-500`} />
         <Input
           type="search"
           placeholder={placeholder}
-          className={`w-full pl-8 bg-white shadow-sm border-gray-200 text-sm ${size === 'lg' ? 'h-12 text-base pr-10' : 'h-10 pr-8'}`}
+          className={`w-full pl-10 bg-white shadow-sm border-gray-200 text-sm ${size === 'lg' ? 'h-12 text-base pr-10' : 'h-10 pr-8'}`}
           value={query}
           onChange={handleChange}
           onFocus={handleFocus}

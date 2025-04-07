@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { categories as predefinedCategories } from "@/data/categories";
 
 interface FilterAccordionProps {
   title: string;
@@ -118,13 +119,11 @@ export const FilterSidebar = ({
   };
   
   const handleResetFilters = () => {
-    // Keep only search query and category params
+    // Keep only search query and reset all other parameters including category
     const newParams = new URLSearchParams();
     const query = searchParams.get("q");
-    const category = searchParams.get("category");
     
     if (query) newParams.set("q", query);
-    if (category) newParams.set("category", category);
     
     setSearchParams(newParams);
     setMinPrice("");
@@ -135,7 +134,7 @@ export const FilterSidebar = ({
   };
   
   const sidebarClass = cn(
-    "fixed inset-y-0 right-0 w-80 max-w-full bg-white z-[101] border-l shadow-lg transition-transform duration-300 transform",
+    "fixed inset-y-0 right-0 w-80 max-w-full bg-white z-[101] border-l shadow-lg transition-transform duration-300 transform overflow-hidden",
     {
       "translate-x-0": isOpen,
       "translate-x-full": !isOpen
@@ -176,11 +175,21 @@ export const FilterSidebar = ({
               {/* Sort Options */}
               <FilterAccordion title="Sort By" defaultOpen>
                 <div className="space-y-2">
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full">
+                  <Select value={sortBy} onValueChange={(value) => {
+                    setSortBy(value);
+                    // Apply the change immediately to make it more responsive
+                    const newParams = new URLSearchParams(searchParams);
+                    if (value !== "recent") {
+                      newParams.set("sort", value);
+                    } else {
+                      newParams.delete("sort");
+                    }
+                    setSearchParams(newParams);
+                  }}>
+                    <SelectTrigger className="w-full border-green-200 hover:border-green-300 focus:ring-green-500">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" className="z-[200]">
                       <SelectItem value="recent">Most Recent</SelectItem>
                       <SelectItem value="price_asc">Price: Low to High</SelectItem>
                       <SelectItem value="price_desc">Price: High to Low</SelectItem>
@@ -227,45 +236,52 @@ export const FilterSidebar = ({
               </FilterAccordion>
               
               {/* Category Filter (only shown on search results, not category pages) */}
-              {categories.length > 0 && (
-                <FilterAccordion title="Categories">
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <div key={category} className="flex items-center">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="category"
-                            value={category}
-                            checked={searchParams.get("category") === category}
-                            onChange={() => {
-                              const newParams = new URLSearchParams(searchParams);
-                              newParams.set("category", category);
-                              setSearchParams(newParams);
-                            }}
-                            className="rounded text-youbuy focus:ring-youbuy"
-                          />
-                          <span className="text-sm">{category}</span>
-                        </label>
-                      </div>
-                    ))}
-                    {searchParams.get("category") && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs mt-1"
-                        onClick={() => {
-                          const newParams = new URLSearchParams(searchParams);
-                          newParams.delete("category");
-                          setSearchParams(newParams);
-                        }}
-                      >
-                        Clear category
-                      </Button>
-                    )}
-                  </div>
-                </FilterAccordion>
-              )}
+              <FilterAccordion title="Categories">
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {predefinedCategories.map((category) => (
+                    <div key={category.id} className="flex items-center">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="category"
+                          value={category.id}
+                          checked={searchParams.get("category") === category.id}
+                          onChange={() => {
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set("category", category.id);
+                            
+                            // Reset subcategory filters when changing category
+                            if (newParams.has("subcategory")) {
+                              newParams.delete("subcategory");
+                            }
+                            if (newParams.has("subsubcategory")) {
+                              newParams.delete("subsubcategory");
+                            }
+                            
+                            setSearchParams(newParams);
+                          }}
+                          className="rounded text-green-500 focus:ring-green-500"
+                        />
+                        <span className="text-sm">{category.name}</span>
+                      </label>
+                    </div>
+                  ))}
+                  {searchParams.get("category") && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs mt-1"
+                      onClick={() => {
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.delete("category");
+                        setSearchParams(newParams);
+                      }}
+                    >
+                      Clear category
+                    </Button>
+                  )}
+                </div>
+              </FilterAccordion>
               
               {/* Distance Filter */}
               <FilterAccordion title="Distance">
@@ -306,14 +322,14 @@ export const FilterSidebar = ({
             <div className="space-y-2">
               <Button 
                 variant="default" 
-                className="w-full bg-youbuy hover:bg-youbuy-dark" 
+                className="w-full bg-green-500 hover:bg-green-600 text-white" 
                 onClick={handleApplyFilters}
               >
                 Apply Filters
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full" 
+                className="w-full border-green-200 text-green-700 hover:bg-green-50" 
                 onClick={handleResetFilters}
               >
                 Reset Filters

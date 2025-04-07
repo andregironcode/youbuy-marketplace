@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType, convertToProductType } from "@/types/product";
 import { calculateDistance, getCurrentPosition } from "@/utils/locationUtils";
+import { categories } from "@/data/categories";
 
 interface SearchFilters {
   query?: string;
@@ -78,7 +79,7 @@ export const searchProducts = async (
 
     // Apply category filter if provided
     if (category) {
-      searchQuery = searchQuery.eq('category', category);
+      searchQuery = searchQuery.eq('category_id', category);
     }
 
     // Apply price filters if provided
@@ -148,23 +149,13 @@ export const searchProducts = async (
 };
 
 /**
- * Get all available categories from products
+ * Get all available categories from the predefined categories list
  * @returns Array of unique categories
  */
 export const getAllCategories = async (): Promise<string[]> => {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('category')
-      .order('category');
-
-    if (error) {
-      console.error('Error getting categories:', error);
-      return [];
-    }
-
-    // Return unique categories
-    return [...new Set(data.map(item => item.category))];
+    // Return all main category names from the predefined categories
+    return categories.map(category => category.name);
   } catch (err) {
     console.error('Error in get categories function:', err);
     return [];

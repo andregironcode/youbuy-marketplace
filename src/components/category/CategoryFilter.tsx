@@ -57,10 +57,10 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
 
   return (
     <Card className="mb-4 shadow-sm border-neutral-100">
-      <CardHeader className="pb-2 pt-3 bg-pink-50">
+      <CardHeader className="pb-2 pt-3 bg-green-50">
         <CardTitle className="text-base flex items-center gap-2">
-          <Search className="h-4 w-4 text-pink-500" />
-          <span className="text-pink-500 font-medium">Filter Categories</span>
+          <Search className="h-5 w-5 text-green-500" />
+          <span className="text-green-500 font-medium">Filter Categories</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-0 pb-3">
@@ -72,7 +72,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
               className={`border-b-0 ${category.id === categoryId ? 'active-category' : 'category-item'}`}
             >
               <AccordionTrigger className="text-base font-medium px-4 py-3 hover:no-underline">
-                <span className={`line-clamp-1 text-left w-full ${category.id === categoryId ? "text-primary" : ""}`}>
+                <span className={`line-clamp-1 text-left w-full ${category.id === categoryId ? "text-green-500" : ""}`}>
                   {category.name}
                 </span>
               </AccordionTrigger>
@@ -86,7 +86,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                             <AccordionTrigger className="p-0 h-auto py-2 text-sm">
                               <span 
                                 className={`text-sm font-normal px-0 line-clamp-1 text-left ${
-                                  subcategoryId === subCategory.id ? "text-primary" : "text-foreground"
+                                  subcategoryId === subCategory.id ? "text-green-500" : "text-foreground"
                                 }`}
                               >
                                 {subCategory.name}
@@ -100,7 +100,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                                       variant="ghost"
                                       className={`w-full justify-start text-xs min-h-7 h-auto px-0 py-1.5 ${
                                         subSubcategoryId === subSubCategory.id
-                                          ? "text-primary"
+                                          ? "text-green-500"
                                           : "text-muted-foreground"
                                       }`}
                                       onClick={() =>
@@ -122,7 +122,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                       ) : (
                         <div className={`w-full text-sm py-2 px-0 font-normal ${
                           subcategoryId === subCategory.id
-                            ? "text-primary"
+                            ? "text-green-500"
                             : "text-foreground"
                         }`}>
                           <span className="line-clamp-2 text-left">{subCategory.name}</span>
@@ -136,8 +136,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           ))}
         </Accordion>
         
-        {categories.length > 4 && (
-          <div className="px-3">
+        <div className="px-3">
+          {categories.length > 4 && (
             <button 
               className="see-more-button"
               onClick={() => setShowAllCategories(!showAllCategories)}
@@ -145,8 +145,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
               {showAllCategories ? 'Show Less' : 'See More Categories'}
               {showAllCategories ? <ChevronUp className="ml-1" /> : <ChevronDown className="ml-1" />}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );

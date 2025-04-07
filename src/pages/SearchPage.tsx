@@ -179,10 +179,9 @@ const SearchPage = () => {
                 size="sm"
                 className="text-xs"
                 onClick={() => {
-                  // Keep only search query and category params
+                  // Keep only search query, reset all filters including category
                   const newParams = new URLSearchParams();
                   if (query) newParams.set("q", query);
-                  if (category) newParams.set("category", category);
                   window.location.search = newParams.toString();
                 }}
               >
