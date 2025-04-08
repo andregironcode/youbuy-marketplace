@@ -72,7 +72,6 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Winky Sans", ...fontFamily.sans],
         sans: ["'Lexend Deca'", ...fontFamily.sans],
       },
       keyframes: {

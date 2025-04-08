@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,40 +7,40 @@
 @layer base {
   :root {
     /* === BACKGROUND COLORS === */
-    --background: 40 33% 98%;         /* Main background color (light cream) */
-    --foreground: 210 12% 16%;        /* Main text color (dark gray-blue) */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
     /* === COMPONENT COLORS === */
-    --card: 0 0% 100%;                /* Card background (white) */
-    --card-foreground: 210 12% 16%;   /* Card text color (dark gray-blue) */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    --popover: 0 0% 100%;             /* Popover/dropdown background (white) */
-    --popover-foreground: 210 12% 16%; /* Popover text color (dark gray-blue) */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
     /* === BRAND COLORS === */
-    --primary: 129 64% 52%;           /* Primary brand color (Lime Green) */
-    --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
 
     /* === UI COLORS === */
-    --secondary: 200 100% 37%;        /* Secondary UI color (Amazon Blue) */
-    --secondary-foreground: 0 0% 100%; /* Text on secondary (white) */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 210 20% 96%;             /* Muted UI elements (light blue-gray) */
-    --muted-foreground: 215 16% 47%;  /* Muted text color (medium gray) */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 340 100% 62%;           /* Accent UI color (Bright Pink) */
-    --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
     /* === FEEDBACK COLORS === */
-    --destructive: 220 10% 56%;       /* Replaced red with neutral gray */
-    --destructive-foreground: 0 0% 100%; /* Text on destructive (white) */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
     /* === BORDER & FOCUS COLORS === */
-    --border: 214 32% 91%;            /* Border color (light gray) */
-    --input: 214 32% 91%;             /* Input border color (light gray) */
-    --ring: 129 64% 52%;              /* Focus ring color (Lime Green) */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
 
-    --radius: 0.5rem;                 /* Border radius for components */
+    --radius: 0.5rem;
 
     /* === SIDEBAR COLORS === */
     --sidebar-background: 0 0% 98%;   /* Sidebar background (off-white) */
@@ -55,38 +55,38 @@
 
   .dark {
     /* === DARK MODE BACKGROUND COLORS === */
-    --background: 222 14% 18%;        /* Main background (dark) */
-    --foreground: 210 40% 98%;        /* Main text color (light) */
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
 
     /* === DARK MODE COMPONENT COLORS === */
-    --card: 222 14% 18%;              /* Card background (dark) */
-    --card-foreground: 210 40% 98%;   /* Card text color (light) */
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222 14% 18%;           /* Popover background (dark) */
-    --popover-foreground: 210 40% 98%; /* Popover text color (light) */
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
 
     /* === DARK MODE BRAND COLORS === */
-    --primary: 129 64% 52%;           /* Primary brand color (Lime Green) */
-    --primary-foreground: 0 0% 100%;  /* Text on primary color (white) */
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 144.9 80.4% 10%;
 
     /* === DARK MODE UI COLORS === */
-    --secondary: 200 100% 37%;        /* Secondary UI color (Amazon Blue) */
-    --secondary-foreground: 0 0% 100%; /* Text on secondary (white) */
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217 33% 17%;             /* Muted UI elements (dark gray-blue) */
-    --muted-foreground: 215 20% 65%;  /* Muted text color (light gray) */
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 340 100% 62%;           /* Accent UI color (Pink) */
-    --accent-foreground: 0 0% 100%;   /* Text on accent (white) */
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
 
     /* === DARK MODE FEEDBACK COLORS === */
-    --destructive: 220 10% 46%;       /* Replaced red with darker neutral gray */
-    --destructive-foreground: 210 40% 98%; /* Text on destructive (light) */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
 
     /* === DARK MODE BORDER & FOCUS COLORS === */
-    --border: 217 33% 17%;            /* Border color (dark gray) */
-    --input: 217 33% 17%;             /* Input border color (dark gray) */
-    --ring: 129 64% 52%;              /* Focus ring color (Lime Green) */
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
     
     /* === DARK MODE SIDEBAR COLORS === */
     --sidebar-background: 240 6% 10%;  /* Sidebar background (very dark) */
@@ -106,30 +106,40 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-family: 'Lexend Deca', sans-serif;
-    font-weight: 500; /* Medium font weight */
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600; /* Bolder headings */
   }
   
-  a, button, .font-medium {
+  a, button {
     font-weight: 500; /* Slightly bolder interactive elements */
-    font-family: 'Winky Sans', sans-serif;
   }
 }
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+@layer components {
+  .font-winky {
+    @apply font-winky;
   }
-  
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4CD137;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #44BD32;
 }
