@@ -1,7 +1,7 @@
 import { Client } from 'postmark';
 
 // Initialize Postmark client
-const postmarkClient = new Client(process.env.POSTMARK_API_TOKEN || '');
+const postmarkClient = new Client(import.meta.env.VITE_POSTMARK_API_TOKEN || '');
 
 interface EmailOptions {
   to: string;
@@ -12,7 +12,7 @@ interface EmailOptions {
 export const sendEmail = async ({ to, subject, html }: EmailOptions) => {
   try {
     await postmarkClient.sendEmail({
-      From: process.env.POSTMARK_FROM_EMAIL || 'notifications@youbuy.com',
+      From: import.meta.env.VITE_POSTMARK_FROM_EMAIL || 'notifications@youbuy.com',
       To: to,
       Subject: subject,
       HtmlBody: html,

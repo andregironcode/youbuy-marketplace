@@ -19,4 +19,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-*'],
+          'utils-vendor': ['date-fns', 'zod', 'class-variance-authority', 'clsx'],
+        },
+      },
+    },
+  },
 }));
