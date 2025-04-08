@@ -1,6 +1,5 @@
+import { Eye as LucideEye, EyeProps } from "lucide-react";
 
-import { Eye as LucideEye } from "lucide-react";
-
-export function Eye(props: React.ComponentProps<typeof LucideEye>) {
+export function Eye(props: EyeProps) {
   return <LucideEye {...props} />;
 }

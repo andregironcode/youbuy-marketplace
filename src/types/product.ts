@@ -96,7 +96,7 @@ export interface ProductSpecifications {
     height: number;
   };
   
-  [key: string]: any;
+  [key: string]: string | number | boolean | { length: number; width: number; height: number } | undefined;
 }
 
 // Import formatDistance from date-fns

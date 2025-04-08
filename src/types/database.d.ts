@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 // Database types
@@ -57,7 +56,20 @@ export function convertToDeliveryRoute(route: DeliveryRouteResponse): DeliveryRo
     
     try {
       if (Array.isArray(data)) {
-        return data as RouteStop[];
+        return data.filter((stop): stop is RouteStop => {
+          return (
+            typeof stop === 'object' &&
+            stop !== null &&
+            'id' in stop &&
+            'type' in stop &&
+            'orderId' in stop &&
+            'location' in stop &&
+            'status' in stop &&
+            'scheduledTime' in stop &&
+            'customerName' in stop &&
+            'customerPhone' in stop
+          );
+        });
       }
       return [];
     } catch (error) {
