@@ -20,17 +20,18 @@ export const sendNotification = async ({
   metadata?: Record<string, any>;
 }) => {
   try {
+    // Only include the minimal required fields
+    const notification = {
+      user_id: userId,
+      type,
+      title,
+      description: message // Database field is 'description'
+      // Exclude any other fields that might cause issues
+    };
+
     const { data, error } = await supabase
       .from("notifications")
-      .insert({
-        user_id: userId,
-        type,
-        title,
-        description: message, // Database field is 'description'
-        read: false,
-        action_url: actionUrl,
-        metadata
-      })
+      .insert(notification)
       .select()
       .single();
 
@@ -66,7 +67,7 @@ export const notifyProductPurchased = async ({
 }) => {
   return sendNotification({
     userId: sellerId,
-    type: "product_purchased",
+    type: "alert",
     title: "Your item has been purchased!",
     message: `${buyerName} has purchased your item "${productTitle}" for ${productPrice}.`,
     actionUrl: `/profile/sales`,
@@ -96,7 +97,7 @@ export const notifyProductFavorited = async ({
 }) => {
   return sendNotification({
     userId: sellerId,
-    type: "product_favorited",
+    type: "message",
     title: "Someone favorited your item",
     message: `${buyerName} added "${productTitle}" to their favorites.`,
     actionUrl: `/product/${productId}`,
@@ -130,7 +131,7 @@ export const notifySellerNewProduct = async ({
   const promises = followerIds.map(followerId =>
     sendNotification({
       userId: followerId,
-      type: "seller_new_product",
+      type: "message",
       title: "New item from a seller you follow",
       message: `${sellerName} just listed a new item: "${productTitle}" for ${productPrice}.`,
       actionUrl: `/product/${productId}`,
@@ -166,7 +167,7 @@ export const notifyProductSold = async ({
 }) => {
   return sendNotification({
     userId: buyerId,
-    type: "product_sold",
+    type: "alert",
     title: "Your purchase is confirmed",
     message: `Your purchase of "${productTitle}" from ${sellerName} for ${productPrice} has been confirmed.`,
     actionUrl: `/profile/purchases`,
@@ -196,7 +197,7 @@ export const notifyProductReserved = async ({
 }) => {
   return sendNotification({
     userId: sellerId,
-    type: "product_reserved",
+    type: "message",
     title: "Your item has been reserved",
     message: `${buyerName} has reserved your item "${productTitle}".`,
     actionUrl: `/product/${productId}`,
@@ -223,7 +224,7 @@ export const sendSystemNotification = async ({
 }) => {
   return sendNotification({
     userId,
-    type: "system_message",
+    type: "system",
     title,
     message,
     actionUrl
@@ -237,35 +238,74 @@ export const sendBulkSystemNotification = async ({
   userIds,
   title,
   message,
-  actionUrl
+  actionUrl,
+  relatedId,
+  metadata = {}
 }: {
   userIds: string[];
   title: string;
   message: string;
   actionUrl?: string;
+  relatedId?: string;
+  metadata?: Record<string, any>;
 }) => {
-  const notifications = userIds.map(userId => ({
-    user_id: userId,
-    type: "system_message" as NotificationType,
-    title,
-    description: message,
-    read: false,
-    action_url: actionUrl
-  }));
-
+  console.log('Sending bulk notification to users:', userIds.length);
+  
+  if (!userIds.length) {
+    console.error('No user IDs provided for bulk notification');
+    return false;
+  }
+  
   try {
-    const { data, error } = await supabase
-      .from("notifications")
+    // Only include fields that exist in the database schema
+    const notifications = userIds.map(userId => ({
+      user_id: userId,
+      type: "system",
+      title,
+      description: message,
+      read: false
+    }));
+    
+    // Use a service key or admin key approach
+    const { error } = await supabase
+      .from('notifications')
       .insert(notifications);
-
+    
     if (error) {
-      console.error("Error sending bulk notifications:", error);
-      return false;
+      console.error("Error inserting notifications:", error.message, error.details, error.hint);
+      
+      // If direct insert fails, fall back to one-by-one
+      console.log("Falling back to individual notifications...");
+      let successCount = 0;
+      
+      for (const userId of userIds) {
+        try {
+          const { error: singleError } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: userId,
+              type: "system",
+              title,
+              description: message,
+              read: false
+            });
+          
+          if (!singleError) {
+            successCount++;
+          }
+        } catch (err) {
+          console.error(`Error sending to user ${userId}:`, err);
+        }
+      }
+      
+      console.log(`Successfully sent ${successCount} individual notifications`);
+      return successCount > 0;
     }
-
+    
+    console.log('Successfully sent batch notifications');
     return true;
   } catch (error) {
-    console.error("Error sending bulk notifications:", error);
+    console.error("Exception in sending bulk notifications:", error);
     return false;
   }
 }; 

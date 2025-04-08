@@ -1,11 +1,7 @@
 export type NotificationType = 
-  | 'product_purchased'  // Someone bought your product
-  | 'product_favorited'  // Someone favorited your product
-  | 'seller_new_product' // A seller you follow listed a new product
-  | 'message_received'   // New message received
-  | 'product_sold'       // Your product was sold
-  | 'product_reserved'   // Your product was reserved
-  | 'system_message';    // System message or announcement
+  | 'message'  // Standard message notification
+  | 'alert'    // Alert notification
+  | 'system';  // System message or announcement
 
 export interface NotificationData {
   id: string;
@@ -13,9 +9,10 @@ export interface NotificationData {
   user_id: string;
   type: NotificationType;
   title: string;
-  message: string;
+  description: string; // Database field is 'description', not 'message'
   read: boolean;
-  action_url?: string;
+  action_url?: string; // Matches database column name
+  related_id?: string; // Required by database schema
   metadata?: {
     product_id?: string;
     seller_id?: string;

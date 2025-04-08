@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/components/admin/pages/AdminDashboard";
@@ -12,6 +11,7 @@ import { DeliveryRoutes } from "@/components/admin/pages/DeliveryRoutes";
 import { DriverPanel } from "@/components/delivery/DriverPanel";
 import { RouteOptimization } from "@/components/admin/pages/RouteOptimization";
 import { ShipdayIntegration } from "@/components/admin/pages/ShipdayIntegration";
+import { AdminNotifications } from "@/components/admin/pages/AdminNotifications";
 
 const AdminPage = () => {
   return (
@@ -25,6 +25,7 @@ const AdminPage = () => {
         <Route path="/reports" element={<AdminReports />} />
         <Route path="/settings" element={<AdminSettings />} />
         <Route path="/support" element={<AdminSupport />} />
+        <Route path="/notifications" element={<AdminNotifications />} />
         <Route path="/delivery-routes" element={<DeliveryRoutes />} />
         <Route path="/route-optimization" element={<RouteOptimization />} />
         <Route path="/shipday" element={<ShipdayIntegration />} />

@@ -12,23 +12,27 @@ import {
   HelpCircle,
   Truck,
   Route,
-  Map
+  Map,
+  ExternalLink,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { LucideIcon } from "lucide-react";
 
-type SidebarItem = {
-  icon: React.ElementType;
+interface SidebarItem {
+  icon: LucideIcon;
   label: string;
   path: string;
-};
+}
 
 const adminSidebarItems: SidebarItem[] = [
   { icon: BarChart2, label: "Dashboard", path: "/admin/dashboard" },
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: ShoppingBag, label: "Products", path: "/admin/products" },
   { icon: Box, label: "Orders", path: "/admin/orders" },
+  { icon: Bell, label: "Notifications", path: "/admin/notifications" },
   { icon: Truck, label: "Delivery Routes", path: "/admin/delivery-routes" },
   { icon: Route, label: "Route Optimization", path: "/admin/route-optimization" },
   { icon: Map, label: "Shipday Integration", path: "/admin/shipday" },

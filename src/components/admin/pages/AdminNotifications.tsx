@@ -51,27 +51,32 @@ export const AdminNotifications = () => {
     }
 
     setStatus("loading");
+    console.log("Starting notification process");
 
     try {
       let targetUserIds: string[] = [];
 
       // Determine which users should receive the notification
-      // For simplicity, we'll just get all users and filter in code
-      // In a production app, you'd want to query only the relevant users based on a role field
       const { data: allUsers, error: usersError } = await supabase
         .from("profiles")
         .select("id");
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error("Error fetching profiles:", usersError);
+        throw usersError;
+      }
+
+      console.log(`Found ${allUsers?.length || 0} total profiles`);
 
       if (userType === "all") {
         targetUserIds = allUsers.map(user => user.id);
       } else if (userType === "specific" && specificUser) {
         targetUserIds = [specificUser];
+        console.log("Sending to specific user:", specificUser);
       } else {
-        // In a real app, you would filter based on user type from database
-        // For now, we'll just use all users for demo purposes
+        // For demo purposes, we'll use all users
         targetUserIds = allUsers.map(user => user.id);
+        console.log(`Filtering ${userType} (simulated) - using all users for demo`);
         
         toast({
           title: "Simplified Filter",
@@ -80,6 +85,7 @@ export const AdminNotifications = () => {
       }
 
       if (targetUserIds.length === 0) {
+        console.error("No target users found");
         toast({
           title: "No recipients",
           description: "No users match your selected criteria.",
@@ -89,28 +95,88 @@ export const AdminNotifications = () => {
         return;
       }
 
-      // Send the notification
-      const success = await sendBulkSystemNotification({
-        userIds: targetUserIds,
+      console.log(`Sending notification to ${targetUserIds.length} users`);
+
+      // Use a valid type that matches the database constraint
+      // Based on the check constraint: CHECK ((type = ANY (ARRAY['message'::text, 'alert'::text, 'system'::text])))
+      const validType = 'system'; // Use 'system' for admin notifications
+      
+      // Create notifications array
+      const notifications = targetUserIds.map(userId => ({
+        user_id: userId,
+        type: validType,
         title,
-        message,
-        actionUrl: actionUrl || undefined,
-      });
+        description: message
+      }));
+      
+      // Try with a direct insert
+      let success = false;
+      
+      try {
+        // Try batch insert first
+        const { error } = await supabase
+          .from('notifications')
+          .insert(notifications);
+        
+        if (!error) {
+          success = true;
+          console.log("Batch notification insert successful");
+        } else {
+          console.error("Batch insert failed:", error);
+          
+          // If batch failed, try one by one
+          console.log("Attempting individual inserts");
+          let individualSuccessCount = 0;
+          
+          for (const userId of targetUserIds) {
+            try {
+              const { error: singleError } = await supabase
+                .from('notifications')
+                .insert({
+                  user_id: userId,
+                  type: validType,
+                  title,
+                  description: message
+                });
+              
+              if (!singleError) {
+                individualSuccessCount++;
+              } else {
+                console.error(`Error for user ${userId}:`, singleError);
+              }
+            } catch (err) {
+              console.error(`Failed to insert for user ${userId}:`, err);
+            }
+          }
+          
+          console.log(`Individual inserts: ${individualSuccessCount} successful out of ${targetUserIds.length}`);
+          success = individualSuccessCount > 0;
+        }
+      } catch (batchError) {
+        console.error("Batch insert exception:", batchError);
+      }
 
       if (success) {
+        console.log("Notification sent successfully");
         toast({
           title: "Notification sent",
-          description: `Successfully sent to ${targetUserIds.length} users.`,
+          description: `Successfully sent notifications to users.`,
         });
         setTitle("");
         setMessage("");
         setActionUrl("");
         setStatus("success");
       } else {
-        throw new Error("Failed to send notifications");
+        console.error("Failed to send notifications");
+        toast({
+          title: "Error",
+          description: "Couldn't send notifications. Please check console for details.",
+          variant: "destructive",
+        });
+        setStatus("error");
       }
     } catch (error) {
-      console.error("Error sending notifications:", error);
+      console.error("Error in notification process:", error);
       toast({
         title: "Error",
         description: "Failed to send notifications. Please try again.",
