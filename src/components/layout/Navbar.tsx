@@ -132,30 +132,14 @@ export const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white/95">
       <div className="container flex h-16 items-center">
-        {/* Mobile menu - burger icon */}
-        {isMobile && (
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2 md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Open categories</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle>Categories</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 grid gap-4">
-                <CategoryDropdown mobile={true} />
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
-        
         {/* Logo */}
         <div className="mr-0 md:mr-4 flex">
           <Link to="/" className="flex items-center">
-            <img src="/youbuy-logo.png" alt="YouBuy" className="h-8" />
+            <img 
+              src={isMobile ? "/mobile-logo.png" : "/youbuy-logo.png"} 
+              alt="YouBuy" 
+              className="h-8" 
+            />
           </Link>
         </div>
 
@@ -166,24 +150,13 @@ export const Navbar = () => {
           </div>
         )}
 
-        {/* Search bar - desktop only */}
-        {!isMobile && (
-          <div className="flex-1 mx-1 md:mx-2">
-            <SearchBar />
-          </div>
-        )}
-
-        {/* Mobile search icon */}
-        {isMobile && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="ml-auto mr-2"
-            onClick={navigateToSearch}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-        )}
+        {/* Search bar - both desktop and mobile */}
+        <div className="flex-1 mx-1 md:mx-2">
+          <SearchBar 
+            size={isMobile ? "default" : "default"}
+            className={isMobile ? "max-w-full" : ""}
+          />
+        </div>
 
         {/* Desktop navigation links */}
         {!isMobile && (
@@ -236,6 +209,26 @@ export const Navbar = () => {
               </Button>
             </Link>
           </div>
+        )}
+        
+        {/* Mobile menu - burger icon (moved to the right) */}
+        {isMobile && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="ml-2 md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Open categories</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Categories</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 grid gap-4">
+                <CategoryDropdown mobile={true} />
+              </div>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
     </header>
