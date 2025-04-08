@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { ProfileRoutes } from "@/components/profile/ProfileRoutes";
 import { useAuth } from "@/context/AuthContext";
 import { AccountLayout } from "@/components/profile/AccountLayout";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {

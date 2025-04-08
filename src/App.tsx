@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext";
 import { WalletProvider } from "@/context/WalletContext";
 import { Navbar } from "@/components/layout/Navbar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { NotificationProvider } from "@/components/NotificationProvider";
@@ -53,34 +54,29 @@ function App() {
                       element={
                         <>
                           <Navbar />
-                          <div className="flex-1 w-full">
+                          <div className="flex-1 w-full pb-16 md:pb-0">
                             <Routes>
                               <Route path="/" element={<Index />} />
-                              <Route path="/auth" element={<Auth />} />
-                              <Route path="/auth/callback" element={<AuthCallback />} />
-                              {/* Fixed route here to ensure parameter is named 'id' */}
                               <Route path="/product/:id" element={<ProductDetail />} />
-                              <Route path="/checkout/:id" element={<CheckoutPage />} />
-                              <Route path="/category/:categoryId" element={<CategoryPage />} />
-                              <Route path="/category/:categoryId/:subcategoryId" element={<CategoryPage />} />
-                              <Route
-                                path="/category/:categoryId/:subcategoryId/:subSubcategoryId"
-                                element={<CategoryPage />}
-                              />
-                              <Route path="/categories" element={<CategoriesPage />} />
+                              <Route path="/category/:category" element={<CategoryPage />} />
                               <Route path="/search" element={<SearchPage />} />
                               <Route path="/seller/:id" element={<SellerProfile />} />
+                              <Route path="/auth" element={<Auth />} />
+                              <Route path="/auth/callback" element={<AuthCallback />} />
                               <Route path="/sell" element={<Sell />} />
+                              <Route path="/product/:id/edit" element={<ProductEditPage />} />
                               <Route path="/profile/*" element={<Profile />} />
-                              <Route path="/profile/edit-product/:id" element={<ProductEditPage />} />
                               <Route path="/messages" element={<Messages />} />
                               <Route path="/messages/:chatId" element={<Messages />} />
                               <Route path="/favorites" element={<Favorites />} />
                               <Route path="/notifications" element={<Notifications />} />
+                              <Route path="/checkout" element={<CheckoutPage />} />
+                              <Route path="/categories" element={<CategoriesPage />} />
                               <Route path="/test" element={<TestPage />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </div>
+                          <BottomNav />
                         </>
                       }
                     />

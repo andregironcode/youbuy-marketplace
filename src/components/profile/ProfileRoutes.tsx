@@ -19,11 +19,12 @@ import {
 import { SupportPage } from "./pages/SupportPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
+import { ProfileHome } from "@/pages/ProfileHome";
 
 export const ProfileRoutes = () => {
   return (
     <Routes>
-      <Route index element={<PrivateAccountRedirect />} />
+      <Route index element={<ProfileHome />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="products" element={<ProductsPage />} />
       <Route path="purchases" element={<PurchasesPage />} />

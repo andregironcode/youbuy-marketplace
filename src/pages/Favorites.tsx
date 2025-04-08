@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
@@ -12,55 +11,20 @@ const Favorites = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, or to profile/favorites if authenticated
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
+    if (!loading) {
+      if (!user) {
+        navigate("/auth");
+      } else {
+        // Redirect to the profile/favorites route for consistency
+        navigate("/profile/favorites", { replace: true });
+      }
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
-    return <div className="h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!user) return null;
-
-  return (
-    <div className="h-screen flex">
-      <ProfileSidebar />
-      <div className="flex-1 ml-60 overflow-auto">
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Your favorites</h1>
-            <p className="text-muted-foreground">
-              All your saved items and favorite sellers in one place.
-            </p>
-          </div>
-
-          <Tabs defaultValue="products" className="w-full">
-            <TabsList className="w-full max-w-md mb-6">
-              <TabsTrigger value="products" className="flex items-center flex-1">
-                <Heart className="mr-2 h-4 w-4" />
-                Products
-              </TabsTrigger>
-              <TabsTrigger value="sellers" className="flex items-center flex-1">
-                <User className="mr-2 h-4 w-4" />
-                Sellers
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="products">
-              <FavoriteProductsTab />
-            </TabsContent>
-
-            <TabsContent value="sellers">
-              <FavoriteSellersTab />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
-  );
+  // This component will only show briefly during loading or redirect
+  return <div className="h-screen flex items-center justify-center">Redirecting...</div>;
 };
 
 export default Favorites;

@@ -20,6 +20,7 @@ import {
   Heart,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavigationItem {
   icon: LucideIcon;
@@ -30,10 +31,15 @@ interface NavigationItem {
   onClick?: () => void;
 }
 
-export const ProfileSidebar = () => {
+interface ProfileSidebarProps {
+  compact?: boolean;
+}
+
+export const ProfileSidebar = ({ compact = false }: ProfileSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
@@ -44,6 +50,13 @@ export const ProfileSidebar = () => {
       return `${user.user_metadata.avatar_url}?t=${Date.now()}`;
     }
     return null;
+  };
+
+  const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.charAt(0).toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() || "U";
   };
 
   const items: NavigationItem[] = [
@@ -116,6 +129,32 @@ export const ProfileSidebar = () => {
     },
   ];
 
+  // Compact mode (for mobile)
+  if (compact) {
+    return (
+      <div className="flex overflow-x-auto py-4 px-2 gap-2 hide-scrollbar">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Button
+              key={item.label}
+              variant={item.active ? "default" : "outline"}
+              size="sm"
+              className={cn(
+                "flex-shrink-0",
+                item.className
+              )}
+              onClick={() => item.href ? navigate(item.href) : item.onClick?.()}
+            >
+              <Icon className="h-4 w-4 mr-2" />
+              <span>{item.label}</span>
+            </Button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* User Profile */}
@@ -123,11 +162,13 @@ export const ProfileSidebar = () => {
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={getAvatarUrl() || undefined} alt={user?.email || "User"} />
           <AvatarFallback className="bg-primary/10 text-primary">
-            {user?.email?.charAt(0).toUpperCase() || "U"}
+            {getInitials()}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <h3 className="font-medium truncate">{user?.email}</h3>
+          <h3 className="font-medium truncate">
+            {user?.user_metadata?.full_name || user?.email}
+          </h3>
           <p className="text-sm text-muted-foreground">Manage your account</p>
         </div>
       </div>

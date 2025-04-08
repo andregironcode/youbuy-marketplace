@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { categories } from '@/data/categories';
 import { Link, useNavigate } from 'react-router-dom';
@@ -48,7 +47,11 @@ const ListItem = ({
   );
 };
 
-export const CategoryDropdown = () => {
+interface CategoryDropdownProps {
+  mobile?: boolean;
+}
+
+export const CategoryDropdown = ({ mobile = false }: CategoryDropdownProps) => {
   const [isClient, setIsClient] = useState(false);
   const navigate = useNavigate();
 
@@ -74,6 +77,55 @@ export const CategoryDropdown = () => {
     );
   }
 
+  // Mobile view renders a simple list of categories
+  if (mobile) {
+    return (
+      <div className="space-y-2">
+        {categories.map((category) => (
+          <div key={category.id} className="space-y-1">
+            <Link 
+              to={`/category/${category.id}`}
+              className="block py-2 text-base font-medium"
+            >
+              {category.name}
+            </Link>
+            {category.subCategories && category.subCategories.length > 0 && (
+              <div className="ml-4 space-y-1">
+                {category.subCategories.slice(0, 5).map((subcategory) => (
+                  <Link 
+                    key={subcategory.id}
+                    to={`/category/${category.id}/${subcategory.id}`}
+                    className="block py-1 text-sm text-muted-foreground"
+                  >
+                    {subcategory.name}
+                  </Link>
+                ))}
+                {category.subCategories.length > 5 && (
+                  <Link
+                    to={`/category/${category.id}`}
+                    className="block py-1 text-sm text-youbuy"
+                  >
+                    View all in {category.name}
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="pt-2 mt-2 border-t">
+          <Link 
+            to="/categories" 
+            className="flex items-center text-base font-medium text-youbuy"
+          >
+            View all categories
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view uses the NavigationMenu
   return (
     <NavigationMenu>
       <NavigationMenuList>
