@@ -18,24 +18,39 @@
       "continue": true
     },
     {
-      "src": "youbuy.ae",
-      "dest": "https://www.youbuy.ae",
-      "status": 301
-    },
-    {
-      "src": "http://youbuy.ae",
-      "dest": "https://www.youbuy.ae",
-      "status": 301
-    },
-    {
       "src": "/(.*)",
       "headers": {
         "X-Frame-Options": "DENY",
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "strict-origin-when-cross-origin",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization"
       },
       "dest": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "http://(.*)",
+      "destination": "https://$1",
+      "permanent": true
+    },
+    {
+      "source": "youbuy.ae",
+      "destination": "https://www.youbuy.ae",
+      "permanent": true
+    },
+    {
+      "source": "http://youbuy.ae",
+      "destination": "https://www.youbuy.ae",
+      "permanent": true
+    },
+    {
+      "source": "http://www.youbuy.ae",
+      "destination": "https://www.youbuy.ae",
+      "permanent": true
     }
   ]
 } 
