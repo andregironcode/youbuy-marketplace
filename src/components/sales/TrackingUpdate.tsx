@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { LocationMap } from "@/components/map/LocationMap";
+import { handleOrderStatusUpdate } from "@/utils/orderUtils";
 
 const statusUpdateSchema = z.object({
   status: z.string({
@@ -134,6 +135,13 @@ export const TrackingUpdate = ({
       });
       
       if (error) throw error;
+
+      // Handle email notifications
+      await handleOrderStatusUpdate({
+        orderId,
+        status: values.status,
+        notes: values.notes
+      });
       
       toast({
         title: "Status updated",
