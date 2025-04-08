@@ -43,9 +43,9 @@ export const SupportPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-center p-8">
-              <Button className="bg-youbuy hover:bg-youbuy/90 text-white">
+              <Button className="bg-youbuy/50 hover:bg-youbuy/50 text-white cursor-not-allowed" disabled>
                 <MessageSquare className="mr-2 h-4 w-4" />
-                Start Chat
+                Coming Soon
               </Button>
             </div>
           </CardContent>

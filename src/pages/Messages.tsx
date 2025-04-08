@@ -18,12 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const Messages = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { chatId } = useParams<{ chatId: string }>();
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user, loading: authLoading } = useAuth();
   
   const {
@@ -38,7 +41,9 @@ const Messages = () => {
     loadingMessages,
     handleSendMessage,
     handleDeleteMessage,
-    handleImageUpload
+    handleImageUpload,
+    loadChatById,
+    fetchChats
   } = useMessages(chatId);
 
   useEffect(() => {
@@ -62,6 +67,16 @@ const Messages = () => {
     }
   }, [chatId, chats, initialLoadComplete, navigate, location.pathname, authLoading]);
 
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      chat.other_user?.full_name?.toLowerCase().includes(searchLower) ||
+      chat.product?.title?.toLowerCase().includes(searchLower) ||
+      chat.last_message?.content?.toLowerCase().includes(searchLower)
+    );
+  });
+
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -79,7 +94,7 @@ const Messages = () => {
     <AccountLayout>
       <PageHeader
         title="Messages"
-        description="Your conversations with buyers and sellers"
+        description=""
       >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -97,7 +112,7 @@ const Messages = () => {
 
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex h-[calc(100vh-12rem)]">
         {/* Left sidebar: Chat list */}
-        <div className={`w-1/3 border-r ${chatId && 'hidden md:block'}`}>
+        <div className="w-full md:w-80 border-r flex flex-col">
           <div className="flex flex-col h-full">
             <Tabs defaultValue="all" className="w-full">
               <div className="px-4 pt-4">
@@ -113,37 +128,40 @@ const Messages = () => {
               <TabsContent value="all" className="m-0 flex-1 flex flex-col">
                 <div className="p-4">
                   <div className="relative">
-                    <input 
-                      type="text" 
-                      placeholder="Search messages..." 
-                      className="w-full pl-8 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-youbuy focus:border-transparent"
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search messages..."
+                      className="w-full pl-9 pr-4 py-2"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <svg className="absolute left-3 top-3 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
                   </div>
                 </div>
                 
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-auto">
                   <ChatList 
-                    chats={chats} 
-                    loading={loadingChats} 
-                    currentChatId={chatId} 
+                    chats={filteredChats}
+                    loading={loadingChats}
+                    currentChatId={chatId}
                   />
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="unread" className="m-0">
-                <div className="flex flex-col justify-center items-center h-64 p-4 text-center">
-                  <p className="text-muted-foreground mb-2">No unread messages</p>
-                  <p className="text-sm">All caught up!</p>
                 </div>
               </TabsContent>
               
-              <TabsContent value="archived" className="m-0">
-                <div className="flex flex-col justify-center items-center h-64 p-4 text-center">
-                  <p className="text-muted-foreground mb-2">No archived chats</p>
-                  <p className="text-sm">Chats you archive will appear here</p>
+              <TabsContent value="unread" className="m-0 flex-1">
+                <div className="h-full overflow-auto">
+                  <ChatList 
+                    chats={filteredChats.filter(chat => !chat.last_message?.read)}
+                    loading={loadingChats}
+                    currentChatId={chatId}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="archived" className="m-0 flex-1">
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <p className="text-muted-foreground mb-2">No archived conversations</p>
+                  <p className="text-sm">Archived conversations will appear here</p>
                 </div>
               </TabsContent>
             </Tabs>
@@ -151,7 +169,7 @@ const Messages = () => {
         </div>
         
         {/* Right side: Chat window */}
-        <div className={`flex-1 ${!chatId ? 'hidden md:block' : 'block'}`}>
+        <div className="flex-1">
           {!chatId ? (
             <div className="flex flex-col justify-center items-center h-full p-8 text-center bg-gray-50/50">
               <div className="w-16 h-16 rounded-full bg-youbuy/10 flex items-center justify-center mb-4">

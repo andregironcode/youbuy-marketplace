@@ -31,6 +31,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/context/AuthContext";
 import { MessageButton } from "@/components/product/MessageButton";
 import { LocationMap } from "@/components/map/LocationMap";
+import { supabase } from "@/integrations/supabase/client";
 
 const placeholderImages = [
   "https://via.placeholder.com/400x400?text=Placeholder+Image",
@@ -186,6 +187,56 @@ export default function ProductDetail() {
     
     if (product.id) {
       navigate(`/checkout/${product.id}`);
+    }
+  };
+
+  const handleMessageClick = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to message the seller",
+      });
+      return;
+    }
+
+    try {
+      // Check if a chat already exists
+      const { data: existingChat } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('product_id', product.id)
+        .eq('buyer_id', user.id)
+        .single();
+
+      if (existingChat) {
+        // Navigate to existing chat
+        navigate(`/messages/${existingChat.id}`);
+        return;
+      }
+
+      // Create new chat
+      const { data: newChat, error } = await supabase
+        .from('chats')
+        .insert({
+          product_id: product.id,
+          seller_id: product.seller?.id,
+          buyer_id: user.id,
+          last_message_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Navigate to new chat
+      navigate(`/messages/${newChat.id}`);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -417,11 +468,7 @@ export default function ProductDetail() {
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center py-6"
-              onClick={() => {
-                if (product.seller?.id) {
-                  navigate(`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`);
-                }
-              }}
+              onClick={handleMessageClick}
             >
               <MessageCircle className="mr-2 h-5 w-5" />
               Message

@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 type CurrencyContextType = {
   currency: string;
   setCurrency: (currency: string) => void;
-  convertPrice: (price: number) => string;
-  formatCurrency: (amount: number) => string;
+  convertPrice: (price: string | number) => string;
+  formatCurrency: (amount: string | number) => string;
 };
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -44,14 +44,30 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   // Format number with thousand separators
-  const formatCurrency = (amount: number): string => {
-    return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const formatCurrency = (amount: string | number): string => {
+    // Convert string to number if needed
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    
+    // Check if it's a valid number
+    if (isNaN(numericAmount)) {
+      return '0.00';
+    }
+    
+    return numericAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   // Convert price to selected currency
-  const convertPrice = (price: number) => {
+  const convertPrice = (price: string | number) => {
+    // Convert string to number if needed
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    
+    // Check if it's a valid number
+    if (isNaN(numericPrice)) {
+      return `${currency} 0.00`;
+    }
+    
     const rate = exchangeRates[currency] || 1;
-    const convertedPrice = price * rate;
+    const convertedPrice = numericPrice * rate;
     
     if (currency === "AED") {
       return `AED ${formatCurrency(convertedPrice)}`;

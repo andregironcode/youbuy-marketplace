@@ -63,30 +63,39 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden group h-full flex flex-col">
-      <Link to={`/product/${product.id}`} className="flex-shrink-0">
-        <div className="relative aspect-square">
+    <Card className="group w-full overflow-hidden border rounded-lg transition-all duration-300 hover:shadow-md flex flex-col">
+      <div className="relative rounded-t-lg bg-gray-100 overflow-hidden flex items-center justify-center h-48">
+        <Link to={`/product/${product.id}`} className="block h-full w-full relative">
           <img
-            src={product.image}
+            src={product.image_urls?.[0] || '/placeholder-product.jpg'}
             alt={product.title}
-            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
           />
-          {product.isNew && (
-            <Badge className="absolute top-2 left-2 bg-youbuy">
-              New
-            </Badge>
+          {product.product_status === 'sold' && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <Badge variant="destructive" className="text-lg py-1 px-4">
+                SOLD
+              </Badge>
+            </div>
           )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`absolute top-2 right-2 ${productIsFavorite ? 'bg-white' : 'bg-white/80 hover:bg-white'} rounded-full`}
+          {product.product_status === 'reserved' && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <Badge variant="secondary" className="text-lg py-1 px-4 bg-amber-100 text-amber-800">
+                RESERVED
+              </Badge>
+            </div>
+          )}
+          <Button
+            variant={productIsFavorite ? "default" : "outline"}
+            size="icon"
+            className="absolute top-2 right-2 h-8 w-8 rounded-full"
             onClick={handleFavoriteClick}
             disabled={isAdding || isRemoving}
           >
-            <Heart className={`h-4 w-4 ${productIsFavorite ? 'fill-cta text-cta' : 'text-muted-foreground'}`} />
+            <Heart fill={productIsFavorite ? "white" : "none"} className="h-4 w-4" />
           </Button>
-        </div>
-      </Link>
+        </Link>
+      </div>
       
       <CardContent className="p-4 flex-grow flex flex-col">
         <div className="flex justify-between items-start gap-2">
