@@ -18,6 +18,11 @@
       "continue": true
     },
     {
+      "src": "youbuy.ae",
+      "dest": "https://www.youbuy.ae",
+      "status": 301
+    },
+    {
       "src": "/(.*)",
       "headers": {
         "X-Frame-Options": "DENY",
@@ -26,13 +31,6 @@
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
       },
       "dest": "/index.html"
-    }
-  ],
-  "redirects": [
-    {
-      "source": "youbuy.ae",
-      "destination": "https://www.youbuy.ae",
-      "permanent": true
     }
   ]
 } 
