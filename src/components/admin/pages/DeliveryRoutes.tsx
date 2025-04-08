@@ -28,27 +28,31 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon, MapPin, Package, Truck, ChevronRight, DownloadCloud, RefreshCw } from "lucide-react";
+import { CalendarIcon, MapPin, Package, Truck, ChevronRight, DownloadCloud, RefreshCw, Loader2 } from "lucide-react";
+import { LocationMap } from "@/components/map/LocationMap";
 
-type DeliveryOrder = {
+interface Order {
   id: string;
-  product_title: string;
-  created_at: string;
-  pickup_location: {
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
-  delivery_location: {
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
-  buyer_name: string;
-  seller_name: string;
+  order_id: string;
+  pickup_address: string;
+  delivery_address: string;
+  pickup_lat: number;
+  pickup_lng: number;
+  delivery_lat: number;
+  delivery_lng: number;
   status: string;
-  preferred_time: string | null;
-};
+  scheduled_time: string;
+  customer_name: string;
+  customer_phone: string;
+  buyer: {
+    full_name: string;
+    phone: string;
+  };
+  seller: {
+    full_name: string;
+    phone: string;
+  };
+}
 
 type RouteStop = {
   id: string;
@@ -91,362 +95,256 @@ const getJsonNumber = (json: any, key: string, defaultValue: number = 0): number
 };
 
 export const DeliveryRoutes = () => {
-  const [date, setDate] = useState<Date>(new Date());
-  const [timeSlot, setTimeSlot] = useState<'morning' | 'afternoon'>('morning');
-  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [timeSlot, setTimeSlot] = useState<string>("morning");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [routeType, setRouteType] = useState<'pickups' | 'deliveries'>('pickups');
   const { toast } = useToast();
 
-  // Fetch orders for the selected date
+  useEffect(() => {
+    fetchOrders();
+  }, [selectedDate, timeSlot]);
+
   const fetchOrders = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      // Format the date to YYYY-MM-DD for database query
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      
-      // Set time boundaries based on the selected time slot
-      const startTime = timeSlot === 'morning' ? '19:00:00' : '13:00:00';
-      const endTime = timeSlot === 'morning' ? '13:00:00' : '19:00:00';
-      
-      // Since we're checking orders from the previous evening (7pm) if morning slot
-      const previousDay = new Date(date);
-      previousDay.setDate(previousDay.getDate() - (timeSlot === 'morning' ? 1 : 0));
-      const formattedPreviousDay = format(previousDay, 'yyyy-MM-dd');
-      
-      // Query to get orders within the time range
       const { data, error } = await supabase
-        .from('orders')
+        .from("delivery_routes")
         .select(`
-          id,
-          created_at,
-          status,
-          products:product_id (
-            title,
-            location,
-            latitude,
-            longitude
-          ),
-          delivery_details,
-          buyer_id,
-          seller_id
+          *,
+          orders (
+            buyer:buyer_id (
+              full_name,
+              phone
+            ),
+            seller:seller_id (
+              full_name,
+              phone
+            )
+          )
         `)
-        .gte('created_at', `${formattedPreviousDay} ${startTime}`)
-        .lte('created_at', `${formattedDate} ${endTime}`)
-        .order('created_at', { ascending: true });
-      
+        .eq("date", selectedDate.toISOString().split("T")[0])
+        .eq("time_slot", timeSlot)
+        .order("scheduled_time");
+
       if (error) throw error;
-      
-      // Fetch buyer and seller profiles separately to avoid RLS issues
-      const buyerIds = (data || []).map(order => order.buyer_id).filter(Boolean);
-      const sellerIds = (data || []).map(order => order.seller_id).filter(Boolean);
-      
-      const { data: buyerProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', buyerIds.length > 0 ? buyerIds : ['00000000-0000-0000-0000-000000000000']);
-      
-      const { data: sellerProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', sellerIds.length > 0 ? sellerIds : ['00000000-0000-0000-0000-000000000000']);
-      
-      // Create lookup maps for buyer and seller names
-      const buyerMap = Object.fromEntries(
-        (buyerProfiles || []).map((profile: any) => [profile.id, profile.full_name || 'Unknown Buyer'])
-      );
-      
-      const sellerMap = Object.fromEntries(
-        (sellerProfiles || []).map((profile: any) => [profile.id, profile.full_name || 'Unknown Seller'])
-      );
-      
-      // Transform and enrich the order data
-      const enrichedOrders = (data || []).map((order: any) => ({
-        id: order.id,
-        product_title: order.products?.title || 'Unknown Product',
-        created_at: order.created_at,
-        pickup_location: {
-          address: order.products?.location || 'Unknown Location',
-          latitude: order.products?.latitude || 0,
-          longitude: order.products?.longitude || 0,
-        },
-        delivery_location: {
-          address: getJsonString(order.delivery_details, 'address'),
-          latitude: getJsonNumber(order.delivery_details, 'latitude'),
-          longitude: getJsonNumber(order.delivery_details, 'longitude'),
-        },
-        buyer_name: buyerMap[order.buyer_id] || 'Unknown Buyer',
-        seller_name: sellerMap[order.seller_id] || 'Unknown Seller',
-        status: order.status,
-        preferred_time: getJsonString(order.delivery_details, 'preferred_time', null),
+
+      const formattedOrders = data.map(order => ({
+        ...order,
+        customer_name: order.orders?.buyer?.full_name || "Unknown",
+        customer_phone: order.orders?.buyer?.phone || "Unknown",
+        buyer: order.orders?.buyer || {},
+        seller: order.orders?.seller || {}
       }));
-      
-      setOrders(enrichedOrders);
-    } catch (error) {
-      console.error("Error fetching delivery orders:", error);
+
+      setOrders(formattedOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("Failed to load delivery orders");
       toast({
         variant: "destructive",
-        title: "Failed to load routes",
-        description: "There was an error loading the delivery routes."
+        title: "Error",
+        description: "Failed to load delivery orders"
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, [date, timeSlot]);
+  const downloadRouteData = async () => {
+    if (orders.length === 0) return;
+    
+    setDownloading(true);
+    try {
+      const csvData = orders.map(order => ({
+        "Order ID": order.order_id,
+        "Customer Name": order.customer_name,
+        "Customer Phone": order.customer_phone,
+        "Pickup Address": order.pickup_address,
+        "Delivery Address": order.delivery_address,
+        "Status": order.status,
+        "Scheduled Time": new Date(order.scheduled_time).toLocaleString(),
+        "Seller Name": order.seller.full_name,
+        "Seller Phone": order.seller.phone
+      }));
 
-  // Organize route stops based on selected route type
-  const routeStops = useMemo(() => {
-    const stops: RouteStop[] = [];
-    
-    orders.forEach(order => {
-      if (routeType === 'pickups') {
-        stops.push({
-          id: `pickup-${order.id}`,
-          type: 'pickup',
-          address: order.pickup_location.address,
-          latitude: order.pickup_location.latitude,
-          longitude: order.pickup_location.longitude,
-          orderId: order.id,
-          productTitle: order.product_title,
-          personName: order.seller_name,
-          time: null,
-        });
-      } else {
-        stops.push({
-          id: `delivery-${order.id}`,
-          type: 'delivery',
-          address: order.delivery_location.address,
-          latitude: order.delivery_location.latitude,
-          longitude: order.delivery_location.longitude,
-          orderId: order.id,
-          productTitle: order.product_title,
-          personName: order.buyer_name,
-          time: order.preferred_time,
-        });
-      }
-    });
-    
-    // Sort by preferred time if available, otherwise group geographically
-    // This is a simple implementation - in a real app you would use a more sophisticated
-    // algorithm to optimize routes based on distance, traffic, etc.
-    return stops.sort((a, b) => {
-      if (a.time && b.time) {
-        return a.time.localeCompare(b.time);
-      }
-      
-      // Simple geographical sort - group by latitude
-      return a.latitude - b.latitude;
-    });
-  }, [orders, routeType]);
+      const csv = Object.keys(csvData[0]).join(",") + "\n" +
+        csvData.map(row => Object.values(row).join(",")).join("\n");
 
-  // Generate a download URL for the route data
-  const generateRouteDownload = () => {
-    const routeData = {
-      date: format(date, 'yyyy-MM-dd'),
-      timeSlot,
-      routeType,
-      stops: routeStops.map(stop => ({
-        type: stop.type,
-        address: stop.address,
-        coordinates: {
-          latitude: stop.latitude,
-          longitude: stop.longitude
-        },
-        orderId: stop.orderId,
-        productTitle: stop.productTitle,
-        personName: stop.personName,
-        preferredTime: stop.time
-      }))
-    };
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(routeData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `route-${format(date, 'yyyy-MM-dd')}-${timeSlot}-${routeType}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `delivery-routes-${selectedDate.toISOString().split("T")[0]}-${timeSlot}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading route data:", err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to download route data"
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleMapError = (error: Error) => {
+    console.error("Map error:", error);
+    setMapError("Failed to load the map");
     toast({
-      title: "Route data downloaded",
-      description: "The route data has been saved to your device."
+      variant: "destructive",
+      title: "Map error",
+      description: "There was an error loading the map. Please try again."
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-50 rounded-md">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Delivery Routes</h1>
-        <p className="text-muted-foreground">Optimize pickup and delivery routes for drivers</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Route Options</CardTitle>
-            <CardDescription>Configure route parameters</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(date) => date && setDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Delivery Routes</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={fetchOrders}
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                onClick={downloadRouteData}
+                disabled={orders.length === 0 || downloading}
+              >
+                {downloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <DownloadCloud className="h-4 w-4 mr-2" />
+                    Download CSV
+                  </>
+                )}
+              </Button>
             </div>
-            
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Time Slot</Label>
-              <Select value={timeSlot} onValueChange={(value) => setTimeSlot(value as 'morning' | 'afternoon')}>
+              <label className="text-sm font-medium">Date</label>
+              <input
+                type="date"
+                value={selectedDate.toISOString().split("T")[0]}
+                onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                className="w-full p-2 border rounded-md"
+                title="Select date for delivery routes"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Time Slot</label>
+              <Select
+                value={timeSlot}
+                onValueChange={setTimeSlot}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select time slot" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="morning">Morning (7PM previous day to 1PM)</SelectItem>
-                  <SelectItem value="afternoon">Afternoon (1PM to 7PM)</SelectItem>
+                  <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
+                  <SelectItem value="afternoon">Afternoon (12PM - 4PM)</SelectItem>
+                  <SelectItem value="evening">Evening (4PM - 8PM)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Route Type</Label>
-              <Tabs value={routeType} onValueChange={(value) => setRouteType(value as 'pickups' | 'deliveries')}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="pickups" className="flex-1">
-                    <Package className="mr-2 h-4 w-4" />
-                    Pickups
-                  </TabsTrigger>
-                  <TabsTrigger value="deliveries" className="flex-1">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Deliveries
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
-            <div className="pt-4 flex flex-col space-y-2">
-              <Button onClick={fetchOrders} disabled={isLoading}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {isLoading ? "Loading..." : "Refresh Routes"}
-              </Button>
-              
-              <Button variant="outline" onClick={generateRouteDownload} disabled={isLoading || routeStops.length === 0}>
-                <DownloadCloud className="mr-2 h-4 w-4" />
-                Export Route Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>
-              {routeType === 'pickups' ? 'Pickup Route' : 'Delivery Route'} ({routeStops.length} stops)
-            </CardTitle>
-            <CardDescription>
-              Optimized route for {format(date, 'PPP')} - {timeSlot === 'morning' ? 'Morning' : 'Afternoon'} shift
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {orders.length > 0 ? (
+          orders.map((order) => (
+            <Card key={order.id} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Order Details</h3>
+                  <div className="space-y-2">
+                    <p><span className="font-medium">Order ID:</span> {order.order_id}</p>
+                    <p><span className="font-medium">Customer:</span> {order.customer_name}</p>
+                    <p><span className="font-medium">Phone:</span> {order.customer_phone}</p>
+                    <p><span className="font-medium">Status:</span> {order.status}</p>
+                    <p><span className="font-medium">Scheduled Time:</span> {
+                      new Date(order.scheduled_time).toLocaleString()
+                    }</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Pickup Details</h3>
+                  <div className="space-y-2">
+                    <p><span className="font-medium">Seller:</span> {order.seller.full_name}</p>
+                    <p><span className="font-medium">Phone:</span> {order.seller.phone}</p>
+                    <p><span className="font-medium">Address:</span> {order.pickup_address}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Delivery Details</h3>
+                  <div className="space-y-2">
+                    <p><span className="font-medium">Address:</span> {order.delivery_address}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Route Map</h3>
+                  <div className="h-[300px] rounded-md overflow-hidden">
+                    <LocationMap
+                      height="100%"
+                      zoom={13}
+                      interactive={false}
+                      showMarker={true}
+                      latitude={order.delivery_lat}
+                      longitude={order.delivery_lng}
+                      onError={handleMapError}
+                    />
+                  </div>
+                </div>
               </div>
-            ) : routeStops.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No {routeType} scheduled for this time period</p>
-                <Button variant="link" onClick={fetchOrders} className="mt-2">
-                  Refresh Data
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <Accordion type="single" collapsible className="w-full">
-                  {routeStops.map((stop, index) => (
-                    <AccordionItem key={stop.id} value={stop.id}>
-                      <AccordionTrigger className="hover:bg-gray-50 px-4">
-                        <div className="flex-1 flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-left">{stop.productTitle}</p>
-                            <p className="text-sm text-muted-foreground text-left">
-                              {stop.address.substring(0, 40)}{stop.address.length > 40 ? '...' : ''}
-                            </p>
-                          </div>
-                          {stop.time && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
-                              {stop.time}
-                            </span>
-                          )}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-start">
-                            <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">Location</p>
-                              <p className="text-sm text-muted-foreground">{stop.address}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Lat: {stop.latitude.toFixed(6)}, Lng: {stop.longitude.toFixed(6)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start">
-                            <div className={`h-5 w-5 mr-2 ${stop.type === 'pickup' ? 'text-amber-500' : 'text-green-500'}`}>
-                              {stop.type === 'pickup' ? <Package /> : <Truck />}
-                            </div>
-                            <div>
-                              <p className="font-medium">
-                                {stop.type === 'pickup' ? 'Pickup from' : 'Deliver to'} {stop.personName}
-                              </p>
-                              <p className="text-sm text-muted-foreground">Order #{stop.orderId.substring(0, 8)}</p>
-                            </div>
-                          </div>
-                          
-                          <Button className="w-full" variant="secondary" asChild>
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Open in Maps <ChevronRight className="h-4 w-4 ml-1" />
-                            </a>
-                          </Button>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </Card>
+          ))
+        ) : (
+          <Card className="p-6 col-span-2 text-center">
+            <p className="text-muted-foreground">No delivery orders found for the selected date and time slot.</p>
+          </Card>
+        )}
       </div>
     </div>
   );

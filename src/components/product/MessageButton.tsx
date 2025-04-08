@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductType } from "@/types/product";
 import { useNavigate } from "react-router-dom";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface MessageButtonProps {
   product: ProductType;
@@ -22,6 +22,7 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -44,66 +45,47 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
     setIsSending(true);
     
     try {
-      // Get the seller ID - check all possible places it could be
-      let sellerId;
-      
-      // Check the different possible locations of the seller ID based on your data structure
-      if (product.seller?.userId) {
-        sellerId = product.seller.userId;
-      } else if (product.seller?.id) {
-        sellerId = product.seller.id;
-      }
-      
-      // Log for debugging
-      console.log("Product data:", product);
-      console.log("Seller ID found:", sellerId);
-      
-      if (!sellerId) {
-        throw new Error("Could not find seller information. Please try again later.");
-      }
-      
-      // Check if chat already exists
-      const { data: existingChats, error: chatQueryError } = await supabase
+      // Check if a chat already exists between these users for this product
+      const { data: existingChat } = await supabase
         .from('chats')
         .select('id')
         .eq('product_id', product.id)
         .eq('buyer_id', user.id)
-        .eq('seller_id', sellerId);
+        .eq('seller_id', product.seller.id)
+        .maybeSingle();
       
-      if (chatQueryError) throw chatQueryError;
+      let chatId = existingChat?.id;
       
-      let chatId;
-      
-      // If chat doesn't exist, create one
-      if (!existingChats || existingChats.length === 0) {
+      // If no chat exists, create one
+      if (!chatId) {
         const { data: newChat, error: chatError } = await supabase
           .from('chats')
           .insert({
             product_id: product.id,
-            seller_id: sellerId,
             buyer_id: user.id,
+            seller_id: product.seller.id,
             last_message_at: new Date().toISOString()
           })
           .select('id')
           .single();
-          
+        
         if (chatError) throw chatError;
         chatId = newChat.id;
-      } else {
-        chatId = existingChats[0].id;
       }
       
-      // Insert message
-      const { error: msgError } = await supabase
+      // Send the message
+      const { error: messageError } = await supabase
         .from('messages')
         .insert({
-          sender_id: user.id,
-          receiver_id: sellerId,
-          product_id: product.id,
+          chat_id: chatId,
           content: message,
+          sender_id: user.id,
+          receiver_id: product.seller.id,
+          product_id: product.id,
+          read: false
         });
-        
-      if (msgError) throw msgError;
+      
+      if (messageError) throw messageError;
       
       // Update last_message_at in chat
       await supabase
@@ -155,13 +137,13 @@ export const MessageButton = ({ product, size = "md", fullWidth = false, id, var
           </DialogHeader>
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={product.image} 
+              src={product.image_urls?.[0] || '/placeholder-product.jpg'} 
               alt={product.title} 
               className="w-16 h-16 object-cover rounded"
             />
             <div>
               <p className="font-medium">{product.title}</p>
-              <p className="text-price font-bold">AED {product.price.toFixed(2)}</p>
+              <p className="text-price font-bold">AED {formatCurrency(product.price)}</p>
             </div>
           </div>
           <Textarea

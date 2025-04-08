@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn, Wallet } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useWallet } from "@/context/WalletContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
@@ -12,10 +13,16 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { useLocation } from "react-router-dom";
 import { CategoryDropdown } from "@/components/category/CategoryDropdown";
 
+// Function to format currency with thousand separators
+const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 export const Navbar = () => {
   const isMobile = useIsMobile();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
+  const { balance } = useWallet();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
   const location = useLocation();
@@ -166,6 +173,12 @@ export const Navbar = () => {
                       <UnreadBadge count={unreadCount} />
                     </Button>
                   </Link>
+                  <Link to="/profile/wallet">
+                    <Button variant="ghost" size="sm" className="gap-2 h-9" aria-label="Wallet">
+                      <Wallet className="h-4 w-4" />
+                      <span className="text-xs font-medium">AED {formatCurrency(balance)}</span>
+                    </Button>
+                  </Link>
                   <Link to="/profile" className="flex items-center">
                     <Button variant="outline" size="sm" className="gap-2">
                       <Avatar className="h-6 w-6">
@@ -223,6 +236,13 @@ export const Navbar = () => {
                   {unreadCount > 0 && (
                     <Badge className="bg-youbuy">{unreadCount}</Badge>
                   )}
+                </Link>
+                <Link to="/profile/wallet" className="py-2 px-3 hover:bg-muted rounded-md flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Wallet
+                  </div>
+                  <span className="font-medium">AED {formatCurrency(balance)}</span>
                 </Link>
                 <Link to="/profile" className="py-2 px-3 hover:bg-muted rounded-md">
                   Profile

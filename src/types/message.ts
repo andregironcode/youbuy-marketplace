@@ -1,30 +1,44 @@
+import { ProductType } from "./product";
 
 export interface MessageType {
   id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
   sender_id: string;
   receiver_id: string;
   product_id: string;
-  content: string;
-  read: boolean;
-  created_at: string;
+  sender_name?: string;
+  sender_avatar?: string | null;
 }
 
 export interface ChatType {
   id: string;
-  product_id: string;
-  seller_id: string;
-  buyer_id: string;
-  last_message_at: string;
   created_at: string;
-  product?: {
+  last_message_at: string;
+  buyer_id: string;
+  seller_id: string;
+  product_id: string;
+  unread_count: number;
+  last_message?: {
+    id: string;
+    content: string;
+    created_at: string;
+    read: boolean;
+  };
+  product: {
+    id: string;
     title: string;
-    image: string;
-    price: number;
+    price: string;
+    image_urls: string[] | null;
+    product_status: "available" | "reserved" | "sold";
   };
-  otherUser?: {
-    name: string;
-    avatar: string;
+  other_user: {
+    id: string;
+    full_name: string;
+    avatar_url?: string | null;
+    last_seen?: string | null;
   };
-  lastMessage?: string;
-  unreadCount?: number;
 }
+
+export type ProductStatus = "available" | "reserved" | "sold";

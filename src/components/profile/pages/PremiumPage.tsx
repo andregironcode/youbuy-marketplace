@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Check, Star, Building2, Rocket } from "lucide-react";
 import { 
@@ -28,15 +27,15 @@ export const PremiumPage = () => {
   };
 
   return (
-    <div className="container max-w-5xl px-4 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">YouBuy Premium</h1>
+    <div className="flex-1 -mt-6">
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold">YouBuy Premium</h1>
         <p className="text-muted-foreground mt-2">
           Unlock enhanced features and benefits to boost your buying and selling experience
         </p>
       </div>
 
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-6">
         <Tabs defaultValue="monthly" className="w-[300px]">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger 

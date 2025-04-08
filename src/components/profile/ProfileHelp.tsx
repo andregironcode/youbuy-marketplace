@@ -54,6 +54,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
+interface ProfileHelpProps {
+  // Remove the className prop
+}
+
 export function ProfileHelp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -142,7 +146,7 @@ export function ProfileHelp() {
   };
 
   return (
-    <div className="container max-w-5xl mx-auto px-4 py-6 text-left">
+    <div className="container max-w-5xl mx-auto px-4 py-0 text-left">
       {selectedArticle ? (
         // Article detail view
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -276,15 +280,15 @@ export function ProfileHelp() {
       ) : (
         // Help center main view
         <>
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Help Center</h1>
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold mb-2">Help Center</h1>
             <p className="text-muted-foreground">
               Find answers to common questions or contact our support team
             </p>
           </div>
           
           {/* Search and Contact */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
               <Input
                 icon={<Search className="h-4 w-4" />}

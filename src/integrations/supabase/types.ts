@@ -292,23 +292,21 @@ export type Database = {
           created_at: string
           current_stage: string | null
           delivery_confirmed_at: string | null
-          delivery_details: Json
+          delivery_details: Json | null
           dispute_deadline: string | null
           dispute_reason: string | null
-          dispute_status: string | null
-          estimated_delivery: string | null
           id: string
           last_status_change: string | null
           last_updated_by: string | null
           order_number: number
           payment_status: string | null
+          payment_confirmed_at: string | null
+          payment_method: string | null
           product_id: string
           seller_id: string
           shipday_order_id: string | null
           status: string
-          stripe_payment_intent_id: string | null
-          stripe_transfer_id: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           amount: number
@@ -316,23 +314,21 @@ export type Database = {
           created_at?: string
           current_stage?: string | null
           delivery_confirmed_at?: string | null
-          delivery_details: Json
+          delivery_details?: Json | null
           dispute_deadline?: string | null
           dispute_reason?: string | null
-          dispute_status?: string | null
-          estimated_delivery?: string | null
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
           order_number?: number
           payment_status?: string | null
+          payment_confirmed_at?: string | null
+          payment_method?: string | null
           product_id: string
           seller_id: string
           shipday_order_id?: string | null
           status?: string
-          stripe_payment_intent_id?: string | null
-          stripe_transfer_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           amount?: number
@@ -340,33 +336,23 @@ export type Database = {
           created_at?: string
           current_stage?: string | null
           delivery_confirmed_at?: string | null
-          delivery_details?: Json
+          delivery_details?: Json | null
           dispute_deadline?: string | null
           dispute_reason?: string | null
-          dispute_status?: string | null
-          estimated_delivery?: string | null
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
           order_number?: number
           payment_status?: string | null
+          payment_confirmed_at?: string | null
+          payment_method?: string | null
           product_id?: string
           seller_id?: string
           shipday_order_id?: string | null
           status?: string
-          stripe_payment_intent_id?: string | null
-          stripe_transfer_id?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "orders_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       platform_fees: {
         Row: {
@@ -521,6 +507,7 @@ export type Database = {
           updated_at: string
           username: string | null
           website: string | null
+          currency: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -535,6 +522,7 @@ export type Database = {
           updated_at?: string
           username?: string | null
           website?: string | null
+          currency?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -549,6 +537,7 @@ export type Database = {
           updated_at?: string
           username?: string | null
           website?: string | null
+          currency?: string | null
         }
         Relationships: []
       }

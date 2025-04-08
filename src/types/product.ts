@@ -2,9 +2,8 @@ export interface ProductType {
   id: string;
   title: string;
   description: string;
-  price: number;
-  image: string;
-  images?: string[];
+  price: string;
+  image_urls: string[] | null;
   location: string;
   coordinates?: {
     latitude: number;
@@ -37,7 +36,7 @@ export interface ProductType {
   subcategory?: string;
   subSubcategory?: string;
   variations?: ProductVariation[];
-  status?: 'available' | 'reserved' | 'sold';
+  product_status?: 'available' | 'reserved' | 'sold';
   reservedFor?: string;
   reservedUntil?: string;
   specifications?: ProductSpecifications;
@@ -97,7 +96,7 @@ export interface ProductSpecifications {
     height: number;
   };
   
-  [key: string]: any;
+  [key: string]: string | number | boolean | { length: number; width: number; height: number } | undefined;
 }
 
 // Import formatDistance from date-fns
@@ -118,9 +117,8 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     id: item.id,
     title: item.title,
     description: item.description,
-    price: parseFloat(item.price),
-    image: item.image_urls?.[0] || '/placeholder.svg',
-    images: item.image_urls || [],
+    price: item.price,
+    image_urls: item.image_urls || null,
     location: item.location,
     coordinates,
     timeAgo: formatDistance(new Date(item.created_at), new Date(), { addSuffix: true }),
@@ -139,7 +137,7 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     viewCount: includeViews ? (item.view_count || 0) : undefined,
     likeCount: item.like_count || 0,
     createdAt: item.created_at,
-    status: item.product_status || 'available',
+    product_status: item.product_status || 'available',
     variations: item.variations || [],
     specifications: item.specifications || {},
     shippingOptions: {

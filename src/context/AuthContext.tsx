@@ -12,6 +12,9 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
   }>;
+  signInWithGoogle: () => Promise<{
+    error: Error | null;
+  }>;
   signUp: (email: string, password: string, name: string) => Promise<{
     error: Error | null;
   }>;
@@ -175,6 +178,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function signInWithGoogle() {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      setLoading(false);
+      return { error };
+    } catch (error) {
+      setLoading(false);
+      return { error: error as Error };
+    }
+  }
+
   async function signUp(email: string, password: string, name: string) {
     try {
       const { error } = await supabase.auth.signUp({ 
@@ -193,8 +213,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    setIsAdmin(false);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      }
+      // Clear user state explicitly
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      // Force page reload to clear any cached state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error("Unexpected error during sign out:", error);
+    }
   }
 
   const value = {
@@ -205,6 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     adminStatusChecked,
     checkIsAdmin,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
   };

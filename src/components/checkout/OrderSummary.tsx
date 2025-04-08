@@ -1,13 +1,12 @@
-
 import { ProductType } from "@/types/product";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Shield } from "lucide-react";
+import { ShoppingBag, Shield, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface OrderSummaryProps {
-  product: ProductType;
+  product?: ProductType;
 }
 
 export function OrderSummary({ product }: OrderSummaryProps) {
@@ -26,6 +25,23 @@ export function OrderSummary({ product }: OrderSummaryProps) {
       return data;
     },
   });
+
+  // If product is not loaded yet, show loading state
+  if (!product) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Order Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="py-8 flex justify-center items-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Calculate fees based on price
   const productPrice = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
@@ -60,7 +76,7 @@ export function OrderSummary({ product }: OrderSummaryProps) {
           </div>
           <div>
             <h3 className="font-medium text-sm line-clamp-2">{product.title}</h3>
-            <p className="text-muted-foreground text-xs">{product.seller.name}</p>
+            <p className="text-muted-foreground text-xs">{product.seller?.name}</p>
           </div>
         </div>
 

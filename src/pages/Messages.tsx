@@ -1,17 +1,34 @@
-
-import { useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
-import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { MessageCircle, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/context/AuthContext";
+import { AccountLayout } from "@/components/profile/AccountLayout";
+import { PageHeader } from "@/components/profile/PageHeader";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const Messages = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { chatId } = useParams<{ chatId: string }>();
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { user, loading: authLoading } = useAuth();
+  
   const {
     chats,
     messages,
@@ -24,99 +41,162 @@ const Messages = () => {
     loadingMessages,
     handleSendMessage,
     handleDeleteMessage,
-    handleImageUpload
+    handleImageUpload,
+    loadChatById,
+    fetchChats
   } = useMessages(chatId);
 
-  // Debug current state
   useEffect(() => {
-    console.log("Current chat state:", { 
-      chatId, 
-      hasCurrentChat: !!currentChat, 
-      loadingMessages,
-      messagesCount: messages.length
-    });
-  }, [chatId, currentChat, loadingMessages, messages]);
-
-  // If no valid chatId but chats are loaded, redirect to the first chat
-  useEffect(() => {
-    if (!chatId && chats.length > 0 && !loadingChats) {
-      navigate(`/messages/${chats[0].id}`);
+    if (!authLoading && !user) {
+      console.log("User not authenticated, redirecting to login");
+      navigate("/auth", { replace: true });
     }
-  }, [chatId, chats, loadingChats, navigate]);
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!loadingChats && !initialLoadComplete) {
+      setInitialLoadComplete(true);
+    }
+  }, [loadingChats, initialLoadComplete]);
+
+  useEffect(() => {
+    if (!initialLoadComplete || authLoading) return;
+    const isExactMessagesRoute = location.pathname === '/messages';
+    if (isExactMessagesRoute && chats.length > 0) {
+      navigate(`/messages/${chats[0].id}`, { replace: true });
+    }
+  }, [chatId, chats, initialLoadComplete, navigate, location.pathname, authLoading]);
+
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      chat.other_user?.full_name?.toLowerCase().includes(searchLower) ||
+      chat.product?.title?.toLowerCase().includes(searchLower) ||
+      chat.last_message?.content?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-youbuy mb-2" />
+          <p className="text-muted-foreground">Loading your messages...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
-    <div className="h-screen flex">
-      <ProfileSidebar />
-      <main className="flex-1 py-4 px-6 ml-[280px] overflow-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-w-[calc(100vw-280px)]">
-          {/* Chat List - Always visible on desktop, hidden on mobile when showing a chat */}
-          <div className={`border rounded-lg overflow-hidden h-full ${chatId ? 'hidden md:block' : 'block'}`}>
-            <div className="p-4 border-b bg-gray-50">
-              <h2 className="font-bold text-lg">Messages</h2>
-            </div>
-            
-            <div className="overflow-y-auto h-[calc(100%-60px)]">
-              <ChatList 
-                chats={chats} 
-                loading={loadingChats} 
-                currentChatId={chatId} 
-              />
-            </div>
-          </div>
+    <AccountLayout>
+      <PageHeader
+        title="Messages"
+        description=""
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>Mark all as read</DropdownMenuItem>
+            <DropdownMenuItem>Archive chats</DropdownMenuItem>
+            <DropdownMenuItem>Notification settings</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
 
-          {/* Chat Window or Empty State */}
-          <div className={`border rounded-lg overflow-hidden md:col-span-2 lg:col-span-3 flex flex-col h-full ${!chatId ? 'hidden md:flex' : 'flex'}`}>
-            {!chatId ? (
-              <div className="flex flex-col justify-center items-center h-full p-4 text-center">
-                <p className="text-muted-foreground mb-2">Select a conversation</p>
-                <p className="text-sm">Choose a conversation from the list to view messages</p>
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex h-[calc(100vh-12rem)]">
+        {/* Left sidebar: Chat list */}
+        <div className="w-full md:w-80 border-r flex flex-col">
+          <div className="flex flex-col h-full">
+            <Tabs defaultValue="all" className="w-full">
+              <div className="px-4 pt-4">
+                <TabsList className="w-full">
+                  <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                  <TabsTrigger value="unread" className="flex-1">Unread</TabsTrigger>
+                  <TabsTrigger value="archived" className="flex-1">Archived</TabsTrigger>
+                </TabsList>
               </div>
-            ) : loadingMessages ? (
-              <div className="flex-1 flex flex-col">
-                <div className="p-3 border-b bg-gray-50 flex items-center">
-                  <Skeleton className="h-10 w-10 rounded-full mr-3" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
+              
+              <Separator className="mt-4" />
+              
+              <TabsContent value="all" className="m-0 flex-1 flex flex-col">
+                <div className="p-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search messages..."
+                      className="w-full pl-9 pr-4 py-2"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
                 </div>
-                <div className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-3/4" />
-                    ))}
-                  </div>
+                
+                <div className="flex-1 overflow-auto">
+                  <ChatList 
+                    chats={filteredChats}
+                    loading={loadingChats}
+                    currentChatId={chatId}
+                  />
                 </div>
-              </div>
-            ) : !currentChat ? (
-              <div className="flex flex-col justify-center items-center h-full p-4 text-center">
-                <p className="text-muted-foreground mb-2">Chat is loading or could not be found</p>
-                <p className="text-sm">Please try refreshing if this persists.</p>
-                <Link to="/messages" className="mt-4">
-                  <Button variant="outline" className="flex items-center space-x-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Back to messages</span>
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <ChatWindow 
-                currentChat={currentChat}
-                messages={messages}
-                currentProduct={currentProduct}
-                newMessage={newMessage}
-                setNewMessage={setNewMessage}
-                handleSendMessage={handleSendMessage}
-                handleDeleteMessage={handleDeleteMessage}
-                handleImageUpload={handleImageUpload}
-                sendingMessage={sendingMessage}
-                loading={loadingMessages}
-              />
-            )}
+              </TabsContent>
+              
+              <TabsContent value="unread" className="m-0 flex-1">
+                <div className="h-full overflow-auto">
+                  <ChatList 
+                    chats={filteredChats.filter(chat => !chat.last_message?.read)}
+                    loading={loadingChats}
+                    currentChatId={chatId}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="archived" className="m-0 flex-1">
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <p className="text-muted-foreground mb-2">No archived conversations</p>
+                  <p className="text-sm">Archived conversations will appear here</p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
-      </main>
-    </div>
+        
+        {/* Right side: Chat window */}
+        <div className="flex-1">
+          {!chatId ? (
+            <div className="flex flex-col justify-center items-center h-full p-8 text-center bg-gray-50/50">
+              <div className="w-16 h-16 rounded-full bg-youbuy/10 flex items-center justify-center mb-4">
+                <MessageCircle className="h-8 w-8 text-youbuy" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">Your Messages</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                Select a conversation from the list to view your messages. Messages about items you're buying or selling will appear here.
+              </p>
+            </div>
+          ) : (
+            <ChatWindow 
+              currentChat={currentChat}
+              messages={messages}
+              currentProduct={currentProduct}
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              handleSendMessage={handleSendMessage}
+              handleDeleteMessage={handleDeleteMessage}
+              handleImageUpload={handleImageUpload}
+              sendingMessage={sendingMessage}
+              loading={loadingMessages}
+            />
+          )}
+        </div>
+      </div>
+    </AccountLayout>
   );
 };
 

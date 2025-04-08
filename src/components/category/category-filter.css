@@ -1,0 +1,245 @@
+/* Clean styling for category filter during search */
+.accordion-no-underline [data-state="open"] > button,
+.accordion-no-underline [data-state="closed"] > button {
+  text-decoration: none !important;
+  border: none !important;
+}
+
+/* Normal button state - cleaner appearance */
+.accordion-no-underline button {
+  min-height: 36px !important;
+  height: auto !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease-in-out !important;
+  font-weight: 400 !important;
+  border: none !important;
+}
+
+/* Hover state - clean subtle effect */
+.accordion-no-underline button:hover:not(.text-primary) {
+  background-color: transparent !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  transform: none;
+}
+
+/* Selected state - distinct appearance */
+.accordion-no-underline .text-primary {
+  background-color: transparent !important;
+  color: rgb(34, 197, 94) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+/* Enhanced active category highlight */
+.accordion-no-underline [data-state="open"].active-category {
+  background-color: rgba(34, 197, 94, 0.08) !important;
+  border-radius: 0 !important;
+  position: relative !important;
+}
+
+.accordion-no-underline [data-state="open"].active-category > button {
+  color: rgb(34, 197, 94) !important;
+  font-weight: 600 !important;
+  background-color: transparent !important;
+}
+
+.accordion-no-underline [data-state="open"].active-category::before {
+  content: '';
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 4px !important;
+  background-color: rgb(34, 197, 94) !important;
+}
+
+/* Style for line-clamp-2 text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Main categories styling */
+.accordion-no-underline [data-state] {
+  margin-bottom: 0 !important;
+  position: relative !important;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.05) !important;
+}
+
+/* Improved accordion appearance */
+.accordion-no-underline {
+  --background: transparent;
+  --ring-offset-background: transparent;
+  margin-top: 8px !important;
+}
+
+/* Nested items styling */
+.accordion-no-underline ul li {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Subcategory styling improvements */
+.accordion-no-underline ul {
+  padding-left: 0 !important;
+  position: relative !important;
+}
+
+.accordion-no-underline ul::before {
+  content: none;
+}
+
+/* Animation for subcategories appearing */
+.accordion-no-underline [data-state="open"] > div > ul > li {
+  opacity: 0;
+  animation: fadeInItems 0.2s ease-in-out forwards;
+}
+
+@keyframes fadeInItems {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Staggered animation for multiple items */
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(1) { animation-delay: 0.05s; }
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(2) { animation-delay: 0.1s; }
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(3) { animation-delay: 0.15s; }
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(4) { animation-delay: 0.2s; }
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(5) { animation-delay: 0.25s; }
+.accordion-no-underline [data-state="open"] > div > ul > li:nth-child(n+6) { animation-delay: 0.3s; }
+
+/* Chevron icon styling */
+.accordion-no-underline [data-state="open"] > button > svg,
+.accordion-no-underline [data-state="closed"] > button > svg {
+  color: rgb(34, 197, 94) !important;
+  opacity: 0.8 !important;
+  height: 16px !important;
+  width: 16px !important;
+  transition: transform 0.2s ease-in-out !important;
+}
+
+/* Rotate the chevron when open */
+.accordion-no-underline [data-state="open"] > button > svg {
+  transform: rotate(180deg) !important;
+}
+
+/* Space between categories */
+.accordion-no-underline [data-state="open"] {
+  padding-bottom: 0 !important;
+}
+
+/* See more button styling - Green version */
+.see-more-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  padding: 10px !important;
+  background-color: rgba(34, 197, 94, 0.08) !important;
+  color: rgb(34, 197, 94) !important;
+  border-radius: 4px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  margin-top: 12px !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.see-more-button:hover {
+  background-color: rgba(34, 197, 94, 0.12) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.see-more-button svg {
+  margin-left: 4px !important;
+  height: 16px !important;
+  width: 16px !important;
+  color: rgb(34, 197, 94) !important;
+}
+
+.accordion-no-underline [data-state="open"]::after {
+  content: none;
+}
+
+.accordion-no-underline button:focus-visible {
+  outline: none;
+}
+
+.category-item {
+  transition: background-color 0.2s ease;
+  border-radius: 0 !important;
+}
+
+.category-item:hover {
+  background-color: transparent !important;
+}
+
+.active-category {
+  background-color: rgba(34, 197, 94, 0.08) !important;
+  border-radius: 0 !important;
+  position: relative;
+}
+
+.active-category::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  height: 100%;
+  background-color: rgb(34, 197, 94) !important;
+  border-radius: 0;
+}
+
+/* Subcategories with selected state */
+.subcategory-list li button.text-primary {
+  position: relative !important;
+  background-color: transparent !important;
+}
+
+.subcategory-list li button.text-primary::before {
+  content: none;
+}
+
+/* Improve text alignment in accordion triggers */
+.accordion-no-underline button span {
+  width: 100%;
+}
+
+/* Improve text overflow for long category names */
+.line-clamp-1, .line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.line-clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+/* Sub-subcategory hover effect */
+.subsub-list li button:hover span {
+  color: rgb(34, 197, 94) !important;
+} 

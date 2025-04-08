@@ -1,28 +1,57 @@
-import { useRef, useEffect, ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, SendHorizonal, ImagePlus } from "lucide-react";
-import { MessageList } from "./MessageList";
-import { ProductInfoCard } from "./ProductInfoCard";
-import { Skeleton } from "@/components/ui/skeleton"; 
-import { ChatType, MessageType } from "@/types/message";
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  ArrowLeft, 
+  SendHorizonal, 
+  ImagePlus, 
+  MoreHorizontal, 
+  ExternalLink, 
+  ShoppingBag,
+  Smile,
+  Reply,
+  X,
+  Check,
+  CheckCheck,
+  MessageCircle
+} from 'lucide-react';
+import { MessageList } from './MessageList';
+import { ProductInfoCard } from './ProductInfoCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ChatType, MessageType } from '@/types/message';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { ProductType } from '@/types/product';
+import { Separator } from '@/components/ui/separator';
+import { Image as ImageIcon } from 'lucide-react';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ChatWindowProps {
   currentChat: ChatType | null;
   messages: MessageType[];
-  currentProduct: any;
+  currentProduct: ProductType | null;
   newMessage: string;
   setNewMessage: (message: string) => void;
   handleSendMessage: () => void;
-  handleDeleteMessage?: (messageId: string) => void;
-  handleImageUpload?: (file: File) => void;
+  handleDeleteMessage: (messageId: string) => void;
+  handleImageUpload: (file: File) => void;
   sendingMessage: boolean;
   loading: boolean;
 }
 
-export const ChatWindow = ({
+export function ChatWindow({
   currentChat,
   messages,
   currentProduct,
@@ -32,169 +61,197 @@ export const ChatWindow = ({
   handleDeleteMessage,
   handleImageUpload,
   sendingMessage,
-  loading
-}: ChatWindowProps) => {
+  loading,
+}: ChatWindowProps) {
   const navigate = useNavigate();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const [replyTo, setReplyTo] = useState<MessageType | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const otherUser = currentChat?.other_user;
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0 && handleImageUpload) {
-      handleImageUpload(files[0]);
-      e.target.value = '';
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const userName = currentChat?.otherUser?.name || 'User';
-  const productTitle = currentProduct?.title || currentChat?.product?.title || 'Product';
-
-  const renderChatHeader = () => (
-    <div className="p-3 border-b bg-gray-50 flex items-center">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="md:hidden mr-2"
-        onClick={() => navigate('/messages')}
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </Button>
-      {loading ? (
-        <>
-          <Skeleton className="h-10 w-10 rounded-full mr-3" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-        </>
-      ) : (
-        <>
-          <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={currentChat?.otherUser?.avatar} />
-            <AvatarFallback>
-              {userName.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">
-              {userName}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {productTitle}
-            </p>
-          </div>
-        </>
-      )}
-    </div>
-  );
-
-  const renderProductInfo = () => {
-    if (loading) {
-      return (
-        <div className="p-3 border-b bg-accent/5">
-          <div className="flex items-center p-2">
-            <Skeleton className="w-16 h-16 rounded mr-3" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    return <ProductInfoCard 
-      product={currentProduct || currentChat?.product} 
-      productId={currentChat?.product_id}
-    />;
-  };
-
-  const renderMessages = () => {
-    if (loading) {
-      return (
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className={`flex ${index % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] ${index % 2 === 0 ? 'ml-auto' : 'mr-auto'}`}>
-                <Skeleton className={`h-14 w-48 rounded-lg ${index % 2 === 0 ? 'rounded-tr-none' : 'rounded-tl-none'}`} />
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4 overflow-x-hidden">
-        <MessageList 
-          messages={messages} 
-          onDeleteMessage={handleDeleteMessage}
-        />
-        <div ref={messagesEndRef} />
-      </div>
-    );
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !loading && newMessage.trim()) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {renderChatHeader()}
-      {renderProductInfo()}
-      {renderMessages()}
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
 
-      <div className="p-3 border-t mt-auto">
-        <div className="flex space-x-2">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="min-h-[45px] max-h-[120px]"
-            disabled={loading || sendingMessage}
-            onKeyDown={handleKeyPress}
-          />
-          <div className="flex flex-col space-y-2 self-end">
+  const handleReply = (message: MessageType) => {
+    setReplyTo(message);
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      textarea.focus();
+    }
+  };
+
+  const handleEmojiSelect = (emoji: any) => {
+    setNewMessage(newMessage + emoji.native);
+    setShowEmojiPicker(false);
+  };
+
+  if (!currentChat) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full p-8 text-center bg-gray-50/50">
+        <div className="w-16 h-16 rounded-full bg-youbuy/10 flex items-center justify-center mb-4">
+          <MessageCircle className="h-8 w-8 text-youbuy" />
+        </div>
+        <h3 className="text-lg font-medium mb-2">Your Messages</h3>
+        <p className="text-muted-foreground mb-4 max-w-md">
+          Select a conversation from the list to view your messages. Messages about items you're buying or selling will appear here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Chat Header */}
+      <div className="p-3 border-b bg-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Button
-              type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-9 w-9"
-              onClick={triggerFileInput}
-              disabled={loading || sendingMessage}
+              className="md:hidden"
+              onClick={() => navigate('/messages')}
             >
-              <ImagePlus className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleFileChange}
-              disabled={loading || sendingMessage}
-            />
-            <Button 
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sendingMessage || loading}
-              className="bg-youbuy hover:bg-youbuy-dark h-9 w-9 p-0"
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={otherUser?.avatar_url} />
+              <AvatarFallback>{otherUser?.full_name?.[0] || "?"}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-medium truncate mb-0">{otherUser?.full_name}</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {otherUser?.last_seen ? `Last seen ${formatDistanceToNow(new Date(otherUser.last_seen))} ago` : 'Online'}
+              </p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                View Product
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Product Info */}
+      {currentProduct && (
+        <div className="p-2 border-b bg-white">
+          <ProductInfoCard product={currentProduct} />
+        </div>
+      )}
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-3">
+        <MessageList
+          messages={messages}
+          loading={loading}
+          onDeleteMessage={handleDeleteMessage}
+          onReplyMessage={handleReply}
+        />
+      </ScrollArea>
+
+      {/* Reply Preview */}
+      {replyTo && (
+        <div className="p-2 border-t bg-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Reply className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Replying to {replyTo.sender_name}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => setReplyTo(null)}
             >
-              <SendHorizonal className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-1 truncate">
+            {replyTo.content}
+          </p>
         </div>
+      )}
+
+      {/* Message Input */}
+      <div className="p-3 border-t bg-white relative">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          >
+            <Smile className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ImagePlus className="h-4 w-4" />
+          </Button>
+          <div className="flex-1">
+            <Textarea
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="min-h-[40px] max-h-[120px] resize-none"
+            />
+          </div>
+          <Button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim() || sendingMessage}
+            className="h-8 w-8"
+          >
+            <SendHorizonal className="h-4 w-4" />
+          </Button>
+        </div>
+        {showEmojiPicker && (
+          <div className="absolute bottom-16 right-4">
+            <Picker
+              data={data}
+              onEmojiSelect={handleEmojiSelect}
+              theme="light"
+              previewPosition="none"
+            />
+          </div>
+        )}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
       </div>
     </div>
   );
-};
+}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -34,6 +33,7 @@ const CheckoutPage = () => {
   });
   const [orderId, setOrderId] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(33);
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'cash'>('cash');
 
   // Query to fetch the product data
   const { data: product, isLoading, error } = useQuery({
@@ -97,16 +97,106 @@ const CheckoutPage = () => {
     }
 
     try {
-      const { data: orderData, error: orderError } = await supabase.rpc('create_order', {
-        p_product_id: id,
-        p_buyer_id: user.id,
-        p_seller_id: product.seller.id,
-        p_amount: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
-        p_status: 'pending',
-        p_delivery_details: deliveryDetails
+      // Add payment method to delivery details
+      const deliveryDetailsWithPayment = {
+        ...deliveryDetails,
+        paymentMethod: paymentMethod
+      };
+
+      // Create the order directly instead of using RPC
+      const { data: orderData, error: createOrderError } = await supabase
+        .from('orders')
+        .insert({
+          product_id: id,
+          buyer_id: user.id,
+          seller_id: product.seller.id,
+          amount: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+          status: 'pending',
+          delivery_details: deliveryDetailsWithPayment,
+          payment_method: paymentMethod
+        })
+        .select('id')
+        .single();
+
+      if (createOrderError) {
+        console.error("Order creation error:", createOrderError);
+        toast({
+          title: "Error creating order",
+          description: createOrderError.message,
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      // Process wallet payment if selected using the WalletContext
+      if (paymentMethod === 'wallet') {
+        try {
+          // This will be handled by the direct makePayment call in handlePaymentSuccess
+          console.log("Wallet payment selected, will be processed after order creation");
+        } catch (paymentError) {
+          console.error("Payment error:", paymentError);
+          toast({
+            title: "Payment Error",
+            description: "Your order was created but the payment failed. Please contact support.",
+            variant: "destructive"
+          });
+          // Continue with order creation even if payment fails
+        }
+      }
+
+      // Create initial order status history entry
+      await supabase.from('order_status_history').insert({
+        order_id: orderData.id,
+        status: 'pending',
+        notes: 'Order created'
       });
 
-      if (orderError) throw orderError;
+      // Create Shipday order with retry mechanism
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('No active session');
+        }
+
+        // Add a small delay to ensure the order is available in the database
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const shipdayResponse = await fetch('https://epkpqlkvhuqnfepfpscd.supabase.co/functions/v1/order-management/create-shipday-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            orderId: orderData.id,
+            productId: id,
+            buyerId: user.id,
+            sellerId: product.seller.id,
+            amount: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+            deliveryDetails: deliveryDetails
+          })
+        });
+
+        if (!shipdayResponse.ok) {
+          const errorText = await shipdayResponse.text();
+          console.error('Failed to create Shipday order:', errorText);
+          // Don't throw here, just log the error and continue
+        } else {
+          const shipdayData = await shipdayResponse.json();
+          // Update order with Shipday reference
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ shipday_order_id: shipdayData.order_id })
+            .eq('id', orderData.id);
+
+          if (updateError) {
+            console.error('Failed to update order with Shipday reference:', updateError);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating Shipday order:', error);
+        // Continue with the order creation even if Shipday fails
+      }
 
       const { error: productError } = await supabase
         .from("products")
@@ -123,10 +213,10 @@ const CheckoutPage = () => {
         type: "new_order",
         title: "New Order Received",
         description: `You have received a new order for ${product.title}`,
-        related_id: orderData
+        related_id: orderData.id
       });
 
-      return orderData;
+      return orderData.id;
     } catch (error) {
       console.error("Error creating order:", error);
       toast({
@@ -138,10 +228,11 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (method: 'wallet' | 'cash') => {
+    setPaymentMethod(method);
     const newOrderId = await createOrder();
     if (newOrderId) {
-      setOrderId(newOrderId);
+      setOrderId(newOrderId as string);  // Cast to string for type safety
       setCurrentStep('confirmation');
       
       toast({
@@ -243,38 +334,75 @@ const CheckoutPage = () => {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 container py-8">
-          <div className="flex items-center justify-center h-[60vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
-            <p className="ml-2">Loading checkout...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-youbuy" />
+        </div>
+      );
+    }
 
-  if (error || !product) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 container py-8">
+    if (error || !product) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-red-500 mb-4">Error loading product. Please try again.</p>
+          <Button variant="outline" onClick={handleBackToProduct}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to product
+          </Button>
+        </div>
+      );
+    }
+
+    switch (currentStep) {
+      case 'delivery':
+        return (
+          <CheckoutForm onSubmit={handleDeliveryDetailsChange} initialValues={deliveryDetails} />
+        );
+      case 'payment':
+        return (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center p-8">
-              <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
-              <p className="text-muted-foreground mb-4">
-                The product you're trying to purchase doesn't exist or has been removed.
-              </p>
-              <Button asChild>
-                <Link to="/">Browse More Products</Link>
-              </Button>
+            <CardHeader>
+              <CardTitle>Payment Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderLocationDetails()}
+              <Separator className="my-4" />
+              <PaymentForm onSuccess={handlePaymentSuccess} totalAmount={typeof product.price === 'string' ? parseFloat(product.price) : product.price} />
             </CardContent>
           </Card>
-        </main>
-      </div>
-    );
-  }
+        );
+      case 'confirmation':
+        return (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Order Confirmed!</h2>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Your order has been placed successfully. The seller has been notified and will prepare your item for delivery.
+                </p>
+                
+                <div className="bg-gray-50 p-4 rounded-md w-full max-w-md mb-6">
+                  <p className="font-medium mb-2">Order Reference</p>
+                  <p className="text-sm font-mono bg-white border rounded-md p-2">{orderId}</p>
+                </div>
+                
+                <Button asChild>
+                  <Link to={`/profile/orders`}>
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    View My Orders
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+    }
+  };
 
   if (!user) {
     return (
@@ -321,119 +449,7 @@ const CheckoutPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {currentStep === 'delivery' && (
-                  <CheckoutForm 
-                    initialValues={deliveryDetails}
-                    onSubmit={handleDeliveryDetailsChange}
-                  />
-                )}
-                {currentStep === 'payment' && (
-                  <div className="space-y-4">
-                    {renderLocationDetails()}
-                    
-                    {deliveryDetails.latitude && deliveryDetails.longitude && (
-                      <div className="mt-4">
-                        <h3 className="font-medium mb-2 flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-red-500" />
-                          Delivery Location
-                        </h3>
-                        <LocationMap 
-                          latitude={deliveryDetails.latitude}
-                          longitude={deliveryDetails.longitude}
-                          height="250px"
-                          zoom={15}
-                          interactive={false}
-                          showMarker={true}
-                          className="mt-2 rounded-md overflow-hidden border border-gray-200"
-                        />
-                      </div>
-                    )}
-                    
-                    <Button 
-                      variant="outline" 
-                      className="mt-2" 
-                      onClick={() => setCurrentStep('delivery')}
-                    >
-                      Edit Details
-                    </Button>
-                    
-                    <div className="space-y-4 mt-6">
-                      <h3 className="font-medium">Payment Method</h3>
-                      <PaymentForm onSuccess={handlePaymentSuccess} />
-                    </div>
-                  </div>
-                )}
-                {currentStep === 'confirmation' && (
-                  <div className="space-y-6 text-center">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <Package className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold">Thank You for Your Purchase!</h2>
-                    <p className="text-muted-foreground">
-                      Your order has been successfully placed and will be processed by the seller soon.
-                    </p>
-                    
-                    {deliveryDetails.latitude && deliveryDetails.longitude && (
-                      <div className="mt-4">
-                        <h3 className="font-medium mb-2 flex items-center text-left">
-                          <MapPin className="h-4 w-4 mr-1 text-red-500" />
-                          Delivery Location
-                        </h3>
-                        <LocationMap 
-                          latitude={deliveryDetails.latitude}
-                          longitude={deliveryDetails.longitude}
-                          height="200px"
-                          zoom={15}
-                          interactive={false}
-                          showMarker={true}
-                          className="mt-2 rounded-md overflow-hidden border border-gray-200"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="p-4 bg-gray-50 rounded-md text-left mt-4">
-                      <h3 className="font-medium mb-2">Delivery Information</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        {deliveryDetails.locationType === 'house' ? (
-                          <div className="flex items-center text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                            <Home className="h-3 w-3 mr-1" />
-                            House
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-sm bg-purple-50 text-purple-700 px-2 py-1 rounded">
-                            <Building className="h-3 w-3 mr-1" />
-                            Apartment
-                          </div>
-                        )}
-                      </div>
-                      <p><strong>Name:</strong> {deliveryDetails.fullName}</p>
-                      <p><strong>Address:</strong> {deliveryDetails.formattedAddress}</p>
-                      {deliveryDetails.locationType === 'house' && deliveryDetails.houseNumber && (
-                        <p><strong>House Number:</strong> {deliveryDetails.houseNumber}</p>
-                      )}
-                      {deliveryDetails.locationType === 'apartment' && (
-                        <>
-                          {deliveryDetails.buildingName && <p><strong>Building:</strong> {deliveryDetails.buildingName}</p>}
-                          {deliveryDetails.floor && <p><strong>Floor:</strong> {deliveryDetails.floor}</p>}
-                          {deliveryDetails.apartmentNumber && <p><strong>Apartment:</strong> #{deliveryDetails.apartmentNumber}</p>}
-                        </>
-                      )}
-                      <p><strong>Delivery Time:</strong> {
-                        deliveryDetails.deliveryTime === 'morning' ? 'Morning (9am - 12pm)' :
-                        deliveryDetails.deliveryTime === 'afternoon' ? 'Afternoon (12pm - 5pm)' : 
-                        'Evening (5pm - 9pm)'
-                      }</p>
-                    </div>
-                    <div className="flex justify-center space-x-4">
-                      <Button asChild className="bg-youbuy hover:bg-youbuy-dark">
-                        <Link to="/">Continue Shopping</Link>
-                      </Button>
-                      <Button asChild variant="outline">
-                        <Link to="/profile/purchases">View Your Purchases</Link>
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                {renderContent()}
               </CardContent>
             </Card>
           </div>

@@ -1,466 +1,606 @@
-
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatType, MessageType } from "@/types/message";
-import { products } from "@/data/products";
-import { 
-  markMessagesAsRead,
-  deleteMessage,
-  sendTextMessage, 
-  getChatUnreadCount 
-} from "@/utils/messageHelpers";
+import { ProductType } from "@/types/product";
+import { toast } from "@/components/ui/use-toast";
+import { Database } from "@/types/supabase";
 
-export const useMessages = (chatId?: string) => {
+type Tables = Database["public"]["Tables"];
+type ChatRow = Tables["chats"]["Row"];
+type MessageRow = Tables["messages"]["Row"];
+type ProfileRow = Tables["profiles"]["Row"];
+type ProductRow = Tables["products"]["Row"];
+
+type MessageInsert = {
+  chat_id: string;
+  content: string;
+  sender_id: string;
+  read: boolean;
+  product_id: string;
+  receiver_id: string;
+};
+
+// Custom type for messages with profile information
+type MessageWithProfile = {
+  id: string;
+  content: string;
+  created_at: string | null;
+  sender_id: string;
+  receiver_id: string;
+  product_id: string;
+  read: boolean | null;
+  profiles?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
+export function useMessages(chatId?: string) {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
+  const { toast: showToast } = useToast();
   const [chats, setChats] = useState<ChatType[]>([]);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [currentChat, setCurrentChat] = useState<ChatType | null>(null);
+  const [currentProduct, setCurrentProduct] = useState<ProductType | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<any>(null);
 
-  // Enhanced function to get user display name
-  const getUserDisplayName = (userData: any) => {
-    if (!userData) return "User";
-    return userData.name || userData.full_name || userData.username || "User";
-  };
+  // Load chats on initial load
+  useEffect(() => {
+    console.log('Loading chats...');
+    fetchChats();
+  }, []);
 
-  // Enhanced function to get product display name
-  const getProductDisplayName = (productData: any) => {
-    if (!productData) return "Product";
-    return productData.title || "Product";
-  };
+  // Fetch chats for the current user
+  const fetchChats = async () => {
+    if (!user) {
+      console.log('No user found, skipping chat fetch');
+      setLoadingChats(false);
+      return;
+    }
 
-  // Fetch chats
-  const fetchChats = useCallback(async () => {
-    if (!user) return;
-    
-    setLoadingChats(true);
     try {
-      console.log("Fetching chats for user:", user.id);
-      const { data, error } = await supabase
-        .from('chats')
-        .select(`
-          id, 
-          product_id, 
-          seller_id, 
-          buyer_id, 
-          last_message_at, 
-          created_at
-        `)
-        .or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false });
-
-      if (error) throw error;
+      console.log('Fetching chats for user:', user.id);
+      setLoadingChats(true);
       
-      console.log("Chats fetched:", data);
+      // First, get all chats for the user
+      const { data: chatsData, error: chatsError } = await supabase
+        .from("chats")
+        .select("*")
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .order("last_message_at", { ascending: false });
 
-      // Get products from our local data for this demo
-      const enhancedChats = await Promise.all(
-        (data || []).map(async (chat) => {
-          // Determine if user is buyer or seller
-          const isUserSeller = chat.seller_id === user.id;
-          const otherUserId = isUserSeller ? chat.buyer_id : chat.seller_id;
-          
-          // Find matching product from our local data
-          const matchedProduct = products.find(p => p.id === chat.product_id);
-          
-          // For local development, we'll use mock product data
-          const productData = matchedProduct || {
-            title: "Product Item",
-            price: 100,
-            image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
-          };
-          
-          // Get otherUser info - for mock data, we use the seller info from products
-          let otherUserInfo = {
-            name: 'User',
-            avatar: '',
-          };
-          
-          // Try to get user profile from Supabase first
-          try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('full_name, username, avatar_url')
-              .eq('id', otherUserId)
-              .maybeSingle();
-              
-            if (profileData) {
-              otherUserInfo = {
-                name: profileData.full_name || profileData.username || 'User',
-                avatar: profileData.avatar_url || '',
-              };
-            } else if (isUserSeller && matchedProduct) {
-              // If user profile not found and current user is seller, use generic buyer name
-              otherUserInfo = {
-                name: 'Potential Buyer',
-                avatar: '',
-              };
-            } else if (matchedProduct) {
-              // If user profile not found and current user is buyer, use seller info from mock data
-              otherUserInfo = {
-                name: matchedProduct.seller.name || 'Seller',
-                avatar: matchedProduct.seller.avatar || '',
-              };
-            }
-          } catch (profileError) {
-            console.error("Error fetching other user profile:", profileError);
-            
-            // Fallback to mock data
-            if (isUserSeller && matchedProduct) {
-              otherUserInfo = {
-                name: 'Potential Buyer',
-                avatar: '',
-              };
-            } else if (matchedProduct) {
-              otherUserInfo = {
-                name: matchedProduct.seller.name || 'Seller',
-                avatar: matchedProduct.seller.avatar || '',
-              };
-            }
-          }
+      if (chatsError) {
+        console.error('Error fetching chats:', chatsError);
+        throw chatsError;
+      }
 
-          // Get last message
-          const { data: lastMessageData } = await supabase
-            .from('messages')
-            .select('content, created_at')
-            .eq('product_id', chat.product_id)
-            .order('created_at', { ascending: false })
+      if (!chatsData || chatsData.length === 0) {
+        console.log('No chats found');
+        setChats([]);
+        setLoadingChats(false);
+        return;
+      }
+
+      // Then, for each chat, get the associated product, profiles, and messages
+      const enhancedChats = await Promise.all(chatsData.map(async (chat) => {
+        const [
+          { data: product },
+          { data: otherUserProfile },
+          { data: messages }
+        ] = await Promise.all([
+          // Get product details
+          supabase
+            .from("products")
+            .select("id, title, price, image_urls, product_status")
+            .eq("id", chat.product_id)
+            .single(),
+          // Get other user's profile
+          supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url, updated_at")
+            .eq("id", chat.buyer_id === user.id ? chat.seller_id : chat.buyer_id)
+            .single(),
+          // Get latest message
+          supabase
+            .from("messages")
+            .select("id, content, created_at, read")
+            .eq("chat_id", chat.id)
+            .order("created_at", { ascending: false })
             .limit(1)
-            .maybeSingle();
+        ]);
 
-          // Get unread count
-          const unreadCount = await getChatUnreadCount(user.id, chat.product_id);
+        if (!product || !otherUserProfile) {
+          console.error('Missing product or profile data for chat:', chat.id);
+          return null;
+        }
 
-          return {
-            ...chat,
-            otherUser: otherUserInfo,
-            product: {
-              title: productData.title || 'Product',
-              price: productData.price || 0,
-              image: productData.image || '',
-            },
-            lastMessage: lastMessageData?.content || "No messages yet",
-            unreadCount,
-          };
-        })
-      );
+        const lastMessage = messages?.[0];
 
-      setChats(enhancedChats);
+        const chatData: ChatType = {
+          id: chat.id,
+          created_at: chat.created_at || new Date().toISOString(),
+          last_message_at: chat.last_message_at || new Date().toISOString(),
+          buyer_id: chat.buyer_id,
+          seller_id: chat.seller_id,
+          product_id: chat.product_id,
+          unread_count: 0, // TODO: Calculate unread count
+          last_message: lastMessage ? {
+            id: lastMessage.id,
+            content: lastMessage.content,
+            created_at: lastMessage.created_at || new Date().toISOString(),
+            read: lastMessage.read || false
+          } : undefined,
+          product: {
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            image_urls: product.image_urls,
+            product_status: product.product_status as "available" | "reserved" | "sold"
+          },
+          other_user: {
+            id: otherUserProfile.id,
+            full_name: otherUserProfile.full_name || "Unknown",
+            avatar_url: otherUserProfile.avatar_url,
+            last_seen: otherUserProfile.updated_at
+          }
+        };
+
+        return chatData;
+      }));
+
+      const validChats = enhancedChats.filter((chat): chat is ChatType => chat !== null);
+      console.log('Processed chats:', validChats);
+      setChats(validChats);
     } catch (error) {
       console.error("Error fetching chats:", error);
       toast({
-        title: "Error loading chats",
-        description: "Please try again later",
         variant: "destructive",
+        title: "Error",
+        description: "Failed to load chats. Please try again.",
       });
     } finally {
       setLoadingChats(false);
     }
-  }, [user, toast]);
+  };
 
-  // Load chat by ID
-  const loadChatById = useCallback(async (id: string) => {
-    if (!user || !id) return;
-    
-    console.log("loadChatById called with ID:", id);
-    setLoadingMessages(true);
-    setMessages([]); // Clear existing messages
-    setCurrentChat(null); // Reset current chat while loading
-    
-    try {
-      // Get the current chat
-      const { data: chatData, error: chatError } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (chatError) {
-        console.error("Error fetching chat by ID:", chatError);
-        throw chatError;
-      }
-      
-      if (!chatData) {
-        console.error("Chat not found");
-        toast({
-          title: "Chat not found",
-          description: "The conversation you're looking for doesn't exist",
-          variant: "destructive",
-        });
-        navigate('/messages');
-        return;
-      }
-      
-      console.log("Chat data loaded:", chatData);
-      
-      // Check if the user is part of this chat
-      if (chatData.seller_id !== user.id && chatData.buyer_id !== user.id) {
-        console.error("User not authorized to view this chat");
-        toast({
-          title: "Not authorized",
-          description: "You don't have permission to view this conversation",
-          variant: "destructive",
-        });
-        navigate('/messages');
-        return;
-      }
-      
-      // Find product from mock data
-      const productData = products.find(p => p.id === chatData.product_id);
-      setCurrentProduct(productData);
-      
-      // Determine if user is buyer or seller
-      const isUserSeller = chatData.seller_id === user.id;
-      const otherUserId = isUserSeller ? chatData.buyer_id : chatData.seller_id;
-      
-      // Get otherUser info from profile if possible
-      let otherUserInfo = {
-        name: 'User',
-        avatar: '',
-      };
-      
-      // Try to get user profile from Supabase first
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url')
-          .eq('id', otherUserId)
-          .maybeSingle();
-          
-        if (profileData) {
-          otherUserInfo = {
-            name: profileData.full_name || profileData.username || 'User',
-            avatar: profileData.avatar_url || '',
-          };
-        } else if (isUserSeller && productData) {
-          // Fallback for buyer when profile not available
-          otherUserInfo = {
-            name: 'Potential Buyer',
-            avatar: '',
-          };
-        } else if (productData) {
-          // Fallback for seller when profile not available
-          otherUserInfo = {
-            name: productData.seller.name || 'Seller',
-            avatar: productData.seller.avatar || '',
-          };
-        }
-      } catch (profileError) {
-        console.error("Error fetching other user profile:", profileError);
-        
-        // Fallback to mock data
-        if (isUserSeller && productData) {
-          otherUserInfo = {
-            name: 'Potential Buyer',
-            avatar: '',
-          };
-        } else if (productData) {
-          otherUserInfo = {
-            name: productData.seller.name || 'Seller',
-            avatar: productData.seller.avatar || '',
-          };
-        }
-      }
-      
-      // Set enhanced chat data
-      const enhancedChatData = {
-        ...chatData,
-        otherUser: otherUserInfo,
-        product: {
-          title: productData?.title || 'Product',
-          price: productData?.price || 0,
-          image: productData?.image || '',
-        },
-      };
-      
-      setCurrentChat(enhancedChatData);
-      
-      // Fetch messages
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('product_id', chatData.product_id)
-        .order('created_at', { ascending: true });
-
-      if (messagesError) {
-        console.error("Error fetching messages:", messagesError);
-        throw messagesError;
-      }
-      
-      console.log("Messages loaded:", messagesData?.length);
-      setMessages(messagesData || []);
-
-      // Mark messages as read
-      if (messagesData && messagesData.length > 0) {
-        const unreadMessages = messagesData.filter(msg => 
-          msg.receiver_id === user.id && !msg.read
-        );
-        
-        if (unreadMessages.length > 0) {
-          await markMessagesAsRead(user.id, chatData.product_id);
-        }
-      }
-
-    } catch (error) {
-      console.error("Error loading chat by ID:", error);
-      toast({
-        title: "Error loading conversation",
-        description: "Please try again later",
-        variant: "destructive",
-      });
-      navigate('/messages');
-    } finally {
-      setLoadingMessages(false);
-    }
-  }, [user, toast, navigate]);
-
-  // Fetch chats on initial load
+  // Subscribe to real-time updates
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    if (!chatId || !user) return;
 
-    fetchChats();
-    
-    // Set up message subscription for all user's chats
-    const messageSubscription = supabase
-      .channel('all_messages')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'messages',
-        filter: `receiver_id=eq.${user.id}`
-      }, () => {
-        console.log("New message received in subscription");
-        fetchChats(); // Refresh chats when receiving new messages
-        
-        // Reload current chat if we're viewing one
-        if (chatId) {
-          loadChatById(chatId);
+    console.log(`Subscribing to chat:${chatId}`);
+    const channel = supabase
+      .channel(`chat:${chatId}`)
+      .on(
+        'postgres_changes' as any,
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chatId}`
+        },
+        async (payload: { 
+          eventType: string; 
+          new: MessageRow;
+        }) => {
+          console.log('Message event received:', payload.eventType, payload.new);
+          if (payload.eventType === 'INSERT') {
+            const { data: sender } = await supabase
+              .from("profiles")
+              .select("full_name, avatar_url")
+              .eq("id", payload.new.sender_id)
+              .single();
+
+            const newMessage: MessageType = {
+              id: payload.new.id,
+              content: payload.new.content,
+              created_at: payload.new.created_at || new Date().toISOString(),
+              sender_id: payload.new.sender_id,
+              receiver_id: payload.new.receiver_id,
+              product_id: payload.new.product_id,
+              read: payload.new.read || false,
+              sender_name: sender?.full_name || "Unknown",
+              sender_avatar: sender?.avatar_url
+            };
+
+            console.log('Adding new message to state:', newMessage);
+            setMessages(prev => [...prev, newMessage]);
+            
+            // Update chat list if this is the latest message
+            setChats(prev => prev.map(chat => {
+              if (chat.id === chatId) {
+                return {
+                  ...chat,
+                  last_message: {
+                    id: newMessage.id,
+                    content: newMessage.content,
+                    created_at: newMessage.created_at,
+                    read: newMessage.read
+                  }
+                };
+              }
+              return chat;
+            }));
+          } else if (payload.eventType === 'UPDATE') {
+            // Update message in messages state
+            setMessages(prev => prev.map(msg => 
+              msg.id === payload.new.id ? {
+                ...msg,
+                read: payload.new.read || false,
+                content: payload.new.content,
+                created_at: payload.new.created_at || msg.created_at
+              } : msg
+            ));
+
+            // Update chat in chats state if it's the last message
+            setChats(prev => prev.map(chat => {
+              if (chat.id === chatId && chat.last_message?.id === payload.new.id) {
+                return {
+                  ...chat,
+                  last_message: {
+                    id: payload.new.id,
+                    content: payload.new.content,
+                    created_at: payload.new.created_at || new Date().toISOString(),
+                    read: payload.new.read || false
+                  }
+                };
+              }
+              return chat;
+            }));
+          }
         }
-      })
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(messageSubscription);
+      console.log(`Unsubscribing from chat:${chatId}`);
+      supabase.removeChannel(channel);
     };
-  }, [user, navigate, fetchChats, chatId, loadChatById]);
+  }, [chatId, user]);
 
-  // Load specific chat when chatId changes
+  // Mark messages as read when chat is opened
   useEffect(() => {
-    if (chatId && user) {
-      console.log("Chat ID changed, loading:", chatId);
-      loadChatById(chatId);
-    }
-  }, [chatId, user, loadChatById]);
+    if (!chatId || !user || !currentChat) return;
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user || !currentChat) return;
-    
-    setSendingMessage(true);
-    try {
-      const receiverId = currentChat.seller_id === user.id 
-        ? currentChat.buyer_id 
-        : currentChat.seller_id;
-      
-      const success = await sendTextMessage(
-        user.id,
-        receiverId,
-        currentChat.product_id,
-        currentChat.id,
-        newMessage
-      );
-      
-      if (success) {
-        setNewMessage("");
-        // Reload messages after sending
-        loadChatById(currentChat.id);
+    const markMessagesAsRead = async () => {
+      console.log('Marking messages as read in chat:', chatId);
+      const { error } = await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("chat_id", chatId)
+        .eq("read", false)
+        .neq("sender_id", user.id);
+
+      if (error) {
+        console.error('Error marking messages as read:', error);
+      } else {
+        // Update local state
+        setMessages(prev => prev.map(msg => 
+          msg.sender_id !== user.id ? { ...msg, read: true } : msg
+        ));
+
+        // Update chat list
+        setChats(prev => prev.map(chat => {
+          if (chat.id === chatId && chat.last_message) {
+            return {
+              ...chat,
+              last_message: { ...chat.last_message, read: true },
+              unread_count: 0
+            };
+          }
+          return chat;
+        }));
       }
+    };
+
+    markMessagesAsRead();
+  }, [chatId, user, currentChat]);
+
+  // Fetch messages for a chat
+  const fetchMessages = async (chatId: string) => {
+    if (!user) return;
+
+    try {
+      console.log('Fetching messages for chat:', chatId);
+      setLoadingMessages(true);
+      
+      // Get all messages for this chat
+      const { data, error } = await supabase
+        .from("messages")
+        .select("id, content, created_at, sender_id, receiver_id, product_id, read")
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Get all unique sender IDs
+        const senderIds = [...new Set(data.map(msg => msg.sender_id))];
+        
+        // Fetch profiles for all senders in one query
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", senderIds);
+        
+        // Create a map of profiles by ID for easy lookup
+        const profilesMap = new Map();
+        if (profilesData) {
+          profilesData.forEach(profile => {
+            profilesMap.set(profile.id, {
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url
+            });
+          });
+        }
+        
+        // Format messages with sender info
+        const formattedMessages: MessageType[] = data.map(msg => {
+          const profile = profilesMap.get(msg.sender_id);
+          return {
+            id: msg.id,
+            content: msg.content,
+            created_at: msg.created_at || new Date().toISOString(),
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            product_id: msg.product_id,
+            read: msg.read || false,
+            sender_name: profile?.full_name || "Unknown",
+            sender_avatar: profile?.avatar_url
+          };
+        });
+        
+        console.log('Fetched messages:', formattedMessages.length);
+        setMessages(formattedMessages);
+      } else {
+        console.log('No messages found for chat:', chatId);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load messages. Please try again.",
+      });
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  // Load a specific chat by ID
+  const loadChatById = async (chatId: string) => {
+    if (!user) return;
+
+    try {
+      console.log('Loading chat:', chatId);
+      setLoadingMessages(true);
+
+      // First get the chat details
+      const { data: chatData, error: chatError } = await supabase
+        .from("chats")
+        .select("*")
+        .eq("id", chatId)
+        .single();
+
+      if (chatError) throw chatError;
+      
+      if (!chatData) {
+        console.error('Chat not found:', chatId);
+        return;
+      }
+
+      // Then get the product details
+      const { data: productData } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", chatData.product_id)
+        .single();
+
+      // Get the other user's profile
+      const otherId = chatData.buyer_id === user.id ? chatData.seller_id : chatData.buyer_id;
+      
+      const { data: otherUserData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", otherId)
+        .single();
+
+      // Create current chat object
+      if (productData && otherUserData) {
+        const currentChatData: ChatType = {
+          id: chatData.id,
+          created_at: chatData.created_at || new Date().toISOString(),
+          last_message_at: chatData.last_message_at || new Date().toISOString(),
+          buyer_id: chatData.buyer_id,
+          seller_id: chatData.seller_id,
+          product_id: chatData.product_id,
+          unread_count: 0,
+          product: {
+            id: productData.id,
+            title: productData.title,
+            price: productData.price,
+            image_urls: productData.image_urls,
+            product_status: productData.product_status as "available" | "reserved" | "sold"
+          },
+          other_user: {
+            id: otherUserData.id,
+            full_name: otherUserData.full_name || "Unknown",
+            avatar_url: otherUserData.avatar_url,
+            last_seen: otherUserData.updated_at
+          }
+        };
+        
+        setCurrentChat(currentChatData);
+        
+        if (productData) {
+          setCurrentProduct({
+            id: productData.id,
+            title: productData.title,
+            description: productData.description,
+            price: productData.price,
+            image_urls: productData.image_urls,
+            location: productData.location,
+            createdAt: productData.created_at,
+            product_status: productData.product_status as "available" | "reserved" | "sold",
+            seller: {
+              id: chatData.seller_id,
+              name: otherUserData.full_name || "Unknown",
+              avatar: otherUserData.avatar_url || '',
+              joinedDate: otherUserData.created_at
+            },
+            category: productData.category,
+            likeCount: productData.like_count
+          } as ProductType);
+        }
+      }
+
+      // Get messages
+      await fetchMessages(chatId);
+
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load chat. Please try again.",
+      });
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  // Handle sending a new message
+  const handleSendMessage = async () => {
+    if (!user || !chatId || !newMessage.trim() || !currentChat) {
+      console.error('Cannot send message - missing data', { user, chatId, messageContent: newMessage, currentChat });
+      return;
+    }
+
+    try {
+      console.log('Sending message in chat:', chatId);
+      setSendingMessage(true);
+
+      const messageData: MessageInsert = {
+        chat_id: chatId,
+        content: newMessage.trim(),
+        sender_id: user.id,
+        read: false,
+        product_id: currentChat.product_id,
+        receiver_id: user.id === currentChat.buyer_id ? currentChat.seller_id : currentChat.buyer_id
+      };
+
+      const { error } = await supabase
+        .from("messages")
+        .insert(messageData);
+
+      if (error) throw error;
+
+      // Update the last_message_at timestamp for the chat
+      await supabase
+        .from("chats")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", chatId);
+
+      setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
-        title: "Failed to send message",
-        description: "Please try again later.",
-        variant: "destructive"
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to send message. Please try again.",
       });
     } finally {
       setSendingMessage(false);
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    if (!user || !currentChat) return;
-    
-    setSendingMessage(true);
-    try {
-      // Create a mock image URL - in production this would be the actual upload URL
-      const mockImageUrl = URL.createObjectURL(file);
-      
-      const receiverId = currentChat.seller_id === user.id 
-        ? currentChat.buyer_id 
-        : currentChat.seller_id;
-      
-      // Insert message with image URL
-      const { error: msgError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: receiverId,
-          product_id: currentChat.product_id,
-          // Prefixing with "image:" to distinguish image messages
-          content: `image:${mockImageUrl}`,
-        });
-        
-      if (msgError) throw msgError;
-      
-      // Update last_message_at in chat
-      await supabase
-        .from('chats')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', currentChat.id);
-      
-      // Reload messages after sending
-      loadChatById(currentChat.id);
-    } catch (error) {
-      console.error("Error sending image:", error);
-      toast({
-        title: "Failed to send image",
-        description: "Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
-
+  // Handle deleting a message
   const handleDeleteMessage = async (messageId: string) => {
-    if (!user || !currentChat) return;
-    
-    const success = await deleteMessage(messageId, user.id);
-    if (success && currentChat) {
-      // Reload messages after deletion
-      loadChatById(currentChat.id);
-      
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .delete()
+        .eq("id", messageId);
+
+      if (error) throw error;
+
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
       toast({
-        title: "Message deleted",
-        description: "Your message has been removed from the conversation."
+        description: "Message deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete message. Please try again.",
       });
     }
   };
+
+  // Handle image upload
+  const handleImageUpload = async (file: File) => {
+    if (!user || !chatId || !currentChat) return;
+
+    try {
+      setSendingMessage(true);
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filePath);
+
+      const messageData: MessageInsert = {
+        chat_id: chatId,
+        content: `image:${publicUrl}`,
+        sender_id: user.id,
+        read: false,
+        product_id: currentChat.product_id,
+        receiver_id: user.id === currentChat.buyer_id ? currentChat.seller_id : currentChat.buyer_id
+      };
+
+      const { error: messageError } = await supabase
+        .from("messages")
+        .insert(messageData);
+
+      if (messageError) throw messageError;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Load specific chat when chatId changes
+  useEffect(() => {
+    if (chatId) {
+      loadChatById(chatId);
+    } else {
+      setCurrentChat(null);
+      setCurrentProduct(null);
+      setMessages([]);
+    }
+  }, [chatId]);
 
   return {
-    user,
     chats,
     messages,
     currentChat,
@@ -474,6 +614,6 @@ export const useMessages = (chatId?: string) => {
     handleDeleteMessage,
     handleImageUpload,
     loadChatById,
-    fetchChats
+    fetchChats,
   };
-};
+}
