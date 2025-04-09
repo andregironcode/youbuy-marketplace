@@ -57,6 +57,18 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   const isLocationValid = location.length >= 3 && coordinates !== null && 
     coordinates.latitude !== undefined && coordinates.longitude !== undefined;
 
+  // Initialize locationDetails with a default value if undefined
+  useEffect(() => {
+    if (!locationDetails || locationDetails.type === undefined) {
+      console.log("Initializing locationDetails with default values");
+      setLocationDetails({
+        type: "house", // Default to house type
+        houseNumber: "",
+        additionalInfo: ""
+      });
+    }
+  }, []);  // Only run once on component mount
+
   // If location already exists but no coordinates, try to geocode it
   useEffect(() => {
     const setCoordinatesFromLocation = async () => {
@@ -180,7 +192,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   // Handle location type change
   const handleLocationTypeChange = (value: string) => {
     setLocationDetails({
-      ...locationDetails,
+      ...(locationDetails || {}),
       type: value as LocationType
     });
   };
@@ -188,7 +200,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   // Handle location details change
   const handleLocationDetailsChange = (field: keyof LocationDetails, value: string) => {
     setLocationDetails({
-      ...locationDetails,
+      ...(locationDetails || { type: "house" }),
       [field]: value
     });
   };
@@ -196,6 +208,10 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   // Format full address with location details
   const formatFullAddress = () => {
     let formattedDetails = "";
+    
+    if (!locationDetails) {
+      return location;
+    }
     
     if (locationDetails.type === "house") {
       if (locationDetails.houseNumber) {
@@ -290,89 +306,93 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             <div className="space-y-4 border p-4 rounded-md">
               <h3 className="font-medium">Location Details</h3>
               
-              <RadioGroup 
-                value={locationDetails.type} 
-                onValueChange={handleLocationTypeChange}
-                className="flex space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="house" id="house" />
-                  <Label htmlFor="house" className="flex items-center">
-                    <Home className="mr-2 h-4 w-4" />
-                    House
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="apartment" id="apartment" />
-                  <Label htmlFor="apartment" className="flex items-center">
-                    <Building className="mr-2 h-4 w-4" />
-                    Apartment
-                  </Label>
-                </div>
-              </RadioGroup>
-              
-              {locationDetails.type === "house" ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="houseNumber">House Number</Label>
-                    <Input
-                      id="houseNumber"
-                      placeholder="e.g., 123"
-                      value={locationDetails.houseNumber || ""}
-                      onChange={(e) => handleLocationDetailsChange("houseNumber", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
-                    <Input
-                      id="additionalInfo"
-                      placeholder="e.g., Gate code, landmark"
-                      value={locationDetails.additionalInfo || ""}
-                      onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="buildingName">Building Name</Label>
-                    <Input
-                      id="buildingName"
-                      placeholder="e.g., Sunset Towers"
-                      value={locationDetails.buildingName || ""}
-                      onChange={(e) => handleLocationDetailsChange("buildingName", e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="floor">Floor</Label>
-                      <Input
-                        id="floor"
-                        placeholder="e.g., 5"
-                        value={locationDetails.floor || ""}
-                        onChange={(e) => handleLocationDetailsChange("floor", e.target.value)}
-                      />
+              {locationDetails && (
+                <>
+                  <RadioGroup 
+                    value={locationDetails.type} 
+                    onValueChange={handleLocationTypeChange}
+                    className="flex space-x-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="house" id="house" />
+                      <Label htmlFor="house" className="flex items-center">
+                        <Home className="mr-2 h-4 w-4" />
+                        House
+                      </Label>
                     </div>
-                    <div>
-                      <Label htmlFor="apartmentNumber">Apartment Number</Label>
-                      <Input
-                        id="apartmentNumber"
-                        placeholder="e.g., 502"
-                        value={locationDetails.apartmentNumber || ""}
-                        onChange={(e) => handleLocationDetailsChange("apartmentNumber", e.target.value)}
-                      />
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="apartment" id="apartment" />
+                      <Label htmlFor="apartment" className="flex items-center">
+                        <Building className="mr-2 h-4 w-4" />
+                        Apartment
+                      </Label>
                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
-                    <Input
-                      id="additionalInfo"
-                      placeholder="e.g., Buzzer code, landmark"
-                      value={locationDetails.additionalInfo || ""}
-                      onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
-                    />
-                  </div>
-                </div>
+                  </RadioGroup>
+                  
+                  {locationDetails.type === "house" ? (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="houseNumber">House Number</Label>
+                        <Input
+                          id="houseNumber"
+                          placeholder="e.g., 123"
+                          value={locationDetails.houseNumber || ""}
+                          onChange={(e) => handleLocationDetailsChange("houseNumber", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
+                        <Input
+                          id="additionalInfo"
+                          placeholder="e.g., Gate code, landmark"
+                          value={locationDetails.additionalInfo || ""}
+                          onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="buildingName">Building Name</Label>
+                        <Input
+                          id="buildingName"
+                          placeholder="e.g., Sunset Towers"
+                          value={locationDetails.buildingName || ""}
+                          onChange={(e) => handleLocationDetailsChange("buildingName", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="floor">Floor</Label>
+                          <Input
+                            id="floor"
+                            placeholder="e.g., 5"
+                            value={locationDetails.floor || ""}
+                            onChange={(e) => handleLocationDetailsChange("floor", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="apartmentNumber">Apartment Number</Label>
+                          <Input
+                            id="apartmentNumber"
+                            placeholder="e.g., 502"
+                            value={locationDetails.apartmentNumber || ""}
+                            onChange={(e) => handleLocationDetailsChange("apartmentNumber", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="additionalInfo">Additional Information (Optional)</Label>
+                        <Input
+                          id="additionalInfo"
+                          placeholder="e.g., Buzzer code, landmark"
+                          value={locationDetails.additionalInfo || ""}
+                          onChange={(e) => handleLocationDetailsChange("additionalInfo", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

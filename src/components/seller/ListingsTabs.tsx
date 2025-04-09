@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 interface ListingsTabsProps {
-  currentActiveTab: "selling" | "sold";
-  onTabChange: (tab: "selling" | "sold") => void;
+  currentActiveTab: "active" | "reserved" | "sold";
+  onTabChange: (tab: "active" | "reserved" | "sold") => void;
 }
 
 export const ListingsTabs = ({ currentActiveTab, onTabChange }: ListingsTabsProps) => {
@@ -10,15 +10,26 @@ export const ListingsTabs = ({ currentActiveTab, onTabChange }: ListingsTabsProp
     <div className="flex justify-between items-center mb-4 border-b">
       <div className="flex">
         <button
-          onClick={() => onTabChange("selling")}
+          onClick={() => onTabChange("active")}
           className={cn(
             "px-4 py-3 text-sm font-medium transition-colors relative",
-            currentActiveTab === "selling"
+            currentActiveTab === "active"
               ? "text-youbuy border-b-2 border-youbuy"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          SELLING
+          ACTIVE
+        </button>
+        <button
+          onClick={() => onTabChange("reserved")}
+          className={cn(
+            "px-4 py-3 text-sm font-medium transition-colors relative",
+            currentActiveTab === "reserved"
+              ? "text-youbuy border-b-2 border-youbuy"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          RESERVED
         </button>
         <button
           onClick={() => onTabChange("sold")}

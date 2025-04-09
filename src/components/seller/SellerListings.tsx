@@ -17,9 +17,9 @@ import { Button } from "@/components/ui/button";
 interface SellerListingsProps {
   userId?: string;
   limit?: number;
-  activeTab?: "selling" | "sold";
+  activeTab?: "active" | "reserved" | "sold";
   showTabs?: boolean;
-  onTabChange?: (tab: "selling" | "sold") => void;
+  onTabChange?: (tab: "active" | "reserved" | "sold") => void;
   products?: ProductType[];
   isLoading?: boolean;
 }
@@ -27,13 +27,13 @@ interface SellerListingsProps {
 export const SellerListings = ({ 
   userId, 
   limit = 8, 
-  activeTab = "selling",
+  activeTab = "active",
   showTabs = false,
   onTabChange,
   products: initialProducts = [],
   isLoading: initialLoading = false
 }: SellerListingsProps) => {
-  const [internalActiveTab, setInternalActiveTab] = useState<"selling" | "sold">(activeTab);
+  const [internalActiveTab, setInternalActiveTab] = useState<"active" | "reserved" | "sold">(activeTab);
   const [products, setProducts] = useState<ProductType[]>(initialProducts);
   const [isLoading, setIsLoading] = useState<boolean>(initialLoading);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(false);
@@ -47,53 +47,120 @@ export const SellerListings = ({
   const currentActiveTab = onTabChange ? activeTab : internalActiveTab;
   const isOwnListings = user?.id === userId;
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!userId) return;
-      
-      setIsLoading(true);
-      try {
-        const status = currentActiveTab === "selling" ? "available" : "sold";
-        
-        let query = supabase
-          .from('products')
-          .select('*, profiles(*)')
-          .eq('seller_id', userId)
-          .eq('product_status', status);
-
-        // Apply search filter
-        if (debouncedSearchTerm) {
-          query = query.ilike('title', `%${debouncedSearchTerm}%`);
-        }
-
-        query = query.limit(limit);
-          
-        const { data, error } = await query;
-          
-        if (error) {
-          toast({
-            title: "Error",
-            description: "Failed to load products. Please try again.",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        const formattedProducts = data.map(item => convertToProductType(item, true));
-        setProducts(formattedProducts);
-      } catch (error) {
-        console.error("Error in products fetch:", error);
-      } finally {
-        setIsLoading(false);
-        setHasAttemptedFetch(true);
+  const fetchProducts = async () => {
+    if (!userId) {
+      console.log("Cannot fetch products: userId is undefined or null");
+      return;
+    }
+    
+    console.log("Fetching products for user ID:", userId);
+    console.log("Current tab:", currentActiveTab);
+    
+    setIsLoading(true);
+    try {
+      let status;
+      switch (currentActiveTab) {
+        case "active":
+          status = "available";
+          break;
+        case "reserved":
+          status = "reserved";
+          break;
+        case "sold":
+          status = "sold";
+          break;
+        default:
+          status = "available";
       }
-    };
+      console.log("Filtering by product status:", status);
+      
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          profiles!seller_id(*),
+          reserved_users:profiles(*)
+        `)
+        .eq('seller_id', userId)
+        .eq('product_status', status);
 
+      // If in reserved tab, join with the profiles table to get reservation info
+      if (status === 'reserved') {
+        // We need to handle this in the formatter by looking for reserved_user_id
+        console.log("Fetching reserved products");
+      }
+
+      // Apply search filter
+      if (debouncedSearchTerm) {
+        console.log("Applying search filter:", debouncedSearchTerm);
+        query = query.ilike('title', `%${debouncedSearchTerm}%`);
+      }
+
+      query = query.limit(limit);
+      console.log("Query limit:", limit);
+        
+      const { data, error } = await query;
+        
+      if (error) {
+        console.error("Supabase query error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load products. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log("Query results:", data);
+      console.log("Number of products found:", data?.length || 0);
+      
+      const formattedProducts = data.map(item => {
+        const product = convertToProductType(item, true);
+        
+        // Add reserved user information by fetching the data in a more reliable way
+        if (item.product_status === 'reserved' && item.reserved_user_id) {
+          // If we have the reserved_user_id, we need to find that user's info
+          // from all profiles that were returned with the query
+          const reservedUserProfile = data.find(p => 
+            p.profiles && p.profiles.id === item.reserved_user_id
+          )?.profiles;
+          
+          if (reservedUserProfile) {
+            product.reservedFor = reservedUserProfile.full_name || 'Unknown User';
+            product.reservedUserId = item.reserved_user_id;
+          } else {
+            product.reservedFor = 'Reserved';
+            product.reservedUserId = item.reserved_user_id;
+          }
+        }
+        
+        console.log("Converted product:", product.id, product.title);
+        return product;
+      });
+      
+      setProducts(formattedProducts);
+    } catch (error) {
+      console.error("Error in products fetch:", error);
+    } finally {
+      setIsLoading(false);
+      setHasAttemptedFetch(true);
+    }
+  };
+
+  useEffect(() => {
     if (initialProducts.length === 0 && userId && !hasAttemptedFetch) {
+      console.log("No initial products, fetching from database...");
       fetchProducts();
     } else if (initialProducts.length > 0 && !hasAttemptedFetch) {
+      console.log("Using initial products:", initialProducts.length);
       setHasAttemptedFetch(true);
       setIsLoading(false);
+    } else {
+      console.log("Products fetch conditions not met:", {
+        initialProductsLength: initialProducts.length,
+        userId: !!userId,
+        hasAttemptedFetch
+      });
     }
   }, [userId, currentActiveTab, limit, toast, initialProducts, hasAttemptedFetch, debouncedSearchTerm]);
 
@@ -107,13 +174,19 @@ export const SellerListings = ({
     navigate('/sell');
   };
 
-  const handleTabChange = (tab: "selling" | "sold") => {
+  const handleTabChange = (tab: "active" | "reserved" | "sold") => {
     if (onTabChange) {
       onTabChange(tab);
     } else {
       setInternalActiveTab(tab);
       setHasAttemptedFetch(false);
     }
+  };
+
+  const handleProductUpdated = () => {
+    console.log("Product updated, refreshing listings...");
+    setHasAttemptedFetch(false);
+    fetchProducts();
   };
 
   const displayProducts = initialProducts.length > 0 ? initialProducts.slice(0, limit) : products.slice(0, limit);
@@ -180,6 +253,7 @@ export const SellerListings = ({
                   key={product.id} 
                   product={product} 
                   showBuyButtons={!isOwnListings}
+                  onProductUpdated={handleProductUpdated}
                 />
               ))}
             </div>

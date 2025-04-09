@@ -32,6 +32,7 @@ import { useAuth } from "@/context/AuthContext";
 import { MessageButton } from "@/components/product/MessageButton";
 import { LocationMap } from "@/components/map/LocationMap";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/context/CurrencyContext";
 
 const placeholderImages = [
   "https://via.placeholder.com/400x400?text=Placeholder+Image",
@@ -110,6 +111,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const location = window.location;
 
   const { 
@@ -241,10 +243,8 @@ export default function ProductDetail() {
   };
 
   useEffect(() => {
-    if (product?.images && product.images.length > 0) {
-      setCurrentImage(product.images[0]);
-    } else if (product?.image) {
-      setCurrentImage(product.image);
+    if (product?.image_urls && product.image_urls.length > 0) {
+      setCurrentImage(product.image_urls[0]);
     }
   }, [product]);
 
@@ -320,10 +320,10 @@ export default function ProductDetail() {
               size="icon" 
               className="absolute -left-10 md:-left-16 top-1/2 -translate-y-1/2 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-md z-10"
               onClick={() => {
-                if (product.images && product.images.length > 1) {
-                  const currentIndex = product.images.findIndex(img => img === currentImage);
-                  const prevIndex = currentIndex <= 0 ? product.images.length - 1 : currentIndex - 1;
-                  setCurrentImage(product.images[prevIndex]);
+                if (product.image_urls && product.image_urls.length > 1) {
+                  const currentIndex = product.image_urls.findIndex(img => img === currentImage);
+                  const prevIndex = currentIndex <= 0 ? product.image_urls.length - 1 : currentIndex - 1;
+                  setCurrentImage(product.image_urls[prevIndex]);
                 }
               }}
             >
@@ -336,11 +336,11 @@ export default function ProductDetail() {
               onClick={() => setIsLightboxOpen(true)}
             >
             <img
-              src={currentImage || product.images?.[0] || product.image}
+              src={currentImage || product.image_urls?.[0] || '/placeholder-product.jpg'}
               alt={product.title}
               className="h-full w-full object-contain"
             />
-            {product.status === 'sold' && (
+            {product.product_status === 'sold' && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <span className="text-white text-2xl font-bold">SOLD</span>
               </div>
@@ -366,10 +366,10 @@ export default function ProductDetail() {
               size="icon" 
               className="absolute -right-10 md:-right-16 top-1/2 -translate-y-1/2 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-md z-10"
               onClick={() => {
-                if (product.images && product.images.length > 1) {
-                  const currentIndex = product.images.findIndex(img => img === currentImage);
-                  const nextIndex = currentIndex >= product.images.length - 1 ? 0 : currentIndex + 1;
-                  setCurrentImage(product.images[nextIndex]);
+                if (product.image_urls && product.image_urls.length > 1) {
+                  const currentIndex = product.image_urls.findIndex(img => img === currentImage);
+                  const nextIndex = currentIndex >= product.image_urls.length - 1 ? 0 : currentIndex + 1;
+                  setCurrentImage(product.image_urls[nextIndex]);
                 }
               }}
             >
@@ -379,7 +379,7 @@ export default function ProductDetail() {
           
           {/* Thumbnail Gallery */}
           <div className="grid grid-cols-5 gap-3 mb-8 max-w-lg mx-auto">
-            {product.images && product.images.map((image, index) => (
+            {product.image_urls && product.image_urls.map((image, index) => (
               <div
                 key={index}
                 className={`aspect-square rounded-lg border cursor-pointer overflow-hidden transition-colors ${
@@ -476,7 +476,7 @@ export default function ProductDetail() {
             
             <Button 
               className="w-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center py-6" 
-              disabled={isOwnProduct || product.status === 'sold' || product.status === 'reserved'}
+              disabled={isOwnProduct || product.product_status === 'sold' || product.product_status === 'reserved'}
               onClick={handleBuyNow}
             >
               <ShoppingBag className="mr-2 h-5 w-5" />
@@ -489,7 +489,7 @@ export default function ProductDetail() {
             <CardContent className="p-6">
               <div className="flex items-baseline mb-6">
                 <span className="text-3xl font-bold text-youbuy">
-                  AED {product.price.toFixed(2)} 
+                  AED {formatCurrency(product.price)}
                 </span>
               </div>
               
@@ -606,7 +606,7 @@ export default function ProductDetail() {
             
             <div className="relative h-full w-full flex items-center justify-center">
               <img
-                src={currentImage || product.images?.[0] || product.image}
+                src={currentImage || product.image_urls?.[0] || '/placeholder-product.jpg'}
                 alt={product.title}
                 className="max-h-full max-w-full object-contain"
               />
@@ -619,10 +619,10 @@ export default function ProductDetail() {
                 className="bg-black/50 hover:bg-black/70 text-white rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (product.images && product.images.length > 1) {
-                    const currentIndex = product.images.findIndex(img => img === currentImage);
-                    const prevIndex = currentIndex <= 0 ? product.images.length - 1 : currentIndex - 1;
-                    setCurrentImage(product.images[prevIndex]);
+                  if (product.image_urls && product.image_urls.length > 1) {
+                    const currentIndex = product.image_urls.findIndex(img => img === currentImage);
+                    const prevIndex = currentIndex <= 0 ? product.image_urls.length - 1 : currentIndex - 1;
+                    setCurrentImage(product.image_urls[prevIndex]);
                   }
                 }}
               >
@@ -637,10 +637,10 @@ export default function ProductDetail() {
                 className="bg-black/50 hover:bg-black/70 text-white rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (product.images && product.images.length > 1) {
-                    const currentIndex = product.images.findIndex(img => img === currentImage);
-                    const nextIndex = currentIndex >= product.images.length - 1 ? 0 : currentIndex + 1;
-                    setCurrentImage(product.images[nextIndex]);
+                  if (product.image_urls && product.image_urls.length > 1) {
+                    const currentIndex = product.image_urls.findIndex(img => img === currentImage);
+                    const nextIndex = currentIndex >= product.image_urls.length - 1 ? 0 : currentIndex + 1;
+                    setCurrentImage(product.image_urls[nextIndex]);
                   }
                 }}
               >

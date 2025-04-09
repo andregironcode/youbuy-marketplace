@@ -10,25 +10,31 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: ProductType;
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
-  const { isFavorite, toggleFavorite, isAdding, isRemoving } = useFavorites();
-  const { convertPrice, formatCurrency } = useCurrency();
-  const productIsFavorite = isFavorite(product.id);
-  const [likes, setLikes] = useState(product.likeCount || 0);
-  const navigate = useNavigate();
   const { user } = useAuth();
-
-  const isOwnProduct = user && product.seller?.id === user.id;
+  const { toast } = useToast();
+  const { favorites, addFavorite, removeFavorite, isAdding, isRemoving } = useFavorites();
+  const { formatCurrency } = useCurrency();
+  const navigate = useNavigate();
+  
+  const [likes, setLikes] = useState(product.likeCount || 0);
+  const productIsFavorite = favorites?.includes(product.id);
+  const isOwnProduct = user?.id === product.seller?.id;
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     // Use the existing toggleFavorite function
-    toggleFavorite(product.id);
+    if (productIsFavorite) {
+      removeFavorite(product.id);
+    } else {
+      addFavorite(product.id);
+    }
     
     // Update like count in the database and locally
     if (!productIsFavorite) {

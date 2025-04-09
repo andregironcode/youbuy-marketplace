@@ -38,6 +38,8 @@ export interface ProductType {
   variations?: ProductVariation[];
   product_status?: 'available' | 'reserved' | 'sold';
   reservedFor?: string;
+  reservedUserId?: string;
+  reservationDays?: string;
   reservedUntil?: string;
   specifications?: ProductSpecifications;
   weight?: string;
@@ -113,6 +115,9 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     ? { latitude: parseFloat(item.latitude), longitude: parseFloat(item.longitude) }
     : undefined;
   
+  // Handle reserved user data
+  const reservedProfile = item.reserved_profile || null;
+  
   return {
     id: item.id,
     title: item.title,
@@ -138,6 +143,9 @@ export function convertToProductType(item: any, includeViews = false): ProductTy
     likeCount: item.like_count || 0,
     createdAt: item.created_at,
     product_status: item.product_status || 'available',
+    reservedUserId: item.reserved_user_id || undefined,
+    reservedFor: reservedProfile?.full_name || undefined,
+    reservationDays: item.reservation_days || undefined,
     variations: item.variations || [],
     specifications: item.specifications || {},
     shippingOptions: {

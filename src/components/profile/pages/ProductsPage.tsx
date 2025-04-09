@@ -7,7 +7,7 @@ import { SellerListings } from "@/components/seller/SellerListings";
 
 export const ProductsPage = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState<"active" | "reserved" | "sold">("active");
   const [creating, setCreating] = useState(false);
 
   return (

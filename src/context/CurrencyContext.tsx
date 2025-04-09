@@ -73,7 +73,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       return `AED ${formatCurrency(convertedPrice)}`;
     }
     
-    return `${currency} ${convertedPrice.toFixed(2)}`;
+    // Format the price with thousand separators
+    return `${currency} ${formatCurrency(convertedPrice)}`;
   };
 
   return (

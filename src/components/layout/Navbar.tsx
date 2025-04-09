@@ -150,7 +150,7 @@ export const Navbar = () => {
             <img 
               src={isMobile ? "/mobile-logo.png" : "/youbuy-logo.png"} 
               alt="YouBuy" 
-              className="h-8" 
+              className="h-10" 
             />
           </Link>
         </div>
@@ -193,53 +193,18 @@ export const Navbar = () => {
                     <span className="text-xs font-medium">AED {formatCurrency(balance)}</span>
                   </Button>
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 pr-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage 
-                          src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
-                          className="object-cover"
-                        />
-                        <AvatarFallback>{getInitials()}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs font-medium">{user.user_metadata?.full_name || 'My Account'}</span>
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="flex items-center justify-start p-2">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile/purchases" className="cursor-pointer w-full">
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        <span>My Orders</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile/favorites" className="cursor-pointer w-full">
-                        <Heart className="mr-2 h-4 w-4" />
-                        <span>Favorites</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile/settings" className="cursor-pointer w-full">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Link to="/profile/settings">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage 
+                        src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
+                        className="object-cover"
+                      />
+                      <AvatarFallback>{getInitials()}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium">{user.user_metadata?.full_name || 'My Account'}</span>
+                  </Button>
+                </Link>
               </div>
             ) : (
               <Link to="/auth">

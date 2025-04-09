@@ -76,7 +76,7 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
   const renderStatusBadge = () => {
     if (product.product_status === 'reserved') {
       return (
-        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-200">
+        <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200">
           Reserved
         </Badge>
       );
@@ -272,16 +272,20 @@ export const ProductDetails = ({ product, onAddToCart, isOwnProduct }: ProductDe
         )}
       </div>
       
-      {product.product_status === 'reserved' && product.reservedUntil && (
+      {product.product_status === 'reserved' && (
         <Card className="bg-amber-50 border-amber-200">
           <CardContent className="p-4 flex items-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
             <div>
               <p className="text-sm font-medium">
-                This item is reserved until {new Date(product.reservedUntil).toLocaleDateString()}
+                This item is currently reserved
+                {product.reservedFor && ` for ${product.reservedFor}`}
+                {product.reservationDays && ` for ${product.reservationDays} days`}
               </p>
               <p className="text-xs text-muted-foreground">
-                It may become available after this date if the buyer doesn't complete the purchase.
+                {product.reservedUntil 
+                  ? `It may become available after ${new Date(product.reservedUntil).toLocaleDateString()} if the buyer doesn't complete the purchase.`
+                  : "It may become available if the reservation is cancelled."}
               </p>
             </div>
           </CardContent>
