@@ -8,8 +8,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-# Uncomment the next line if you want to include the dist directory in your repository
-# dist
 dist-ssr
 *.local
 

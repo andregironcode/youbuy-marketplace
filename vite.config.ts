@@ -31,23 +31,13 @@ export default defineConfig(({ mode }) => ({
           'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-label', '@radix-ui/react-select', '@radix-ui/react-slot', '@radix-ui/react-toast'],
           'utils-vendor': ['date-fns', 'zod', 'clsx', 'tailwind-merge', 'class-variance-authority', 'lucide-react']
         },
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name) {
-            const info = assetInfo.name.split('.');
-            const ext = info[info.length - 1];
-            if (ext === 'css') {
-              return 'assets/[name]-[hash].css';
-            }
-            return 'assets/[name]-[hash][extname]';
-          }
-          return 'assets/[name]-[hash][extname]';
-        },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        assetFileNames: 'assets/[name].[ext]',
+        chunkFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name].js'
       },
     },
   },
-  base: '/',
+  base: './',
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
   }
