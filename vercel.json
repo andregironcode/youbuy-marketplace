@@ -1,15 +1,41 @@
 {
   "version": 2,
+  "public": true,
   "builds": [
     {
       "src": "server.cjs",
       "use": "@vercel/node"
+    },
+    {
+      "src": "dist/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "application/javascript"
+      },
+      "dest": "/dist/assets/$1",
+      "continue": true
+    },
+    {
+      "src": "/(.*).js",
+      "headers": {
+        "content-type": "application/javascript"
+      },
+      "dest": "/dist/$1.js",
+      "continue": true
+    },
+    {
+      "src": "/(.*).css",
+      "headers": {
+        "content-type": "text/css"
+      },
+      "dest": "/dist/$1.css",
+      "continue": true
     },
     {
       "src": "/(.*)",
