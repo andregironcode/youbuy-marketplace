@@ -1,57 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/assets/(.*\\.js)$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "text/javascript"
-      },
-      "continue": true
-    },
-    {
-      "src": "/assets/(.*\\.css)$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "text/css"
-      },
-      "continue": true
-    },
-    {
-      "src": "/assets/(.*\\.(png|jpg|jpeg|gif|svg|ico))$",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "continue": true
-    },
-    {
-      "src": "youbuy.ae",
-      "dest": "https://www.youbuy.ae",
-      "status": 301
-    },
-    {
-      "src": "http://youbuy.ae",
-      "dest": "https://www.youbuy.ae",
-      "status": 301
-    },
-    {
-      "src": "/(.*)",
-      "headers": {
-        "X-Frame-Options": "DENY",
-        "X-Content-Type-Options": "nosniff",
-        "Referrer-Policy": "strict-origin-when-cross-origin",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
-      },
-      "dest": "/index.html"
-    }
-  ]
+  "framework": "vite",
+  "outputDirectory": "dist"
 } 
