@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn, Wallet, Search } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn, Wallet, Search, ChevronDown, LogOut, Settings, UserCircle, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -19,6 +19,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Function to format currency with thousand separators
 const formatCurrency = (amount: number): string => {
@@ -48,6 +55,11 @@ export const Navbar = () => {
       return user.user_metadata.full_name.charAt(0).toUpperCase();
     }
     return user?.email?.charAt(0).toUpperCase() || "U";
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    navigate('/');
   };
 
   useEffect(() => {
@@ -181,18 +193,53 @@ export const Navbar = () => {
                     <span className="text-xs font-medium">AED {formatCurrency(balance)}</span>
                   </Button>
                 </Link>
-                <Link to="/profile" className="flex items-center">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage 
-                        src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
-                        className="object-cover"
-                      />
-                      <AvatarFallback>{getInitials()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium">Profile</span>
-                  </Button>
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 pr-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage 
+                          src={user.user_metadata?.avatar_url ? `${user.user_metadata.avatar_url}?t=${Date.now()}` : undefined} 
+                          className="object-cover"
+                        />
+                        <AvatarFallback>{getInitials()}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium">{user.user_metadata?.full_name || 'My Account'}</span>
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start p-2">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/purchases" className="cursor-pointer w-full">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/favorites" className="cursor-pointer w-full">
+                        <Heart className="mr-2 h-4 w-4" />
+                        <span>Favorites</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/settings" className="cursor-pointer w-full">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <Link to="/auth">
