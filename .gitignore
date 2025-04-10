@@ -6,8 +6,7 @@ node_modules
 # Testing
 coverage
 
-Production
-dist
+# Production
 dist-ssr
 *.local
 build
@@ -20,6 +19,7 @@ build
 .env.test.local
 .env.production.local
 .env.*
+!.env.example
 
 # Debug logs
 npm-debug.log*
