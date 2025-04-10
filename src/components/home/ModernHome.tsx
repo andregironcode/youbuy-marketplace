@@ -1,15 +1,18 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { useProducts } from '@/hooks/useProducts';
+import { ProductCard } from '@/components/product/ProductCard';
+import { CategoryGrid } from './CategoryGrid';
+import { HomeBanner } from './HomeBanner';
 import { ProductType } from "@/types/product";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, ArrowRight, TrendingUp, Clock, Star, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProductCard } from "@/components/product/ProductCard";
 import { CategoryBrowser } from "@/components/category/CategoryBrowser";
-import { CategoryGrid } from "@/components/home/CategoryGrid";
-import { HomeBanner } from "@/components/home/HomeBanner";
 import { useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { ArrowRight, TrendingUp, Clock, Star, ChevronRight } from "lucide-react";
 
 interface ModernHomeProps {
   products: ProductType[];
