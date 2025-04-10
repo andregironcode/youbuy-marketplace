@@ -1,77 +1,214 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
-import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
+import { motion } from "framer-motion";
+import { ShoppingCart, TrendingUp, Sparkles, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { ProductType, convertToProductType } from "@/types/product";
+import { useCurrency } from "@/context/CurrencyContext";
+import { TypingText } from "@/components/ui/typing-text";
+import { RainbowButton } from "@/components/ui/rainbow-button";
 
 export const HomeBanner = () => {
+  const [recentProducts, setRecentProducts] = useState<ProductType[]>([]);
+  const { formatCurrency } = useCurrency();
+
+  useEffect(() => {
+    const fetchRecentProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            profiles:seller_id(
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('product_status', 'available')
+          .order('created_at', { ascending: false })
+          .limit(9);
+
+        if (error) throw error;
+
+        const products = data.map(item => convertToProductType(item));
+        setRecentProducts(products);
+      } catch (error) {
+        console.error('Error fetching recent products:', error);
+      }
+    };
+
+    fetchRecentProducts();
+  }, []);
+
   return (
-    <BackgroundGradientAnimation
-      gradientBackgroundStart="rgb(0, 179, 46)"
-      gradientBackgroundEnd="rgb(0, 89, 179)"
-      firstColor="18, 255, 113"
-      secondColor="74, 255, 221"
-      thirdColor="100, 220, 255"
-      fourthColor="50, 200, 150"
-      fifthColor="50, 180, 180"
-      pointerColor="140, 255, 180"
-      interactive={true}
-      className="py-12 md:py-20"
-    >
+    <div className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-background to-accent/30" />
+      
+      {/* Animated Patterns */}
+      <div className="absolute inset-0">
+        <motion.div
+          className="absolute h-56 w-56 rounded-full bg-primary/30 blur-3xl"
+          animate={{
+            x: ["0%", "100%", "0%"],
+            y: ["0%", "100%", "0%"],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        <motion.div
+          className="absolute right-0 h-64 w-64 rounded-full bg-accent/30 blur-3xl"
+          animate={{
+            x: ["0%", "-100%", "0%"],
+            y: ["100%", "0%", "100%"],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      </div>
+
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f10_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f10_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+      {/* Content */}
       <div className="container relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
-          <div className="md:pr-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-tight">
-              Buy & sell <span className="text-white/90">anything</span> near you
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed">
-              Join the marketplace where thousands of people buy and sell unique items every day
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-6 max-w-xl mx-auto sm:mx-0">
-              <div className="flex-1 w-full">
-                <SearchBar 
-                  className="w-full bg-white/95 shadow-xl backdrop-blur-sm rounded-xl" 
-                  placeholder="What are you looking for?" 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-8"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="inline-block"
+            >
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-sm text-primary font-medium border border-primary/20">
+                <Sparkles className="h-4 w-4" />
+                Discover Amazing Products
+              </span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight"
+            >
+              Find Your Next <br />
+              <span className="text-primary">Great Deal</span>
+            </motion.h1>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-lg text-muted-foreground max-w-lg"
+            >
+              <TypingText
+                text="Join thousands of buyers and sellers in our vibrant marketplace. Discover unique items and amazing deals."
+                className="text-lg"
+                delay={40}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <div className="relative flex-1">
+                <SearchBar
+                  className="w-full bg-background/95 shadow-xl backdrop-blur-sm rounded-xl border-primary/20"
+                  placeholder="What are you looking for?"
                   size="lg"
                 />
               </div>
               <Link to="/sell" className="w-full sm:w-auto">
-                <Button 
-                  size="lg" 
-                  className="w-full h-12 bg-white text-blue-600 hover:bg-white/90 shadow-xl font-semibold transition-all duration-300 hover:scale-105"
-                >
-                  Start Selling
-                </Button>
+                <RainbowButton>Start Selling</RainbowButton>
               </Link>
-            </div>
-            
-            <div className="mt-10 flex flex-wrap gap-4">
-              <span className="text-sm font-medium text-white/80">Popular:</span>
-              {["Furniture", "Electronics", "Fashion", "Cars", "Property"].map((category) => (
-                <Link 
-                  key={category} 
-                  to={`/search?q=${category}`}
-                  className="text-sm text-white/90 hover:text-white hover:underline transition-colors"
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1 }}
+              className="grid grid-cols-3 gap-6"
+            >
+              {[
+                { icon: <ShoppingCart className="h-5 w-5" />, text: "Secure Payments", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+                { icon: <TrendingUp className="h-5 w-5" />, text: "Best Deals", color: "bg-green-500/10 text-green-500 border-green-500/20" },
+                { icon: <Sparkles className="h-5 w-5" />, text: "Verified Sellers", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className={`flex items-center gap-2 p-3 rounded-xl backdrop-blur-sm border ${item.color}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.2 + index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
                 >
-                  {category}
+                  {item.icon}
+                  <span className="text-sm font-medium">{item.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Right Content - Recent Products Grid */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="hidden lg:block"
+          >
+            <div className="grid grid-cols-3 gap-4 relative">
+              {recentProducts.map((product, index) => (
+                <Link to={`/product/${product.id}`} key={product.id}>
+                  <motion.div
+                    className="aspect-square bg-background/40 backdrop-blur-sm rounded-xl border border-primary/10 overflow-hidden group relative"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: index * 0.1,
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {/* Product Image */}
+                    <div className="w-full h-full relative">
+                      <img
+                        src={product.image_urls?.[0] || '/placeholder.svg'}
+                        alt={product.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Overlay with Product Info */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                        <h3 className="text-white font-medium text-sm line-clamp-2">{product.title}</h3>
+                        <p className="text-primary font-bold">{formatCurrency(parseFloat(product.price))}</p>
+                        <p className="text-xs text-white/80">{product.timeAgo}</p>
+                      </div>
+                    </div>
+                  </motion.div>
                 </Link>
               ))}
             </div>
-          </div>
-          
-          <div className="relative hidden md:block md:pl-8">
-            <div className="relative h-[450px] w-[110%] -ml-[5%] rounded-3xl overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent rounded-3xl"></div>
-              <img 
-                src="/youbuy-homeimg.jpg" 
-                alt="Digital marketplace illustration showing devices and shopping" 
-                className="w-full h-full object-cover rounded-3xl transform hover:scale-[1.02] transition-transform duration-500"
-              />
-            </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </BackgroundGradientAnimation>
+    </div>
   );
 };

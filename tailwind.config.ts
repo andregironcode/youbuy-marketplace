@@ -116,6 +116,16 @@ const config: Config = {
             transform: "translateX(-50%) translateY(-10%)",
           },
         },
+        'gradient-xy': {
+          '0%, 100%': {
+            'background-size': '400% 400%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center'
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -125,6 +135,7 @@ const config: Config = {
         third: "moveInCircle 40s linear infinite",
         fourth: "moveHorizontal 40s ease infinite",
         fifth: "moveInCircle 20s ease infinite",
+        'gradient-xy': 'gradient-xy 15s linear infinite',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
