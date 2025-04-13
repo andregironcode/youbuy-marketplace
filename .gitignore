@@ -7,7 +7,7 @@ node_modules
 coverage
 
 # Production
-# dist
+#  dist
 # dist-ssr
 *.local
 build
@@ -40,7 +40,7 @@ lerna-debug.log*
 *.sw?
 
 # Vercel
-.vercel
+# .vercel
 
 # TypeScript
 *.tsbuildinfo

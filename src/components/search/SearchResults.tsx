@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { searchProducts, getCategorySuggestions } from "@/utils/searchUtils";
 import { ProductType } from "@/types/product";
 import { Loader2, Search as SearchIcon, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/context/CurrencyContext";
+import { createPortal } from "react-dom";
 
 interface SearchResultsProps {
   query: string;
@@ -16,6 +17,18 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
+  
+  // Get the position of the search bar for positioning the dropdown
+  const searchBarElement = document.querySelector('.search-bar-container');
+  const rect = searchBarElement?.getBoundingClientRect();
+  const style = rect ? {
+    position: 'fixed',
+    top: `${rect.bottom + window.scrollY}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    zIndex: 99999
+  } : {};
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -71,8 +84,11 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
     return null;
   }
 
-  return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-[70vh] overflow-y-auto z-50" style={{ maxWidth: "500px", width: "100%" }}>
+  const content = (
+    <div 
+      className="fixed bg-white rounded-md shadow-lg border border-gray-200 max-h-[70vh] overflow-y-auto" 
+      style={style}
+    >
       {loading ? (
         <div className="p-4 text-center">
           <Loader2 className="h-5 w-5 animate-spin mx-auto" />
@@ -121,14 +137,14 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
                   >
                     <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
                       <img 
-                        src={product.image} 
+                        src={product.image_urls?.[0]} 
                         alt={product.title} 
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{product.title}</p>
-                      <p className="text-sm font-semibold text-price">AED {product.price.toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-price">{formatCurrency(product.price)}</p>
                     </div>
                   </Link>
                 ))}
@@ -156,4 +172,6 @@ export const SearchResults = ({ query, onSelectResult }: SearchResultsProps) => 
       )}
     </div>
   );
+
+  return createPortal(content, document.body);
 };
