@@ -130,9 +130,9 @@ export const HomeBanner = () => {
               transition={{ duration: 0.8, delay: 0.8 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <div className="relative flex-1">
+              <div className="relative flex-1 z-[9999]">
                 <SearchBar
-                  className="w-full bg-background/95 shadow-xl backdrop-blur-sm rounded-xl border-primary/20"
+                  className="w-full bg-background/95 shadow-xl backdrop-blur-sm rounded-xl border-primary/20 relative z-20"
                   placeholder="What are you looking for?"
                   size="lg"
                 />
