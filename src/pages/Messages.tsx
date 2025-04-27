@@ -4,7 +4,7 @@ import { ChatList } from "@/components/messages/ChatList";
 import { ChatWindow } from "@/components/messages/ChatWindow";
 import { useMessages } from "@/hooks/useMessages";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, Settings, Loader2, ArrowLeft } from "lucide-react";
+import { MessageCircle, Settings, Loader2, ArrowLeft, Bell, Search as SearchIcon, Filter, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
@@ -16,11 +16,12 @@ import {
   DropdownMenu, 
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
-  
+
   const {
     chats,
     messages,
@@ -63,14 +64,19 @@ const Messages = () => {
 
   useEffect(() => {
     if (!initialLoadComplete || authLoading) return;
-    // On mobile, don't auto-navigate to first chat
-    if (!isMobile) {
-      const isExactMessagesRoute = location.pathname === '/messages';
-      if (isExactMessagesRoute && chats.length > 0) {
-        navigate(`/messages/${chats[0].id}`, { replace: true });
+
+    // Ensure chats are loaded before navigating
+    if (chats.length > 0 && !loadingChats) {
+      // On mobile, don't auto-navigate to first chat
+      if (!isMobile) {
+        const isExactMessagesRoute = location.pathname === '/messages';
+        if (isExactMessagesRoute) {
+          console.log('Auto-navigating to first chat:', chats[0].id);
+          navigate(`/messages/${chats[0].id}`, { replace: true });
+        }
       }
     }
-  }, [chatId, chats, initialLoadComplete, navigate, location.pathname, authLoading, isMobile]);
+  }, [chatId, chats, initialLoadComplete, navigate, location.pathname, authLoading, isMobile, loadingChats]);
 
   const filteredChats = chats.filter(chat => {
     if (!searchQuery) return true;
@@ -82,12 +88,20 @@ const Messages = () => {
     );
   });
 
+  // Count unread messages
+  const unreadCount = chats.reduce((count, chat) => {
+    if (chat.last_message && !chat.last_message.read && chat.last_message.sender_id !== user?.id) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
+
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-youbuy mb-2" />
-          <p className="text-muted-foreground">Loading your messages...</p>
+          <span className="daisy-loading daisy-loading-spinner daisy-loading-lg text-primary"></span>
+          <p className="mt-4 text-lg">Loading your messages...</p>
         </div>
       </div>
     );
@@ -103,68 +117,98 @@ const Messages = () => {
     <AccountLayout>
       {isMobile && chatId ? (
         // Mobile-specific header when viewing a chat
-        <div className="px-4 py-3 border-b flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/messages')}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold">Messages</h1>
+        <div className="daisy-navbar bg-base-100 shadow-sm">
+          <div className="flex-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/messages')}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-semibold">Messages</h1>
+          </div>
         </div>
       ) : (
         // Desktop header or mobile chat list header
         <PageHeader
           title="Messages"
-          description=""
+          description="Chat with buyers and sellers about products"
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Mark all as read</DropdownMenuItem>
-              <DropdownMenuItem>Archive chats</DropdownMenuItem>
-              <DropdownMenuItem>Notification settings</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/search')}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Chat</span>
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 daisy-badge daisy-badge-primary daisy-badge-xs">{unreadCount}</span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => fetchChats()}>
+                  <Bell className="h-4 w-4 mr-2" />
+                  Refresh Messages
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Mark all as read
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  Notification settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </PageHeader>
       )}
 
-      <div className={`bg-white rounded-xl shadow-sm border overflow-hidden flex ${isMobile ? 'h-[calc(100vh-9rem)]' : 'h-[calc(100vh-12rem)]'}`}>
+      <div className={`daisy-card daisy-card-bordered bg-base-100 shadow-sm overflow-hidden flex ${isMobile ? 'h-[calc(100vh-9rem)]' : 'h-[calc(100vh-12rem)]'}`}>
         {/* Left sidebar: Chat list - always visible on desktop, conditionally on mobile */}
         {(!isMobile || showChatList) && (
-          <div className={`${isMobile ? 'w-full' : 'w-80'} border-r flex flex-col`}>
+          <div className={`${isMobile ? 'w-full' : 'w-96'} border-r flex flex-col`}>
             <div className="flex flex-col h-full">
               <Tabs defaultValue="all" className="w-full">
                 <div className="px-4 pt-4">
-                  <TabsList className="w-full">
-                    <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                    <TabsTrigger value="unread" className="flex-1">Unread</TabsTrigger>
-                    <TabsTrigger value="archived" className="flex-1">Archived</TabsTrigger>
+                  <TabsList className="w-full daisy-tabs daisy-tabs-boxed">
+                    <TabsTrigger value="all" className="flex-1 daisy-tab">All</TabsTrigger>
+                    <TabsTrigger value="unread" className="flex-1 daisy-tab">
+                      Unread
+                      {unreadCount > 0 && (
+                        <Badge className="ml-1 bg-primary text-primary-content">{unreadCount}</Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="archived" className="flex-1 daisy-tab">Archived</TabsTrigger>
                   </TabsList>
                 </div>
-                
-                <Separator className="mt-4" />
-                
-                <TabsContent value="all" className="m-0 flex-1 flex flex-col">
-                  <div className="p-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Search messages..."
-                        className="w-full pl-9 pr-4 py-2"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
+
+                <div className="p-4">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="Search messages..."
+                      className="daisy-input daisy-input-bordered w-full pl-10"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <SearchIcon className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
-                  
+                </div>
+
+                <TabsContent value="all" className="m-0 flex-1 flex flex-col">
                   <div className="flex-1 overflow-auto">
                     <ChatList 
                       chats={filteredChats}
@@ -173,55 +217,67 @@ const Messages = () => {
                     />
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="unread" className="m-0 flex-1">
                   <div className="h-full overflow-auto">
-                    <ChatList 
-                      chats={filteredChats.filter(chat => !chat.last_message?.read)}
-                      loading={loadingChats}
-                      currentChatId={chatId}
-                    />
+                    {filteredChats.filter(chat => 
+                      chat.last_message && 
+                      !chat.last_message.read && 
+                      chat.last_message.sender_id !== user.id
+                    ).length > 0 ? (
+                      <ChatList 
+                        chats={filteredChats.filter(chat => 
+                          chat.last_message && 
+                          !chat.last_message.read && 
+                          chat.last_message.sender_id !== user.id
+                        )}
+                        loading={loadingChats}
+                        currentChatId={chatId}
+                      />
+                    ) : (
+                      <div className="daisy-hero h-full bg-base-200">
+                        <div className="daisy-hero-content text-center">
+                          <div className="max-w-md">
+                            <h2 className="text-xl font-bold">No unread messages</h2>
+                            <p className="py-4">You're all caught up! Check back later for new messages.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="archived" className="m-0 flex-1">
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <p className="text-muted-foreground mb-2">No archived conversations</p>
-                    <p className="text-sm">Archived conversations will appear here</p>
+                  <div className="daisy-hero h-full bg-base-200">
+                    <div className="daisy-hero-content text-center">
+                      <div className="max-w-md">
+                        <h2 className="text-xl font-bold">No archived conversations</h2>
+                        <p className="py-4">Archived conversations will appear here</p>
+                        <Button variant="outline">Learn how archiving works</Button>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
             </div>
           </div>
         )}
-        
+
         {/* Right side: Chat window - always visible on desktop, conditionally on mobile */}
         {showChatDetail && (
           <div className={`${isMobile ? 'w-full' : 'flex-1'}`}>
-            {!chatId ? (
-              <div className="flex flex-col justify-center items-center h-full p-8 text-center bg-gray-50/50">
-                <div className="w-16 h-16 rounded-full bg-youbuy/10 flex items-center justify-center mb-4">
-                  <MessageCircle className="h-8 w-8 text-youbuy" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">Your Messages</h3>
-                <p className="text-muted-foreground mb-4 max-w-md">
-                  Select a conversation from the list to view your messages. Messages about items you're buying or selling will appear here.
-                </p>
-              </div>
-            ) : (
-              <ChatWindow 
-                currentChat={currentChat}
-                messages={messages}
-                currentProduct={currentProduct}
-                newMessage={newMessage}
-                setNewMessage={setNewMessage}
-                handleSendMessage={handleSendMessage}
-                handleDeleteMessage={handleDeleteMessage}
-                handleImageUpload={handleImageUpload}
-                sendingMessage={sendingMessage}
-                loading={loadingMessages}
-              />
-            )}
+            <ChatWindow 
+              currentChat={currentChat}
+              messages={messages}
+              currentProduct={currentProduct}
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              handleSendMessage={handleSendMessage}
+              handleDeleteMessage={handleDeleteMessage}
+              handleImageUpload={handleImageUpload}
+              sendingMessage={sendingMessage}
+              loading={loadingMessages}
+            />
           </div>
         )}
       </div>

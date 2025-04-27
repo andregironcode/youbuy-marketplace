@@ -83,6 +83,10 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        fadeIn: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
         moveVertical: {
           "0%": {
             transform: "translateY(-50%)",
@@ -130,6 +134,7 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fadeIn": "fadeIn 0.5s ease-out forwards",
         first: "moveVertical 30s ease infinite",
         second: "moveInCircle 20s reverse infinite",
         third: "moveInCircle 40s linear infinite",
@@ -142,7 +147,36 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-scrollbar')],
+  plugins: [require('tailwindcss-scrollbar'), require('daisyui')],
+  daisyui: {
+    themes: [
+      {
+        youbuy: {
+          "primary": "#4CD137",
+          "primary-content": "#FFFFFF",
+          "secondary": "#FF3E7F",
+          "secondary-content": "#FFFFFF",
+          "accent": "#FF3E7F",
+          "accent-content": "#FFFFFF",
+          "neutral": "#8E9196",
+          "neutral-content": "#FFFFFF",
+          "base-100": "#FFFFFF",
+          "base-200": "#F9FAFB",
+          "base-300": "#F3F4F6",
+          "base-content": "#1F2937",
+          "info": "#3ABFF8",
+          "success": "#4CD137",
+          "warning": "#FBBD23",
+          "error": "#F87272",
+        },
+      },
+    ],
+    darkTheme: "dark",
+    base: true,
+    styled: true,
+    utils: true,
+    prefix: "daisy-",
+  },
 };
 
 export default config;
