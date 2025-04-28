@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Heart, Upload, MessageSquare, User } from "lucide-react";
+import { Home, Heart, Upload, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
-  
+
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
@@ -17,8 +17,8 @@ export function BottomNav() {
         <Link
           to="/"
           className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
-            isActive("/") && !isActive("/messages") && !isActive("/profile") && !isActive("/upload") && "text-youbuy"
+            "flex flex-col items-center justify-center w-1/4 h-full",
+            isActive("/") && !isActive("/profile") && !isActive("/upload") && "text-youbuy"
           )}
         >
           <Home className="h-5 w-5" />
@@ -27,7 +27,7 @@ export function BottomNav() {
         <Link
           to="/profile/favorites"
           className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
+            "flex flex-col items-center justify-center w-1/4 h-full",
             isActive("/profile/favorites") && "text-youbuy"
           )}
         >
@@ -37,7 +37,7 @@ export function BottomNav() {
         <Link
           to="/upload"
           className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
+            "flex flex-col items-center justify-center w-1/4 h-full",
             isActive("/upload") && "text-youbuy"
           )}
         >
@@ -46,19 +46,9 @@ export function BottomNav() {
           </div>
         </Link>
         <Link
-          to="/messages"
-          className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
-            isActive("/messages") && "text-youbuy"
-          )}
-        >
-          <MessageSquare className="h-5 w-5" />
-          <span className="text-xs mt-1">Inbox</span>
-        </Link>
-        <Link
           to={user ? "/profile" : "/auth"}
           className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
+            "flex flex-col items-center justify-center w-1/4 h-full",
             isActive("/profile") && "text-youbuy"
           )}
         >

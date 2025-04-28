@@ -3,21 +3,21 @@ import { supabase } from './client';
 export async function initializeStorage() {
   try {
     console.log('Starting storage initialization...');
-    
+
     // Check if we have a valid session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) {
       console.error('Error checking session:', sessionError);
       throw new Error(`Session error: ${sessionError.message}`);
     }
-    
+
     if (!session) {
-      console.error('No active session found');
-      throw new Error('You must be logged in to access storage');
+      console.log('No active session found, storage will be initialized later when user logs in');
+      return false;
     }
 
     console.log('User authenticated:', session.user.id);
-    
+
     // Test bucket access with a simple operation
     console.log('Testing bucket access...');
     const { data: testData, error: testError } = await supabase.storage
@@ -32,7 +32,7 @@ export async function initializeStorage() {
       });
       throw new Error(`Bucket access error: ${testError.message}`);
     }
-    
+
     console.log('Bucket access successful');
     return true;
   } catch (error) {
@@ -48,11 +48,5 @@ export async function initializeStorage() {
   }
 }
 
-// Call this function when your app initializes
-initializeStorage().then(success => {
-  if (success) {
-    console.log('Storage initialized successfully');
-  } else {
-    console.error('Failed to initialize storage');
-  }
-}); 
+// Export the function but don't call it immediately
+// It will be called at the appropriate time when the user is authenticated
