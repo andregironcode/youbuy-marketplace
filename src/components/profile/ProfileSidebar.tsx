@@ -17,6 +17,7 @@ import {
   LogOut,
   Wallet,
   Heart,
+  MessageCircle,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -88,6 +89,12 @@ export const ProfileSidebar = ({ compact = false }: ProfileSidebarProps) => {
       label: "Favorites",
       href: "/profile/favorites",
       active: isActive("/favorites"),
+    },
+    {
+      icon: MessageCircle,
+      label: "Messages",
+      href: "/messages",
+      active: isActive("/messages"),
     },
     {
       icon: BarChart2,

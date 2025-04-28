@@ -23,6 +23,7 @@ import Profile from "@/pages/Profile";
 import Favorites from "@/pages/Favorites";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
+import Messages from "@/pages/Messages";
 import CheckoutPage from "@/pages/Checkout";
 import CategoriesPage from "@/pages/CategoriesPage";
 import TestPage from "@/pages/TestPage";
@@ -68,6 +69,8 @@ function App() {
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/product/:id/edit" element={<ProductEditPage />} />
                     <Route path="/profile/*" element={<Profile />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/messages/:chatId" element={<Messages />} />
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/checkout" element={<CheckoutPage />} />

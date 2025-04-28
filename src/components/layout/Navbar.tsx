@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, LogIn, Wallet, Search, ChevronDown, LogOut, Settings, UserCircle, Heart } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, LogIn, Wallet, Search, ChevronDown, LogOut, Settings, UserCircle, Heart, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -148,6 +148,11 @@ export const Navbar = () => {
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </Badge>
                 )}
+              </Button>
+            </Link>
+            <Link to="/messages">
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                <MessageCircle className="h-5 w-5" />
               </Button>
             </Link>
             {user ? (

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye, ShoppingBag } from "lucide-react";
+import { Heart, Eye, ShoppingBag, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { MessageButton } from "./MessageButton";
+import { MessageButton } from "@/components/messages/MessageButton";
 
 interface ProductCardProps {
   product: ProductType;
