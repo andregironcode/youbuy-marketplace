@@ -1,324 +1,132 @@
-import { useRef, useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { MessageType } from '@/types/message';
-import { formatMessageDate } from '@/utils/dateFormat';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Check, 
-  CheckCheck, 
-  Copy, 
-  MoreHorizontal, 
-  Reply, 
-  Trash2, 
-  Image as ImageIcon,
-  Download,
-  Heart,
-  ThumbsUp
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Mock data for conversations
+const mockConversations = [
+  {
+    id: "1",
+    user: {
+      id: "user1",
+      name: "John Doe",
+      avatar: "/avatars/john.jpg",
+    },
+    lastMessage: {
+      text: "Hey, I'm interested in your product!",
+      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
+      isRead: false,
+    },
+  },
+  {
+    id: "2",
+    user: {
+      id: "user2",
+      name: "Jane Smith",
+      avatar: "/avatars/jane.jpg",
+    },
+    lastMessage: {
+      text: "Is this still available?",
+      timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
+      isRead: true,
+    },
+  },
+  {
+    id: "3",
+    user: {
+      id: "user3",
+      name: "Mike Johnson",
+      avatar: "/avatars/mike.jpg",
+    },
+    lastMessage: {
+      text: "Thanks for the quick response!",
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+      isRead: true,
+    },
+  },
+];
 
 interface MessageListProps {
-  messages: MessageType[];
-  loading?: boolean;
-  onDeleteMessage?: (messageId: string) => void;
-  onReplyMessage?: (message: MessageType) => void;
+  selectedChatId: string | null;
+  onSelectChat: (chatId: string) => void;
 }
 
-export const MessageList = ({ messages, loading, onDeleteMessage, onReplyMessage }: MessageListProps) => {
+export function MessageList({ selectedChatId, onSelectChat }: MessageListProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [reactions, setReactions] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [conversations, setConversations] = useState(mockConversations);
+  
+  // Filter conversations based on search term
+  const filteredConversations = conversations.filter(
+    (conversation) =>
+      conversation.user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        toast({
-          description: 'Message copied to clipboard',
-        });
-      },
-      (err) => {
-        console.error('Could not copy text: ', err);
-      }
-    );
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
-
-  const downloadImage = (imageUrl: string) => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = 'youbuy-image-' + Date.now();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      description: 'Image download started',
-    });
-  };
-
-  const addReaction = (messageId: string, reaction: string) => {
-    setReactions(prev => ({
-      ...prev,
-      [messageId]: reaction
-    }));
-
-    toast({
-      description: `You reacted with ${reaction}`,
-    });
-  };
-
-  // Group messages by date and sender
-  const groupedMessages = messages.reduce((acc, message) => {
-    const date = new Date(message.created_at).toLocaleDateString();
-    const senderId = message.sender_id;
-
-    if (!acc[date]) {
-      acc[date] = {};
-    }
-
-    if (!acc[date][senderId]) {
-      acc[date][senderId] = [];
-    }
-
-    acc[date][senderId].push(message);
-    return acc;
-  }, {} as Record<string, Record<string, MessageType[]>>);
-
-  if (loading) {
-    return (
-      <div className="space-y-4 p-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="daisy-chat daisy-chat-start">
-            <div className="daisy-chat-image daisy-avatar">
-              <Skeleton className="h-10 w-10 rounded-full" />
-            </div>
-            <div className="daisy-chat-header opacity-50">
-              <Skeleton className="h-4 w-[100px]" />
-            </div>
-            <div className="daisy-chat-bubble daisy-chat-bubble-accent opacity-50">
-              <Skeleton className="h-16 w-[200px]" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (messages.length === 0) {
-    return (
-      <div className="daisy-hero h-full bg-base-200">
-        <div className="daisy-hero-content text-center">
-          <div className="max-w-md">
-            <h2 className="text-xl font-bold">No messages yet</h2>
-            <p className="py-4">Start the conversation by sending a message about this product.</p>
-            <div className="daisy-chat daisy-chat-start opacity-50 mt-6">
-              <div className="daisy-chat-bubble">Hi, is this item still available?</div>
-            </div>
-            <div className="daisy-chat daisy-chat-end opacity-50 mt-2">
-              <div className="daisy-chat-bubble daisy-chat-bubble-primary">Yes, it's available! Are you interested?</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6 p-4">
-      {Object.entries(groupedMessages).map(([date, senderMessages]) => (
-        <div key={date} className="space-y-6">
-          <div className="flex items-center justify-center my-4">
-            <div className="daisy-badge daisy-badge-neutral py-2 px-4">
-              {formatMessageDate(date)}
-            </div>
-          </div>
-
-          {Object.entries(senderMessages).map(([senderId, messages]) => {
-            const isUserMessage = senderId === user?.id;
-            const lastMessage = messages[messages.length - 1];
-
-            return (
-              <div key={senderId} className="space-y-2">
-                {messages.map((message, index) => {
-                  const isImage = message.content.startsWith('image:');
-                  const imageUrl = isImage ? message.content.replace('image:', '') : '';
-                  const showSenderInfo = index === 0;
-
-                  return (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "daisy-chat",
-                        isUserMessage ? "daisy-chat-end" : "daisy-chat-start"
-                      )}
-                    >
-                      {showSenderInfo && !isUserMessage && (
-                        <div className="daisy-chat-image daisy-avatar">
-                          <div className="w-12 rounded-full">
-                            <Avatar>
-                              <AvatarImage src={message.sender_avatar} />
-                              <AvatarFallback className="bg-primary text-primary-content">
-                                {message.sender_name?.[0] || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                        </div>
-                      )}
-
-                      {showSenderInfo && (
-                        <div className="daisy-chat-header mb-1">
-                          <span className="font-medium">{isUserMessage ? 'You' : message.sender_name}</span>
-                          <time className="text-xs opacity-70 ml-2">
-                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                          </time>
-                        </div>
-                      )}
-
-                      <div 
-                        className={cn(
-                          "group relative daisy-chat-bubble",
-                          isUserMessage ? "daisy-chat-bubble-primary" : "daisy-chat-bubble-accent",
-                          isImage ? "p-2 overflow-hidden" : "p-3"
-                        )}
-                      >
-                        {isImage ? (
-                          <div className="relative">
-                            <img
-                              src={imageUrl}
-                              alt="Message image"
-                              className="max-w-full h-auto rounded-lg"
-                              onClick={() => window.open(imageUrl, '_blank')}
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 hover:opacity-100">
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                className="h-10 w-10 rounded-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  downloadImage(imageUrl);
-                                }}
-                              >
-                                <Download className="h-5 w-5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="whitespace-pre-wrap text-base">{message.content}</div>
-                        )}
-
-                        <div className="daisy-dropdown daisy-dropdown-end absolute top-2 right-2 opacity-0 group-hover:opacity-100">
-                          <label tabIndex={0} className="daisy-btn daisy-btn-circle daisy-btn-ghost daisy-btn-sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </label>
-                          <ul tabIndex={0} className="daisy-dropdown-content z-[1] daisy-menu p-3 shadow bg-base-100 rounded-box w-56">
-                            <li>
-                              <a onClick={() => copyToClipboard(isImage ? imageUrl : message.content)} className="py-2">
-                                <Copy className="h-4 w-4 mr-2" />
-                                Copy {isImage ? 'image link' : 'text'}
-                              </a>
-                            </li>
-                            <li>
-                              <a onClick={() => onReplyMessage?.(message)} className="py-2">
-                                <Reply className="h-4 w-4 mr-2" />
-                                Reply
-                              </a>
-                            </li>
-                            {isUserMessage && (
-                              <li>
-                                <a onClick={() => onDeleteMessage?.(message.id)} className="text-error py-2">
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </a>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-
-                      {reactions[message.id] && (
-                        <div className="daisy-chat-footer opacity-70 mt-1">
-                          <div className="daisy-badge daisy-badge-sm px-2 py-1">{reactions[message.id]}</div>
-                        </div>
-                      )}
-
-                      {!isUserMessage && (
-                        <div className="daisy-chat-footer opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 mt-1">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button 
-                                  className="daisy-btn daisy-btn-circle daisy-btn-ghost daisy-btn-sm"
-                                  onClick={() => addReaction(message.id, '👍')}
-                                >
-                                  <ThumbsUp className="h-4 w-4" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Like</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button 
-                                  className="daisy-btn daisy-btn-circle daisy-btn-ghost daisy-btn-sm"
-                                  onClick={() => addReaction(message.id, '❤️')}
-                                >
-                                  <Heart className="h-4 w-4" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Love</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      )}
-
-                      {isUserMessage && index === messages.length - 1 && (
-                        <div className="daisy-chat-footer opacity-70 flex justify-end mt-1">
-                          {message.read ? (
-                            <div className="flex items-center">
-                              <CheckCheck className="h-4 w-4 text-primary" />
-                              <span className="text-xs ml-1">Read</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center">
-                              <Check className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs ml-1">Sent</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+    <div className="flex flex-col h-full">
+      <div className="p-3 border-b">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      ))}
-      <div ref={messagesEndRef} className="h-4" />
+      </div>
+      
+      <div className="flex-1 overflow-y-auto">
+        {filteredConversations.length > 0 ? (
+          filteredConversations.map((conversation) => (
+            <div
+              key={conversation.id}
+              className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                selectedChatId === conversation.id ? "bg-gray-100" : ""
+              }`}
+              onClick={() => onSelectChat(conversation.id)}
+            >
+              <div className="flex items-start gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={conversation.user.avatar} alt={conversation.user.name} />
+                  <AvatarFallback>{getInitials(conversation.user.name)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium truncate">{conversation.user.name}</h3>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDistanceToNow(conversation.lastMessage.timestamp, { addSuffix: true })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <p className={`text-sm truncate ${!conversation.lastMessage.isRead ? "font-semibold" : "text-muted-foreground"}`}>
+                      {conversation.lastMessage.text}
+                    </p>
+                    {!conversation.lastMessage.isRead && (
+                      <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-full p-4 text-center">
+            <p className="text-muted-foreground">No conversations found</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
