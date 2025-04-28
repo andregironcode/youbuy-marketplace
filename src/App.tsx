@@ -20,7 +20,6 @@ import AdminPage from "@/pages/AdminPage";
 import Sell from "@/pages/Sell";
 import ProductEditPage from "@/pages/ProductEditPage";
 import Profile from "@/pages/Profile";
-import Messages from "@/pages/Messages";
 import Favorites from "@/pages/Favorites";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
@@ -46,7 +45,7 @@ function App() {
                   {/* Admin routes */}
                   <Route path="/admin" element={<AdminAuth />} />
                   <Route path="/admin/*" element={<AdminPage />} />
-                  
+
                   {/* Regular routes with navbar */}
                   <Route
                     element={
@@ -69,8 +68,6 @@ function App() {
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/product/:id/edit" element={<ProductEditPage />} />
                     <Route path="/profile/*" element={<Profile />} />
-                    <Route path="/messages" element={<Messages />} />
-                    <Route path="/messages/:chatId" element={<Messages />} />
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
