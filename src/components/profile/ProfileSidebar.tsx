@@ -91,12 +91,6 @@ export const ProfileSidebar = ({ compact = false }: ProfileSidebarProps) => {
       active: isActive("/favorites"),
     },
     {
-      icon: MessageCircle,
-      label: "Messages",
-      href: "/messages",
-      active: isActive("/messages"),
-    },
-    {
       icon: BarChart2,
       label: "Statistics",
       href: "/profile/statistics",
