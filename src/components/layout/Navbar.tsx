@@ -150,11 +150,6 @@ export const Navbar = () => {
                 )}
               </Button>
             </Link>
-            <Link to="/messages">
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-            </Link>
             {user ? (
               <div className="flex items-center gap-2">
                 <Link to="/profile/wallet">
@@ -184,6 +179,12 @@ export const Navbar = () => {
                 </Button>
               </Link>
             )}
+            <Link to="/messages">
+              <Button variant="outline" className="h-9 text-sm mr-2">
+                <MessageCircle className="mr-1 h-4 w-4" />
+                Messages
+              </Button>
+            </Link>
             <Link to="/sell">
               <Button className="bg-cta hover:bg-cta-hover text-white h-9 text-sm">
                 <PlusCircle className="mr-1 h-4 w-4" />
