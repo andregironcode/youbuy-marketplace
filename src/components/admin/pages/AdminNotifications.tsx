@@ -77,7 +77,7 @@ export const AdminNotifications = () => {
         // For demo purposes, we'll use all users
         targetUserIds = allUsers.map(user => user.id);
         console.log(`Filtering ${userType} (simulated) - using all users for demo`);
-        
+
         toast({
           title: "Simplified Filter",
           description: "Filtering by seller/buyer status is simulated in this demo.",
@@ -100,7 +100,7 @@ export const AdminNotifications = () => {
       // Use a valid type that matches the database constraint
       // Based on the check constraint: CHECK ((type = ANY (ARRAY['message'::text, 'alert'::text, 'system'::text])))
       const validType = 'system'; // Use 'system' for admin notifications
-      
+
       // Create notifications array
       const notifications = targetUserIds.map(userId => ({
         user_id: userId,
@@ -108,26 +108,26 @@ export const AdminNotifications = () => {
         title,
         description: message
       }));
-      
+
       // Try with a direct insert
       let success = false;
-      
+
       try {
         // Try batch insert first
         const { error } = await supabase
           .from('notifications')
           .insert(notifications);
-        
+
         if (!error) {
           success = true;
           console.log("Batch notification insert successful");
         } else {
           console.error("Batch insert failed:", error);
-          
+
           // If batch failed, try one by one
           console.log("Attempting individual inserts");
           let individualSuccessCount = 0;
-          
+
           for (const userId of targetUserIds) {
             try {
               const { error: singleError } = await supabase
@@ -138,7 +138,7 @@ export const AdminNotifications = () => {
                   title,
                   description: message
                 });
-              
+
               if (!singleError) {
                 individualSuccessCount++;
               } else {
@@ -148,7 +148,7 @@ export const AdminNotifications = () => {
               console.error(`Failed to insert for user ${userId}:`, err);
             }
           }
-          
+
           console.log(`Individual inserts: ${individualSuccessCount} successful out of ${targetUserIds.length}`);
           success = individualSuccessCount > 0;
         }
@@ -215,7 +215,7 @@ export const AdminNotifications = () => {
                 <Label htmlFor="recipients">Recipients</Label>
                 <Select 
                   value={userType} 
-                  onValueChange={(value) => setUserType(value as any)}
+                  onValueChange={(value) => setUserType(value as "all" | "sellers" | "buyers" | "specific")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select recipients" />

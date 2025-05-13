@@ -122,9 +122,7 @@ export default function ProductDetail() {
     queryKey: ['product', id],
     queryFn: async () => {
       if (!id) throw new Error('Product ID is undefined');
-      console.log("Fetching product with ID:", id);
       const result = await getProductById(id);
-      console.log("Query result:", result);
       if (!result) throw new Error('Product not found');
       return result as ProductType;
     },
@@ -186,7 +184,7 @@ export default function ProductDetail() {
       navigate("/auth?redirect=/product/" + product.id);
       return;
     }
-    
+
     if (product.id) {
       navigate(`/checkout/${product.id}`);
     }
@@ -300,14 +298,14 @@ export default function ProductDetail() {
             {product.title}
           </span>
           </div>
-          
+
           <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 px-3 py-1 text-xs font-medium">
             <Tag className="h-3 w-3 mr-1.5" />
             FEATURED
           </Badge>
         </div>
       </div>
-      
+
       {/* Product Details */}
       <div className="flex flex-col md:flex-row gap-8">
         {/* Left Column - Product Images */}
@@ -329,7 +327,7 @@ export default function ProductDetail() {
             >
               <ArrowLeft className="h-5 w-5 text-white" />
             </Button>
-            
+
             {/* Main Product Image */}
             <div 
               className="relative aspect-square overflow-hidden rounded-xl border bg-white mb-4 cursor-pointer"
@@ -345,7 +343,7 @@ export default function ProductDetail() {
                 <span className="text-white text-2xl font-bold">SOLD</span>
               </div>
             )}
-              
+
               {/* Enlarge Button */}
               <Button 
                 variant="secondary"
@@ -359,7 +357,7 @@ export default function ProductDetail() {
                 <Maximize className="h-4 w-4 text-white" />
               </Button>
             </div>
-            
+
             {/* Right Arrow - Outside */}
             <Button 
               variant="ghost" 
@@ -376,7 +374,7 @@ export default function ProductDetail() {
               <ArrowLeft className="h-5 w-5 text-white transform rotate-180" />
             </Button>
           </div>
-          
+
           {/* Thumbnail Gallery */}
           <div className="grid grid-cols-5 gap-3 mb-8 max-w-lg mx-auto">
             {product.image_urls && product.image_urls.map((image, index) => (
@@ -395,12 +393,12 @@ export default function ProductDetail() {
               </div>
             ))}
           </div>
-          
+
           {/* Product Description */}
           <div className="mb-8">
             <h2 className="text-xl font-bold mb-4">{product.title}</h2>
             <p className="text-muted-foreground whitespace-pre-line mb-4">{product.description}</p>
-            
+
             {/* Specifications */}
             {product.specifications && Object.keys(product.specifications).length > 0 && (
               <div className="mt-6">
@@ -422,7 +420,7 @@ export default function ProductDetail() {
             )}
           </div>
         </div>
-        
+
         {/* Right Column - Seller Info, Price, Actions */}
         <div className="md:max-w-[35%] space-y-6">
           {/* Offer Header */}
@@ -462,7 +460,7 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="grid gap-3">
             <Button 
@@ -473,7 +471,7 @@ export default function ProductDetail() {
               <MessageCircle className="mr-2 h-5 w-5" />
               Message
             </Button>
-            
+
             <Button 
               className="w-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center py-6" 
               disabled={isOwnProduct || product.product_status === 'sold' || product.product_status === 'reserved'}
@@ -483,7 +481,7 @@ export default function ProductDetail() {
               Buy Now
             </Button>
           </div>
-          
+
           {/* Price and Shipping Info */}
           <Card className="border rounded-lg overflow-hidden">
             <CardContent className="p-6">
@@ -492,24 +490,24 @@ export default function ProductDetail() {
                   AED {formatCurrency(product.price)}
                 </span>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Info className="h-5 w-5 text-muted-foreground" />
                   <span className="font-medium">With secure shipping and payment</span>
                 </div>
-                
+
                 <div className="text-sm space-y-3">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>Receive it in 3-7 days</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>Delivered directly to your home</span>
               </div>
-              
+
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                     <span>Home delivery available</span>
@@ -518,14 +516,14 @@ export default function ProductDetail() {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Location */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <span>{product.location || "Valencia (Valencia)"}</span>
             </div>
-            
+
             {/* Map */}
             <div className="h-40 w-full overflow-hidden rounded-lg border">
               {product.coordinates && product.coordinates.latitude && product.coordinates.longitude ? (
@@ -544,7 +542,7 @@ export default function ProductDetail() {
                     )}
                   </div>
                 </div>
-                
+
           {/* Sharing Options */}
           <div className="space-y-2">
             <div className="text-sm font-medium">Share this listing</div>
@@ -555,7 +553,7 @@ export default function ProductDetail() {
               >
                 <Share className="h-5 w-5" />
               </button>
-              
+
               <button 
                   onClick={() => {
                       toast({
@@ -567,7 +565,7 @@ export default function ProductDetail() {
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
               </button>
-              
+
               <button
                 onClick={handleToggleFavorite}
                 className={`${
@@ -580,7 +578,7 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
-      
+
       {/* Related Products Section */}
       <div className="mt-16">
         <h2 className="text-xl font-bold mb-6">Related Products</h2>
@@ -590,7 +588,7 @@ export default function ProductDetail() {
           ))}
         </div>
       </div>
-      
+
       {/* Lightbox Modal */}
       {isLightboxOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={() => setIsLightboxOpen(false)}>
@@ -603,7 +601,7 @@ export default function ProductDetail() {
             >
               <X className="h-6 w-6" />
             </Button>
-            
+
             <div className="relative h-full w-full flex items-center justify-center">
               <img
                 src={currentImage || product.image_urls?.[0] || '/placeholder-product.jpg'}
@@ -611,7 +609,7 @@ export default function ProductDetail() {
                 className="max-h-full max-w-full object-contain"
               />
             </div>
-            
+
             <div className="absolute left-2 top-1/2 -translate-y-1/2">
               <Button 
                 variant="ghost" 
@@ -629,7 +627,7 @@ export default function ProductDetail() {
                 <ArrowLeft className="h-6 w-6" />
               </Button>
             </div>
-            
+
             <div className="absolute right-2 top-1/2 -translate-y-1/2">
               <Button 
                 variant="ghost" 

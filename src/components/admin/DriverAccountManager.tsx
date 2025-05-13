@@ -53,19 +53,19 @@ export const DriverAccountManager = () => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      
+
       if (!sessionData.session) {
         throw new Error("You must be logged in to create a driver account");
       }
-      
+
       const token = sessionData.session.access_token;
-      
+
       // Get the Supabase URL from the client config
       const supabaseUrl = process.env.SUPABASE_URL || "https://epkpqlkvhuqnfepfpscd.supabase.co";
-      
+
       const response = await fetch(`${supabaseUrl}/functions/v1/create-driver-account`, {
         method: 'POST',
         headers: {
@@ -79,28 +79,29 @@ export const DriverAccountManager = () => {
           phoneNumber: values.phoneNumber,
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Failed to create driver account');
       }
-      
+
       setSuccess(`Driver account created for ${values.fullName}`);
       form.reset();
-      
+
       toast({
         title: "Driver account created",
         description: `Successfully created driver account for ${values.fullName}`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error creating driver account:", err);
-      setError(err.message || 'An unexpected error occurred');
-      
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+
       toast({
         variant: "destructive",
         title: "Failed to create driver account",
-        description: err.message || 'An unexpected error occurred',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -126,14 +127,14 @@ export const DriverAccountManager = () => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         {success && (
           <Alert className="mb-4 border-green-200 bg-green-50">
             <AlertTitle className="text-green-800">Success</AlertTitle>
             <AlertDescription className="text-green-700">{success}</AlertDescription>
           </Alert>
         )}
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -149,7 +150,7 @@ export const DriverAccountManager = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -163,7 +164,7 @@ export const DriverAccountManager = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="password"
@@ -177,7 +178,7 @@ export const DriverAccountManager = () => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phoneNumber"
@@ -191,7 +192,7 @@ export const DriverAccountManager = () => {
                 </FormItem>
               )}
             />
-            
+
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? (
                 <>

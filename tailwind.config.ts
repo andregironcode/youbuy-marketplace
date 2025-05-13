@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import scrollbar from 'tailwindcss-scrollbar';
+import daisyui from 'daisyui';
 
 const config: Config = {
   darkMode: ["class"],
@@ -147,7 +149,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-scrollbar'), require('daisyui')],
+  plugins: [scrollbar, daisyui],
   daisyui: {
     themes: [
       {

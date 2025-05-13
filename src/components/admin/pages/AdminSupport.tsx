@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
@@ -80,7 +80,7 @@ export const AdminSupport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: ticketsData, error: ticketsError } = await supabase
@@ -132,9 +132,9 @@ export const AdminSupport = () => {
           };
         })
       );
-      
+
       console.log("Tickets with profiles:", ticketsWithProfiles);
-      
+
       setTickets(ticketsWithProfiles);
       setFilteredTickets(ticketsWithProfiles);
     } catch (error) {
@@ -147,7 +147,7 @@ export const AdminSupport = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const fetchTicketReplies = async (ticketId: string) => {
     try {
@@ -191,7 +191,7 @@ export const AdminSupport = () => {
       );
 
       console.log("Replies with profiles:", repliesWithProfiles);
-      
+
       setReplies(repliesWithProfiles);
     } catch (error) {
       console.error("Error in fetchTicketReplies:", error);
@@ -233,13 +233,13 @@ export const AdminSupport = () => {
       }
 
       setSelectedTicket({ ...selectedTicket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" });
-      
+
       const updatedTickets = tickets.map((ticket) =>
         ticket.id === selectedTicket.id
           ? { ...ticket, status: newStatus as "open" | "in_progress" | "resolved" | "closed" }
           : ticket
       );
-      
+
       setTickets(updatedTickets);
       setFilteredTickets(
         updatedTickets.filter((ticket) => 
@@ -286,13 +286,13 @@ export const AdminSupport = () => {
       }
 
       setSelectedTicket({ ...selectedTicket, priority: newPriority as "low" | "medium" | "high" | "urgent" });
-      
+
       const updatedTickets = tickets.map((ticket) =>
         ticket.id === selectedTicket.id
           ? { ...ticket, priority: newPriority as "low" | "medium" | "high" | "urgent" }
           : ticket
       );
-      
+
       setTickets(updatedTickets);
       setFilteredTickets(
         updatedTickets.filter((ticket) => 
@@ -353,7 +353,7 @@ export const AdminSupport = () => {
         ...replyData,
         profile: profileData || { full_name: "Admin", avatar_url: "" }
       } as TicketReply;
-      
+
       setReplies([...replies, newReplyWithProfile]);
       setNewReply("");
 
@@ -479,7 +479,7 @@ export const AdminSupport = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Support Tickets</h1>
-      
+
       <Tabs defaultValue="tickets" className="space-y-4">
         <TabsList>
           <TabsTrigger value="tickets">All Tickets</TabsTrigger>
@@ -487,14 +487,14 @@ export const AdminSupport = () => {
           <TabsTrigger value="in_progress">In Progress</TabsTrigger>
           <TabsTrigger value="resolved">Resolved</TabsTrigger>
         </TabsList>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle>Ticket List</CardTitle>
                 <CardDescription>Manage support requests</CardDescription>
-                
+
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center border rounded-md px-3 py-2">
                     <Search className="h-4 w-4 mr-2 text-gray-500" />
@@ -505,7 +505,7 @@ export const AdminSupport = () => {
                       onChange={(e) => handleSearch(e.target.value)}
                     />
                   </div>
-                  
+
                   <div className="flex space-x-2">
                     <Select value={statusFilter} onValueChange={handleStatusFilter}>
                       <SelectTrigger className="flex-1">
@@ -519,7 +519,7 @@ export const AdminSupport = () => {
                         <SelectItem value="closed">Closed</SelectItem>
                       </SelectContent>
                     </Select>
-                    
+
                     <Select value={priorityFilter} onValueChange={handlePriorityFilter}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Priority" />
@@ -535,7 +535,7 @@ export const AdminSupport = () => {
                   </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent>
                 {isLoading ? (
                   <div className="flex justify-center py-8">
@@ -567,14 +567,14 @@ export const AdminSupport = () => {
                             {getStatusBadge(ticket.status)}
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center text-xs text-gray-500 mb-2">
                           <User className="h-3 w-3 mr-1" />
                           <span>{ticket.profile.full_name}</span>
                           <span className="mx-1">•</span>
                           <span>{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
                         </div>
-                        
+
                         <div className="flex justify-between items-center">
                           {getPriorityBadge(ticket.priority)}
                           <div className="flex items-center text-xs text-gray-500">
@@ -589,7 +589,7 @@ export const AdminSupport = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="lg:col-span-2">
             {selectedTicket ? (
               <Card>
@@ -614,7 +614,7 @@ export const AdminSupport = () => {
                           <SelectItem value="closed">Closed</SelectItem>
                         </SelectContent>
                       </Select>
-                      
+
                       <Select value={selectedTicket.priority} onValueChange={handlePriorityChange}>
                         <SelectTrigger className="w-[140px]">
                           <SelectValue placeholder="Priority" />
@@ -629,12 +629,12 @@ export const AdminSupport = () => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="p-4 bg-gray-50 rounded-md mb-6">
                     <p className="whitespace-pre-wrap">{selectedTicket.description}</p>
                   </div>
-                  
+
                   <div className="space-y-4 max-h-[300px] overflow-y-auto mb-4">
                     {replies.map((reply) => (
                       <div
@@ -667,7 +667,7 @@ export const AdminSupport = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="mt-4">
                     <Textarea
                       placeholder="Type your reply here..."

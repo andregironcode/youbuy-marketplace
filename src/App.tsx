@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { NotificationProvider } from "@/components/NotificationProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import ProductDetail from "@/pages/ProductDetail";
 import CategoryPage from "@/pages/CategoryPage";
@@ -53,7 +54,9 @@ function App() {
                       <>
                         <Navbar />
                         <div className="flex-1 w-full pb-16 md:pb-0">
-                          <Outlet />
+                          <ErrorBoundary>
+                            <Outlet />
+                          </ErrorBoundary>
                         </div>
                         <BottomNav />
                       </>
