@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -125,11 +125,11 @@ export const AdminOrders = () => {
   const [timeFilter, setTimeFilter] = useState<string | null>(null);
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     fetchOrders();
-  }, []);
-  
+  }, [fetchOrders]);
+
   // Helper functions for UI
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -154,7 +154,7 @@ export const AdminOrders = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
-  
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -177,14 +177,14 @@ export const AdminOrders = () => {
         return <Package className="h-4 w-4" />;
     }
   };
-  
-  const fetchOrders = async () => {
+
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log("Fetching orders data...");
-      
+
       // First fetch the orders
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -212,46 +212,46 @@ export const AdminOrders = () => {
           dispute_status
         `)
         .order('created_at', { ascending: false });
-      
+
       if (ordersError) {
         throw ordersError;
       }
 
       console.log("Fetched orders data:", ordersData);
-      
+
       if (!ordersData || ordersData.length === 0) {
         setOrders([]);
         setIsLoading(false);
         return;
       }
-      
+
       // Process the raw orders with additional data
       const processedOrders: ProcessedOrder[] = await Promise.all(
-        ordersData.map(async (orderData: any) => {  // Type as any temporarily to handle the database response
+        ordersData.map(async (orderData: OrderRaw) => {  // Use OrderRaw interface for proper typing
           // Explicitly cast to ensure TypeScript knows this matches our OrderRaw interface
           const order = orderData as OrderRaw;
-          
+
           // Fetch buyer profile
           const { data: buyerData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', order.buyer_id)
             .single();
-          
+
           // Fetch seller profile
           const { data: sellerData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', order.seller_id)
             .single();
-          
+
           // Fetch product
           const { data: productData } = await supabase
             .from('products')
             .select('*')
             .eq('id', order.product_id)
             .single();
-          
+
           return {
             ...order,
             buyer_name: buyerData?.full_name || buyerData?.username || "Unknown Buyer",
@@ -261,10 +261,10 @@ export const AdminOrders = () => {
           };
         })
       );
-      
+
       console.log("Processed orders:", processedOrders);
       setOrders(processedOrders);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in fetchOrders:", error);
       setError("Failed to load orders. Please try again.");
       toast({
@@ -275,13 +275,13 @@ export const AdminOrders = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-  
+  }, [toast]);
+
   const viewOrderDetails = async (orderId: string) => {
     try {
       setIsLoading(true);
       console.log("Fetching order details for order ID:", orderId);
-      
+
       // Get the order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -310,37 +310,37 @@ export const AdminOrders = () => {
         `)
         .eq('id', orderId)
         .single();
-      
+
       if (orderError) {
         throw new Error("Could not load order details");
       }
-      
+
       console.log("Order data fetched:", orderData);
-      
+
       // Cast orderData to unknown first, then to OrderRaw type
       const typedOrderData = orderData as unknown as OrderRaw;
-      
+
       // Get associated buyer
       const { data: buyerData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', typedOrderData.buyer_id)
         .single();
-      
+
       // Get associated seller
       const { data: sellerData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', typedOrderData.seller_id)
         .single();
-      
+
       // Get associated product
       const { data: productData } = await supabase
         .from('products')
         .select('*')
         .eq('id', typedOrderData.product_id)
         .single();
-      
+
       const formattedData: OrderDetails = {
         order_id: typedOrderData.id,
         order_number: typedOrderData.order_number,
@@ -354,7 +354,7 @@ export const AdminOrders = () => {
         order_date: typedOrderData.created_at,
         estimated_delivery: typedOrderData.estimated_delivery
       };
-      
+
       console.log("Formatted order details:", formattedData);
       setOrderDetails(formattedData);
       setIsDetailDialogOpen(true);
@@ -369,15 +369,15 @@ export const AdminOrders = () => {
       setIsLoading(false);
     }
   };
-  
+
   const exportOrders = () => {
     try {
       // Create CSV content
       const headers = ["Order ID", "Product", "Buyer", "Seller", "Amount", "Status", "Date"];
       const csvRows = [headers];
-      
+
       const filteredOrders = filterOrders();
-      
+
       filteredOrders.forEach(order => {
         csvRows.push([
           order.id,
@@ -389,21 +389,21 @@ export const AdminOrders = () => {
           new Date(order.created_at).toLocaleDateString()
         ]);
       });
-      
+
       // Create CSV string
       const csvContent = csvRows.map(row => row.join(",")).join("\n");
-      
+
       // Create download link
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      
+
       link.setAttribute("href", url);
       link.setAttribute("download", `orders-export-${new Date().toISOString().split('T')[0]}.csv`);
       link.click();
-      
+
       URL.revokeObjectURL(url);
-      
+
       toast({
         title: "Export successful",
         description: "Orders data has been exported to CSV."
@@ -422,13 +422,13 @@ export const AdminOrders = () => {
     // Refresh the data after a status update
     fetchOrders();
     setIsDetailDialogOpen(false);
-    
+
     toast({
       title: "Order updated",
       description: "The order status has been updated successfully."
     });
   };
-  
+
   const filterOrders = () => {
     return orders.filter(order => {
       // Search filter
@@ -438,39 +438,42 @@ export const AdminOrders = () => {
         order.seller_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.product_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.status.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       // Status filter
       const matchesStatus = statusFilter ? order.status === statusFilter : true;
-      
+
       // Time filter
       let matchesTime = true;
       if (timeFilter) {
         const orderDate = new Date(order.created_at);
         const now = new Date();
-        
+
         switch (timeFilter) {
-          case 'today':
+          case 'today': {
             matchesTime = orderDate.toDateString() === now.toDateString();
             break;
-          case 'week':
+          }
+          case 'week': {
             const weekAgo = new Date();
             weekAgo.setDate(now.getDate() - 7);
             matchesTime = orderDate >= weekAgo;
             break;
-          case 'month':
+          }
+          case 'month': {
             const monthAgo = new Date();
             monthAgo.setMonth(now.getMonth() - 1);
             matchesTime = orderDate >= monthAgo;
             break;
+          }
         }
       }
-      
+
       return matchesSearch && matchesStatus && matchesTime;
     });
   };
-  
+
   const filteredOrders = filterOrders();
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -479,7 +482,7 @@ export const AdminOrders = () => {
           View and manage all orders on the platform
         </p>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative w-full sm:w-64">
@@ -491,7 +494,7 @@ export const AdminOrders = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -520,7 +523,7 @@ export const AdminOrders = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -544,7 +547,7 @@ export const AdminOrders = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button onClick={exportOrders} variant="outline" className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
@@ -555,7 +558,7 @@ export const AdminOrders = () => {
           </Button>
         </div>
       </div>
-      
+
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4 flex items-start gap-2">
@@ -574,7 +577,7 @@ export const AdminOrders = () => {
           </CardContent>
         </Card>
       )}
-      
+
       {filteredOrders.length > 0 && !error && (
         <div className="text-sm text-muted-foreground">
           Showing {filteredOrders.length} of {orders.length} orders
@@ -582,7 +585,7 @@ export const AdminOrders = () => {
           {timeFilter && ` • Period: ${timeFilter === 'today' ? 'Today' : timeFilter === 'week' ? 'Last 7 days' : 'Last 30 days'}`}
         </div>
       )}
-      
+
       <div className="border rounded-md">
         <Table>
           <TableHeader>
@@ -667,7 +670,7 @@ export const AdminOrders = () => {
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Order Details Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -677,7 +680,7 @@ export const AdminOrders = () => {
               Complete information about this order
             </DialogDescription>
           </DialogHeader>
-          
+
           {orderDetails ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <div className="space-y-6">
@@ -710,7 +713,7 @@ export const AdminOrders = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Product</CardTitle>
@@ -733,7 +736,7 @@ export const AdminOrders = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Parties</CardTitle>
@@ -752,7 +755,7 @@ export const AdminOrders = () => {
                   </CardContent>
                 </Card>
               </div>
-              
+
               <div>
                 <Card className="h-full">
                   <CardHeader className="pb-2">

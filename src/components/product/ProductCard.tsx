@@ -1,16 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye, ShoppingBag, MessageCircle } from "lucide-react";
+import { Heart, Eye, ShoppingBag, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductType } from "@/types/product";
-import { MessageButton } from "./MessageButton";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { MessageButton } from "@/components/messages/MessageButton";
 
 interface ProductCardProps {
   product: ProductType;
@@ -22,7 +22,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const { favorites, addFavorite, removeFavorite, isAdding, isRemoving } = useFavorites();
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
-  
+
   const [likes, setLikes] = useState(product.likeCount || 0);
   const productIsFavorite = favorites?.includes(product.id);
   const isOwnProduct = user?.id === product.seller?.id;
@@ -35,7 +35,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     } else {
       addFavorite(product.id);
     }
-    
+
     // Update like count in the database and locally
     if (!productIsFavorite) {
       setLikes(prev => prev + 1);
@@ -61,12 +61,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     }
   };
 
-  const handleMessage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (isOwnProduct) {
-      navigate(`/product/${product.id}`);
-    }
-  };
 
   return (
     <Card className="group w-full overflow-hidden border rounded-lg transition-all duration-300 hover:shadow-md flex flex-col">
@@ -102,7 +96,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </Button>
         </Link>
       </div>
-      
+
       <CardContent className="p-4 flex-grow flex flex-col">
         <div className="flex justify-between items-start gap-2">
           <Link to={`/product/${product.id}`} className="flex-1">

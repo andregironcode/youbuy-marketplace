@@ -9,7 +9,6 @@ import {
   Package,
   ShoppingBag,
   Store,
-  MessageCircle,
   BarChart2,
   CreditCard,
   HeadphonesIcon,
@@ -18,6 +17,7 @@ import {
   LogOut,
   Wallet,
   Heart,
+  MessageCircle,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,7 +40,7 @@ export const ProfileSidebar = ({ compact = false }: ProfileSidebarProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
-  
+
   const isActive = (path: string) => {
     return location.pathname.includes(path);
   };
@@ -89,12 +89,6 @@ export const ProfileSidebar = ({ compact = false }: ProfileSidebarProps) => {
       label: "Favorites",
       href: "/profile/favorites",
       active: isActive("/favorites"),
-    },
-    {
-      icon: MessageCircle,
-      label: "Messages",
-      href: "/messages",
-      active: isActive("/messages"),
     },
     {
       icon: BarChart2,

@@ -49,11 +49,13 @@ export function useMessages(chatId?: string) {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
-  // Load chats on initial load
+  // Load chats on initial load or when user changes
   useEffect(() => {
     console.log('Loading chats...');
-    fetchChats();
-  }, []);
+    if (user) {
+      fetchChats();
+    }
+  }, [user]);
 
   // Fetch chats for the current user
   const fetchChats = async () => {
@@ -66,7 +68,7 @@ export function useMessages(chatId?: string) {
     try {
       console.log('Fetching chats for user:', user.id);
       setLoadingChats(true);
-      
+
       // First, get all chats for the user
       const { data: chatsData, error: chatsError } = await supabase
         .from("chats")
@@ -209,7 +211,7 @@ export function useMessages(chatId?: string) {
 
             console.log('Adding new message to state:', newMessage);
             setMessages(prev => [...prev, newMessage]);
-            
+
             // Update chat list if this is the latest message
             setChats(prev => prev.map(chat => {
               if (chat.id === chatId) {
@@ -307,7 +309,7 @@ export function useMessages(chatId?: string) {
     try {
       console.log('Fetching messages for chat:', chatId);
       setLoadingMessages(true);
-      
+
       // Get all messages for this chat
       const { data, error } = await supabase
         .from("messages")
@@ -320,13 +322,13 @@ export function useMessages(chatId?: string) {
       if (data && data.length > 0) {
         // Get all unique sender IDs
         const senderIds = [...new Set(data.map(msg => msg.sender_id))];
-        
+
         // Fetch profiles for all senders in one query
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url")
           .in("id", senderIds);
-        
+
         // Create a map of profiles by ID for easy lookup
         const profilesMap = new Map();
         if (profilesData) {
@@ -337,7 +339,7 @@ export function useMessages(chatId?: string) {
             });
           });
         }
-        
+
         // Format messages with sender info
         const formattedMessages: MessageType[] = data.map(msg => {
           const profile = profilesMap.get(msg.sender_id);
@@ -353,7 +355,7 @@ export function useMessages(chatId?: string) {
             sender_avatar: profile?.avatar_url
           };
         });
-        
+
         console.log('Fetched messages:', formattedMessages.length);
         setMessages(formattedMessages);
       } else {
@@ -388,7 +390,7 @@ export function useMessages(chatId?: string) {
         .single();
 
       if (chatError) throw chatError;
-      
+
       if (!chatData) {
         console.error('Chat not found:', chatId);
         return;
@@ -403,7 +405,7 @@ export function useMessages(chatId?: string) {
 
       // Get the other user's profile
       const otherId = chatData.buyer_id === user.id ? chatData.seller_id : chatData.buyer_id;
-      
+
       const { data: otherUserData } = await supabase
         .from("profiles")
         .select("*")
@@ -434,9 +436,9 @@ export function useMessages(chatId?: string) {
             last_seen: otherUserData.updated_at
           }
         };
-        
+
         setCurrentChat(currentChatData);
-        
+
         if (productData) {
           setCurrentProduct({
             id: productData.id,

@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { NotificationProvider } from "@/components/NotificationProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import ProductDetail from "@/pages/ProductDetail";
 import CategoryPage from "@/pages/CategoryPage";
@@ -20,10 +21,10 @@ import AdminPage from "@/pages/AdminPage";
 import Sell from "@/pages/Sell";
 import ProductEditPage from "@/pages/ProductEditPage";
 import Profile from "@/pages/Profile";
-import Messages from "@/pages/Messages";
 import Favorites from "@/pages/Favorites";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
+import Messages from "@/pages/Messages";
 import CheckoutPage from "@/pages/Checkout";
 import CategoriesPage from "@/pages/CategoriesPage";
 import TestPage from "@/pages/TestPage";
@@ -46,14 +47,16 @@ function App() {
                   {/* Admin routes */}
                   <Route path="/admin" element={<AdminAuth />} />
                   <Route path="/admin/*" element={<AdminPage />} />
-                  
+
                   {/* Regular routes with navbar */}
                   <Route
                     element={
                       <>
                         <Navbar />
                         <div className="flex-1 w-full pb-16 md:pb-0">
-                          <Outlet />
+                          <ErrorBoundary>
+                            <Outlet />
+                          </ErrorBoundary>
                         </div>
                         <BottomNav />
                       </>

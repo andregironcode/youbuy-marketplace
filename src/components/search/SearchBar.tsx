@@ -75,7 +75,7 @@ export const SearchBar = ({
   };
 
   return (
-    <div className={`relative ${className}`} ref={searchRef}>
+    <div className={`relative z-[9999] search-bar-container ${className}`} ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative">
         <Search className={`absolute left-3 ${size === 'lg' ? 'top-3 h-6 w-6' : 'top-2 h-5 w-5'} text-green-500`} />
         <Input

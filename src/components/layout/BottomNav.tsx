@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Heart, Upload, MessageSquare, User } from "lucide-react";
+import { Home, Heart, Upload, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
-  
+
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
@@ -18,7 +18,7 @@ export function BottomNav() {
           to="/"
           className={cn(
             "flex flex-col items-center justify-center w-1/5 h-full",
-            isActive("/") && !isActive("/messages") && !isActive("/profile") && !isActive("/upload") && "text-youbuy"
+            isActive("/") && !isActive("/profile") && !isActive("/upload") && !isActive("/messages") && "text-youbuy"
           )}
         >
           <Home className="h-5 w-5" />
@@ -35,6 +35,16 @@ export function BottomNav() {
           <span className="text-xs mt-1">Favorites</span>
         </Link>
         <Link
+          to="/messages"
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 h-full",
+            isActive("/messages") && "text-youbuy"
+          )}
+        >
+          <MessageSquare className="h-5 w-5" />
+          <span className="text-xs mt-1">Messages</span>
+        </Link>
+        <Link
           to="/upload"
           className={cn(
             "flex flex-col items-center justify-center w-1/5 h-full",
@@ -44,16 +54,6 @@ export function BottomNav() {
           <div className="h-10 w-10 rounded-full bg-youbuy flex items-center justify-center">
             <Upload className="h-5 w-5 text-white" />
           </div>
-        </Link>
-        <Link
-          to="/messages"
-          className={cn(
-            "flex flex-col items-center justify-center w-1/5 h-full",
-            isActive("/messages") && "text-youbuy"
-          )}
-        >
-          <MessageSquare className="h-5 w-5" />
-          <span className="text-xs mt-1">Inbox</span>
         </Link>
         <Link
           to={user ? "/profile" : "/auth"}

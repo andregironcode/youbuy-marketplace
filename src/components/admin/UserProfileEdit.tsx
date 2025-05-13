@@ -17,6 +17,14 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 
+interface ProfileData {
+  full_name: string | null;
+  username: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  updated_at: string;
+}
+
 interface UserProfileEditProps {
   userId: string;
   profileData: {
@@ -47,16 +55,10 @@ export const UserProfileEdit = ({
 
   const handleSave = async () => {
     if (!userId) return;
-    
+
     setIsSubmitting(true);
     try {
-      console.log("Updating profile for user:", userId, {
-        full_name: fullName,
-        username,
-        bio,
-        avatar_url: avatarUrl
-      });
-      
+
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -65,8 +67,8 @@ export const UserProfileEdit = ({
           bio,
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
-        } as any)
-        .eq("id", userId as any);
+        } as ProfileData)
+        .eq("id", userId);
 
       if (error) throw error;
 
@@ -74,15 +76,16 @@ export const UserProfileEdit = ({
         title: "Profile updated",
         description: "User profile has been updated successfully"
       });
-      
+
       onProfileUpdated();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
+      const errorMessage = error instanceof Error ? error.message : "There was an error updating the user profile";
       toast({
         variant: "destructive",
         title: "Update failed",
-        description: "There was an error updating the user profile"
+        description: errorMessage
       });
     } finally {
       setIsSubmitting(false);
@@ -91,7 +94,7 @@ export const UserProfileEdit = ({
 
   const handleRemoveAvatar = async () => {
     if (!userId) return;
-    
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase
@@ -99,24 +102,25 @@ export const UserProfileEdit = ({
         .update({
           avatar_url: null,
           updated_at: new Date().toISOString()
-        } as any)
-        .eq("id", userId as any);
+        } as ProfileData)
+        .eq("id", userId);
 
       if (error) throw error;
 
       setAvatarUrl("");
       setShowConfirmDelete(false);
-      
+
       toast({
         title: "Avatar removed",
         description: "User avatar has been removed successfully"
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error removing avatar:", error);
+      const errorMessage = error instanceof Error ? error.message : "There was an error removing the user avatar";
       toast({
         variant: "destructive",
         title: "Action failed",
-        description: "There was an error removing the user avatar"
+        description: errorMessage
       });
     } finally {
       setIsSubmitting(false);
@@ -146,14 +150,14 @@ export const UserProfileEdit = ({
               Update user profile information
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2 items-center mb-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={avatarUrl || undefined} />
                 <AvatarFallback>{getInitials()}</AvatarFallback>
               </Avatar>
-              
+
               {avatarUrl && (
                 <Button 
                   variant="destructive" 
@@ -166,7 +170,7 @@ export const UserProfileEdit = ({
                 </Button>
               )}
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
@@ -176,7 +180,7 @@ export const UserProfileEdit = ({
                 placeholder="Enter user's full name"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -186,7 +190,7 @@ export const UserProfileEdit = ({
                 placeholder="Enter username"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea
@@ -198,7 +202,7 @@ export const UserProfileEdit = ({
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
@@ -216,7 +220,7 @@ export const UserProfileEdit = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

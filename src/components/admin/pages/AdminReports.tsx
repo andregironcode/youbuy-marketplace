@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,12 +41,12 @@ export const AdminReports = () => {
   const [currentStatus, setCurrentStatus] = useState<"pending" | "under review" | "resolved">("pending");
   const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
-  
+
   useEffect(() => {
     fetchReports();
-  }, []);
-  
-  const fetchReports = async () => {
+  }, [fetchReports]);
+
+  const fetchReports = useCallback(async () => {
     setIsLoading(true);
     try {
       // This is a placeholder - in a real app this would fetch from the reports table
@@ -89,7 +89,7 @@ export const AdminReports = () => {
           notes: "Seller updated the description"
         }
       ];
-      
+
       setReports(mockReports);
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -101,8 +101,8 @@ export const AdminReports = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-  
+  }, [toast]);
+
   const handleStatusChange = async (reportId: string, newStatus: "pending" | "under review" | "resolved") => {
     try {
       // In a real app, this would update the database
@@ -111,10 +111,10 @@ export const AdminReports = () => {
           ? { ...report, status: newStatus, notes: notes || report.notes } 
           : report
       );
-      
+
       setReports(updatedReports);
       setOpenDialog(false);
-      
+
       toast({
         title: "Status updated",
         description: `Report has been marked as ${newStatus}`
@@ -128,11 +128,11 @@ export const AdminReports = () => {
       });
     }
   };
-  
+
   const filteredReports = activeTab === "all" 
     ? reports 
     : reports.filter(report => report.status === activeTab);
-  
+
   const getStatusBadge = (status: "pending" | "under review" | "resolved") => {
     switch (status) {
       case "pending":
@@ -150,7 +150,7 @@ export const AdminReports = () => {
         <h1 className="text-3xl font-bold tracking-tight">Reports Management</h1>
         <p className="text-muted-foreground">Review and manage user and product reports</p>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Reports</CardTitle>
@@ -166,7 +166,7 @@ export const AdminReports = () => {
               <TabsTrigger value="under review">Under Review</TabsTrigger>
               <TabsTrigger value="resolved">Resolved</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value={activeTab}>
               {isLoading ? (
                 <div className="flex justify-center items-center py-10">
@@ -223,7 +223,7 @@ export const AdminReports = () => {
           </Tabs>
         </CardContent>
       </Card>
-      
+
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -232,7 +232,7 @@ export const AdminReports = () => {
               {selectedReport && `${selectedReport.type} report: "${selectedReport.reason}"`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -244,12 +244,12 @@ export const AdminReports = () => {
                 <p className="text-sm">{selectedReport?.reporter_name}</p>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium mb-1">Reason</h4>
               <p className="text-sm">{selectedReport?.reason}</p>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium mb-1">Status</h4>
               <div className="flex gap-2">
@@ -279,7 +279,7 @@ export const AdminReports = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium mb-1">Admin Notes</h4>
               <Textarea
@@ -290,7 +290,7 @@ export const AdminReports = () => {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(false)}>
               Cancel

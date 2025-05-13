@@ -7,7 +7,8 @@ node_modules
 coverage
 
 # Production
-dist-ssr
+#  dist
+# dist-ssr
 *.local
 build
 
@@ -19,7 +20,6 @@ build
 .env.test.local
 .env.production.local
 .env.*
-!.env.example
 
 # Debug logs
 npm-debug.log*
@@ -40,7 +40,7 @@ lerna-debug.log*
 *.sw?
 
 # Vercel
-.vercel
+# .vercel
 
 # TypeScript
 *.tsbuildinfo

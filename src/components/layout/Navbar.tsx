@@ -1,13 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, Bell, PlusCircle, MessageCircle, LogIn, Wallet, Search, ChevronDown, LogOut, Settings, UserCircle, Heart } from "lucide-react";
+import { ShoppingBag, User, Menu, Bell, PlusCircle, LogIn, Wallet, Search, ChevronDown, LogOut, Settings, UserCircle, Heart, MessageCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { SearchBar } from "@/components/search/SearchBar";
 import { useLocation } from "react-router-dom";
@@ -37,7 +36,6 @@ export const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user, signOut } = useAuth();
   const { balance } = useWallet();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,57 +62,27 @@ export const Navbar = () => {
 
   useEffect(() => {
     if (!user) {
-      setUnreadCount(0);
       setNotificationCount(0);
       return;
     }
 
-    const fetchUnreadCounts = async () => {
+    const fetchNotificationCount = async () => {
       try {
-        const { count: messageCount, error: messageError } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('receiver_id', user.id)
-          .eq('read', false);
-        
-        if (messageError) throw messageError;
-        setUnreadCount(messageCount || 0);
-        
         const { count: notifCount, error: notifError } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('read', false);
-        
+
         if (notifError) throw notifError;
         setNotificationCount(notifCount || 0);
       } catch (error) {
-        console.error('Error fetching unread counts:', error);
+        console.error('Error fetching notification count:', error);
       }
     };
 
-    fetchUnreadCounts();
+    fetchNotificationCount();
 
-    const messagesChannel = supabase
-      .channel('public:messages')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'messages',
-        filter: `receiver_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadCounts();
-      })
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'messages',
-        filter: `receiver_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadCounts();
-      })
-      .subscribe();
-      
     const notificationsChannel = supabase
       .channel('public:notifications')
       .on('postgres_changes', { 
@@ -123,7 +91,7 @@ export const Navbar = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, () => {
-        fetchUnreadCounts();
+        fetchNotificationCount();
       })
       .on('postgres_changes', { 
         event: 'UPDATE', 
@@ -131,12 +99,11 @@ export const Navbar = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, () => {
-        fetchUnreadCounts();
+        fetchNotificationCount();
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(messagesChannel);
       supabase.removeChannel(notificationsChannel);
     };
   }, [user]);
@@ -176,17 +143,15 @@ export const Navbar = () => {
             <Link to="/notifications">
               <Button variant="ghost" size="icon" className="h-9 w-9 relative">
                 <Bell className="h-5 w-5" />
-                <UnreadBadge count={notificationCount} />
+                {notificationCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </Badge>
+                )}
               </Button>
             </Link>
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/messages">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Messages">
-                    <MessageCircle className="h-5 w-5" />
-                    <UnreadBadge count={unreadCount} />
-                  </Button>
-                </Link>
                 <Link to="/profile/wallet">
                   <Button variant="ghost" size="sm" className="gap-2 h-9" aria-label="Wallet">
                     <Wallet className="h-4 w-4" />
@@ -214,6 +179,12 @@ export const Navbar = () => {
                 </Button>
               </Link>
             )}
+            <Link to="/messages">
+              <Button variant="outline" className="h-9 text-sm mr-2">
+                <MessageCircle className="mr-1 h-4 w-4" />
+                Messages
+              </Button>
+            </Link>
             <Link to="/sell">
               <Button className="bg-cta hover:bg-cta-hover text-white h-9 text-sm">
                 <PlusCircle className="mr-1 h-4 w-4" />
@@ -222,7 +193,7 @@ export const Navbar = () => {
             </Link>
           </div>
         )}
-        
+
         {/* Mobile menu - burger icon (moved to the right) */}
         {isMobile && (
           <Sheet>

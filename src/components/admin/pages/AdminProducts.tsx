@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Edit, Trash2, Eye, Ban, CheckCircle } from "lucide-react";
@@ -31,9 +31,9 @@ export const AdminProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch products with seller profiles
@@ -45,11 +45,18 @@ export const AdminProducts = () => {
             full_name
           )
         `);
-      
+
       if (error) throw error;
 
+      // Define a type for the raw product data from the database
+      type ProductWithProfile = Product & {
+        profiles?: {
+          full_name: string | null;
+        } | null;
+      };
+
       // Map the data to include seller name
-      const productsWithSellerNames = data.map((product: any) => ({
+      const productsWithSellerNames = data.map((product: ProductWithProfile) => ({
         ...product,
         seller_name: product.profiles?.full_name || 'Unknown Seller'
       }));
@@ -65,7 +72,7 @@ export const AdminProducts = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const handleViewProduct = (product: Product) => {
     // In a real application, this would navigate to a product detail view
@@ -79,20 +86,20 @@ export const AdminProducts = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedProduct) return;
-    
+
     try {
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', selectedProduct.id);
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Product deleted",
         description: "The product has been removed successfully."
       });
-      
+
       // Update local state
       setProducts(products.filter(p => p.id !== selectedProduct.id));
       setIsDeleteDialogOpen(false);
@@ -114,27 +121,27 @@ export const AdminProducts = () => {
 
   const handleConfirmStatusChange = async () => {
     if (!selectedProduct) return;
-    
+
     try {
       const { error } = await supabase
         .from('products')
         .update({ product_status: newStatus })
         .eq('id', selectedProduct.id);
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Status updated",
         description: `Product is now ${newStatus}.`
       });
-      
+
       // Update local state
       setProducts(products.map(p => 
         p.id === selectedProduct.id 
           ? {...p, product_status: newStatus} 
           : p
       ));
-      
+
       setIsStatusDialogOpen(false);
     } catch (error) {
       console.error("Error updating product status:", error);
@@ -164,7 +171,7 @@ export const AdminProducts = () => {
         <h1 className="text-3xl font-bold tracking-tight">Product Management</h1>
         <p className="text-muted-foreground">Monitor and manage product listings on the platform</p>
       </div>
-      
+
       <div className="flex justify-between items-center">
         <div className="relative w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -179,7 +186,7 @@ export const AdminProducts = () => {
           {isLoading ? "Loading..." : "Refresh Products"}
         </Button>
       </div>
-      
+
       <div className="border rounded-md">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
